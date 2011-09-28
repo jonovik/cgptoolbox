@@ -13,12 +13,16 @@ is easier to define as function than pass as arguments.
 Todo: Add illustration for models.
 """
 
+import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.pyplot import (plot, figure, xlabel, ylabel, title, 
+    tick_params, xlim, ylim, axis, box, setp, getp)
 import os
 from joblib import Memory
 from ap_cvode import Bond
-from protocols import catrec, Clampable, markovplot
+from protocols import catrec, Clampable, markovplot, listify, Bond_protocol
 from splom import spij
+from utils.thinrange import thin
 
 ### Options, model and protocols
 
@@ -26,11 +30,18 @@ cell = Clampable.mixin(Bond)
 protocols = cell.bond_protocols()
 # Pacing parameters
 nprepace = 10
-npace = 2
+npace = 4
 # P1-P2 double-pulse protocol to study voltage-dependence of ion channel
-p1p2 = protocols[3]
+varnames, protocol, limits, url = listify(protocols[3])
+protocol[1][1] = protocol[1][1][::3]
+p1p2 = Bond_protocol(varnames, protocol, limits, url)
 # Variable-gap protocol to study the rate of recovery from inactivation
-vargap = protocols[7]
+varnames, protocol, limits, url = listify(protocols[7])
+protocol[2][0] = protocol[2][0][6::3]  # don't need so many gap lengths
+protocol[2][1] = protocol[2][1][1]  # don't vary gap voltage
+protocol[3][0] = 300  # make shortest run last until the longest gap is done
+vargap = Bond_protocol(varnames, protocol, limits, url)
+
 # Lineplot options
 lineplotopt = dict(linestyle="-", color="k", linewidth=2)
 markovopt = dict(model=cell, plotpy=True, plotr=False, newfig=False)
@@ -44,24 +55,52 @@ def vecvclamp(*args, **kwargs):
 
 ### Regular pacing
 
-# Prepacing
-for t, y, stats in cell.aps(n=nprepace):
-    pass
+@mem.cache
+def pacing_output():
+    # Prepacing
+    for t, y, stats in cell.aps(n=nprepace):
+        pass
+    # A few paces
+    t, y, stats = catrec(*cell.aps(n=npace), globalize_time=False)
+    dy, a = cell.rates_and_algebraic(t, y)
+    return t, y, dy, a
 
-# Two paces
-t, y, stats = catrec(*cell.aps(n=npace), globalize_time=False)
-dy, a = cell.rates_and_algebraic(t, y)
+t, y, dy, a = pacing_output()
+pacelim = (cell.pr.stim_period / 2), (t[-1] - cell.pr.stim_period / 2)
 
-def lineplot(x, y, title, ylabel):
-    def result():
-        plt.plot(x, y, **lineplotopt)
-        plt.title(title)
-        plt.ylabel(ylabel)
-    return result
 
-exp_pace = lineplot(t, a.i_stim, "Pacing", "Stimulus current")
-vis_ap = lineplot(t, y.V, "Action potential", "Voltage")
-vis_ct = lineplot(t, y.Cai, "Calcium transient", "[Ca]")
+def tweak():
+    xmin, xmax, ymin, ymax = axis()
+    xpad = 0.1 * (xmax - xmin)
+    ypad = 0.1 * (ymax - ymin)
+    axis([xmin - xpad, xmax + xpad, ymin - ypad, ymax + ypad])
+    tick_params(length=0)
+    box("off")
+
+# Hack: Use default parameters as hack to store current value of a before it 
+# gets redefined below.
+# http://stackoverflow.com/questions/233673/lexical-closures-in-python#235764
+
+def exp_pace(t=t, a=a):
+    plot(t, a["i_stim"], **lineplotopt)
+    title("Pacing")
+    ylabel("Stimulus current")
+    tweak()
+    xlim(pacelim)
+
+def vis_ap(t=t, y=y):
+    plot(t, y["V"], **lineplotopt)
+    title("Action potential")
+    ylabel("Voltage")
+    tweak()
+    xlim(pacelim)
+
+def vis_ct(t=t, y=y):
+    plot(t, y["Cai"], **lineplotopt)
+    title("Calcium transient")
+    ylabel("[Ca]")
+    tweak()
+    xlim(pacelim)
 
 
 ### Double-pulse protocol
@@ -69,9 +108,25 @@ vis_ct = lineplot(t, y.Cai, "Calcium transient", "[Ca]")
 L = vecvclamp(p1p2.protocol)
 proto, traj = L[3]
 t, y, dy, a = catrec(*traj)
-exp_p1p2 = lineplot(t, y["V"], "Double-pulse clamping", "Voltage")
 
-def vis_p1p2():
+
+def exp_p1p2(L=L):
+    h = []
+    for proto, traj in L:
+        t, y, dy, a = catrec(*traj)
+        h.extend(plot(t, y["V"], **lineplotopt))
+    setp(h, color="gray")
+    hi = h[len(h) // 2]
+    setp(hi, color="black", zorder=10)
+    # from IPython.core.debugger import Tracer; Tracer()()
+    title("Double-pulse clamping")
+    ylabel("Voltage")
+    tweak()
+    xmin = proto[0][0] - 300
+    xmax = t[-1]
+    xlim(xmin, xmax)
+
+def vis_p1p2(t=t, y=y):
     markovplot(t, y, comp="fast_sodium", **markovopt)
 
 
@@ -80,9 +135,26 @@ def vis_p1p2():
 L = vecvclamp(vargap.protocol)  # list of (protocol, trajectories)
 proto, traj = L[3]
 t, y, dy, a = catrec(*traj)
-exp_vargap = lineplot(t, y["V"], "Variable-gap clamping", "Voltage")
 
-def vis_vargap():
+
+def exp_vargap(L=L):
+    h = []
+    for proto, traj in L:
+        t, y, dy, a = catrec(*traj)
+        h.extend(plot(t, y["V"], **lineplotopt))
+    setp(h, color="gray")
+    hi = h[len(h) // 2]
+    setp(hi, color="black", zorder=10)
+    title("Variable-gap clamping")
+    ylabel("Voltage")
+    tweak()
+    xmin = proto[0][0] - 300
+    xmax = getp(hi, "xdata")[-1]
+    # from IPython.core.debugger import Tracer; Tracer()()
+    xlim(xmin, xmax)
+    
+
+def vis_vargap(t=t, y=y):
     markovplot(t, y, comp="L_type", **markovopt)
 
 
@@ -91,6 +163,7 @@ def vis_vargap():
 def model(name):
     def result():
         plt.title(name)
+        axis("off")
     return result
 
 mod = [model(i) 
@@ -106,7 +179,8 @@ n = len(panels)
 plt.figure()
 for j, panelj in enumerate(panels):
     for i, panelij in enumerate(panelj):
-        spij(m, n, i, j)
+        # spij(m, n, i, j)
+        spij(n, m, j, i)
         panelij()
 
 plt.show()
