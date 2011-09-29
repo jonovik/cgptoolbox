@@ -1,10 +1,32 @@
-.. cGPtoolbox documentation master file, created by
-   sphinx-quickstart on Wed Sep 07 17:12:09 2011.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to cGPtoolbox's documentation!
 ======================================
+
+A comprehensive understanding of how genetic variation causes phenotypic 
+variation of a complex trait is a long-term disciplinary goal of genetics. The 
+basic premise is that in a well-validated model that is capable of accounting 
+for the phenotypic variation in a population, the causative genetic variation 
+will manifest in the model parameters. In this context, the term "phenotype" 
+refers to any relevant measure of model behaviour, whereas the term 
+"parameter" denotes a quantity that is constant over the time-scale of the 
+particular model being studied. However, even the lowest-level model 
+parameters are themselves phenotypes :doi:`<10.1534/genetics.108.087064>`, 
+whose genetic basis may be mono-, oligo- or polygenic, and whose physiological 
+basis can be mechanistically modelled at ever deeper levels of detail. The 
+term causally cohesive genotype-phenotype (cGP) modeling (43) thus denotes an 
+approach where low-level parameters have an articulated relationship to the 
+individual's genotype, and higher-level phenotypes emerge from the 
+mathematical model describing the causal dynamic relationships between these 
+lower-level processes. It aims to bridge the gap between standard population 
+genetic models that simply assign phenotypic values directly to genotypes, and 
+mechanistic physiological models without an explicit genetic basis. This 
+forces a causally coherent depiction of the genotype-to-phenotype (GP) map.
+
+
+
+
+
+
+
 
 Contents:
 
