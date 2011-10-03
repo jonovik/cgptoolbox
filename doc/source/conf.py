@@ -298,4 +298,5 @@ extlinks = {
     'cellml': ('http://models.cellml.org/exposure/%s.cellml/view', ''),
     'doi': ('http://dx.doi.org/%s', ''),
     'isbn': ('http://www.amazon.com/s?search-alias=stripbooks&field-isbn=%s', ''),
+    # or http://isbndb.com/search-all.html?kw=%s
 }

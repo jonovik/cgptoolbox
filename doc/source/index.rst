@@ -1,8 +1,6 @@
 A toolbox for causally cohesive genotype-phenotype modeling
 ==========================================================================
 
-.. figure:: cgpstudy.svg
-
 A comprehensive understanding of how genetic variation causes phenotypic 
 variation of a complex trait is a long-term disciplinary goal of genetics. The 
 basic premise is that in a well-validated model that is capable of accounting 
@@ -26,6 +24,43 @@ lower-level processes. It aims to bridge the gap between standard population
 genetic models that simply assign phenotypic values directly to genotypes, and 
 mechanistic physiological models without an explicit genetic basis. This 
 forces a causally coherent depiction of the genotype-to-phenotype (GP) map.
+
+The :wiki:`Virtual Physiological Human` 
+`Network of Excellence <http://www.vph-noe.eu>`_ 
+aims to apply multilevel physiological modelling in patient-specific 
+healthcare and in simulation studies of disease-related processes.
+This requires expanding the scope of multilevel physiological modeling 
+to the genome and population levels. The multi-level systems in 
+:ref:`framework-figure` imply a mapping from low-level parameters to 
+clinically relevant phenotypes. Supplemented by a link from genomic 
+databases to model parameters, this defines what we call a causally 
+cohesive genotype-phenotype (cGP) model. Tailoring treatment to 
+individual genetics is a stated goal of 
+`VPH in the post-Genomic era
+<http://www.vph-noe.eu/vph-repository/doc_download/13-vph-noe-promotional-flyer-v1>`_. 
+However, understanding gene-disease associations requires 
+population-level analyses accounting for genetic interactions and 
+genotype frequencies in the population.
+
+.. _framework-figure:
+
+Integrating genetics, genomics, and multiscale models in a population context
+-----------------------------------------------------------------------------
+
+.. figure:: cgpstudy.png
+
+   In the illustration, a gene codes for ion-channel parameters, which 
+   affect transmembrane currents and the action potential of a heart cell. 
+   Genetically determined variation in low-level parameters propagates 
+   through multiple levels of electrophysiological, mechanical and fluid 
+   dynamic processes. Phenotypic variation emerges at each level of 
+   organization. A cGP model integrates a multiscale model of this 
+   biological system with a linkage map through the genes encoding ion 
+   channels, thus the cGP model describes the creation of new genotypes as a 
+   result of meiosis and mating as well the phenotypes arising from these 
+   genotypes. By simulating populations of cGP models, whose 
+   parameters arise by recombination of virtual genomes, we can obtain a 
+   deeper understanding of the high-dimensional in silico phenotypic data.
 
 .. contents::
 
@@ -58,9 +93,46 @@ The cgptoolbox is a step towards providing computational tools for
 attaching GP maps of parameters to a multiscale modelling framework in 
 order to handle patient-specific issues. We think this is an important 
 delivery preparing for a future situation where acquisition of 
-:doi:`high-dimensional phenotypic data <10.1038/nrg2897>` from patients 
-become routine and the VPH community has come closer to its key goal 
-of achieving more integration across multiple spatial and temporal scales.
+high-dimensional phenotypic data from patients become routine 
+(:doi:`phenomics <10.1038/nrg2897>`) and the VPH community has come 
+closer to its key goal of achieving more integration across multiple 
+spatial and temporal scales.
+
+Design philosophy
+==========================================================================
+
+
+The cGP toolbox will provide a streamlined interface from genomic 
+databases to model parameter structures. At the population level, it 
+provides functions for mating and recombining genomes, keeping track of 
+chromosomal organization and genetic distances (map units) between genes, 
+thereby simulating parameter values for the offspring. This 
+infrastructure is common to any cGP study. See the :ref:`tutorials` for 
+worked examples.
+
+The workflow illustrated in :ref:`design-patterns` exemplifies the 
+:wiki:`design pattern` we developed to facilitate the interchange and 
+reuse of its components: the generation of genotypes (e.g. exhaustive 
+enumeration or reduced designs), the mapping of genes to parameters 
+(based on genome databases, e.g. the :doi:`mouse phenome project 
+<10.1007/s00335-009-9208-3>`), physiological models (e.g. the 
+:doi:`CellML <10.1093/bioinformatics/btn390>` and 
+:doi:`SBML/BioModels <10.1093/nar/gkj092>` repositories) that map 
+parameters to phenotypes, virtual experiments to generate phenotypes that 
+are defined by the model system's response to some stimulus or 
+perturbation (e.g. :isbn:`voltage clamping <047148685X>`), and 
+aggregation from model dynamics to clinically relevant phenotypes (e.g. 
+:wiki:`action potential` duration). This pipeline design allows the 
+gluing together of appropriate tools for each task. For instance, 
+experimental designs and statistical analyses were done in 
+`R <http://www.r-project.org>`_, whereas virtual experiments were flexibly 
+described in `Python <http://www.python.org>`_). The general approach 
+should apply equally well to eventual whole-organ cGP studies.
+
+.. _design-patterns:
+
+Design patterns for cGP studies
+--------------------------------------------------------------------------
 
 .. figure:: workflow.png
 
@@ -68,7 +140,7 @@ of achieving more integration across multiple spatial and temporal scales.
    Blue arrows denote functions that generate genotypes or transform them 
    through successive mappings, genotype to parameter to "raw" phenotypes to 
    aggregated phenotypes. The surrounding text exemplifies different 
-   alternatives for each piece of the pipeline. "Virtual experiments" 
+   alternatives for each piece of the pipeline. :ref:`Virtual experiments` 
    interact with physiological models to generate phenotypes defined by the 
    system's response to external stimuli.
 
@@ -131,25 +203,9 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-.. automodule:: docutils.utils
-    :members:
-
-
-.. py:function:: enumerate(sequence[, start=0])
-    
-    Return an iterator that yields tuples of an index and and item of the *sequence*.
-
-.. function:: publish(paper, impact_factor=123)
-    
-    Make the professor happy.
-
-.. function:: test()
-
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-And remember, it is possible to :func:`publish` almost anything.
