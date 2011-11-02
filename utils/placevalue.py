@@ -383,12 +383,16 @@ class Genotype(Placevalue):
         assert all(unstruct(n).squeeze() <= 3), msg
         super(Genotype, self).__init__(n, msd_first)
 
-def bin(i, ndigits=0):
+def _bin(i, ndigits=0):
     """
+    Convert integer to string of binary digits.
+    
     >>> bin(13)
     '1101'
     >>> bin(13, 8)
     '00001101'
+    
+    Convert to integer from string in base 2.
     >>> int(bin(13), 2)
     13
     """
@@ -411,7 +415,7 @@ def binarray(i, ndigits=0, dtype=int):
     >>> binarray(13, 8)
     array([0, 0, 0, 0, 1, 1, 0, 1])
     """
-    return np.array(list(bin(i, ndigits)), dtype=dtype)
+    return np.array(list(_bin(i, ndigits)), dtype=dtype)
 
 
 if __name__ == "__main__":
