@@ -60,8 +60,6 @@ numbers left-to-right.
 
 The integer is computed by multiplying each vector element with its place value 
 and summing the result, just like 123 = 1*100 + 2*10 + 3*1.
-
-This module also has a Python 2.5.2 replacement for bin().
 """
 import operator
 import numpy as np
@@ -383,29 +381,6 @@ class Genotype(Placevalue):
         assert all(unstruct(n).squeeze() <= 3), msg
         super(Genotype, self).__init__(n, msd_first)
 
-def _bin(i, ndigits=0):
-    """
-    Convert integer to string of binary digits.
-    
-    >>> bin(13)
-    '1101'
-    >>> bin(13, 8)
-    '00001101'
-    
-    Convert to integer from string in base 2.
-    >>> int(bin(13), 2)
-    13
-    """
-    L = []
-    digits = "01"
-    while True:
-        i, carry = divmod(i, 2)
-        L.append(digits[carry])
-        if i == 0:
-            break
-    L.reverse()
-    return "".join(L).rjust(ndigits, "0")
-
 def binarray(i, ndigits=0, dtype=int):
     """
     Numpy array of binary digits (most significant digit in position 0).
@@ -415,7 +390,10 @@ def binarray(i, ndigits=0, dtype=int):
     >>> binarray(13, 8)
     array([0, 0, 0, 0, 1, 1, 0, 1])
     """
-    return np.array(list(_bin(i, ndigits)), dtype=dtype)
+    result = ["0"] * ndigits
+    s = bin(i)[2:]
+    result[-len(s):] = s
+    return np.array(result, dtype=dtype)
 
 
 if __name__ == "__main__":
