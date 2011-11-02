@@ -381,7 +381,7 @@ class Genotype(Placevalue):
         """
         msg = "Genotype only implemented for biallelic loci"
         assert all(unstruct(n).squeeze() <= 3), msg
-        return super(Genotype, self).__init__(n, msd_first)
+        super(Genotype, self).__init__(n, msd_first)
 
 def bin(i, ndigits=0):
     """
