@@ -1,16 +1,16 @@
 """
-View a structured array with identical field types as an unstructured array.
-
-See ?unstruct.
+Unstructured view of a structured array whose fields are all the same type.
 """
+
 import numpy as np
+
 def unstruct(x):
     """
-    View a structured array with identical field types as an unstructured array.
+    Unstructured view of a structured array whose fields are all the same type.
     
     Usage:
     
-    >>> fieldtype = np.int32 # ensure same results on 32- and 64-bit platforms
+    >>> fieldtype = np.int32   # ensure same result on 32- and 64-bit platforms
     >>> dtype = [("a", fieldtype), ("b", fieldtype)]
     >>> x = np.arange(2, dtype=fieldtype).view(dtype)
     >>> x
@@ -141,8 +141,8 @@ def unstruct(x):
     # Arrays of shape 0 cannot be .view()'ed, raising
     # ValueError: new type not compatible with array.
     # So promote to 1d once we're done computing the new shape.
-    x = np.atleast_1d(x) # avoid ValueError 
-    return x.view(fieldtype).reshape(shape)
+    x = np.atleast_1d(x) # avoid ValueError
+    return x.view(fieldtype).reshape(shape)  # pylint: disable=E1103 
 
 if __name__ == "__main__":
     import doctest
