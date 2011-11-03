@@ -111,10 +111,11 @@ class Placevalue(object):
         # The number of possible genotypes can overflow fixed-size integers,
         # so use Python's unlimited-precision integer type.
         self.maxint = reduce(operator.mul, [int(i) for i in self.u])
+        # Likewise, dtype=object will use Python integers
         if msd_first:
-            self.posval = np.r_[1, self.u[:0:-1].cumprod()][::-1]
+            self.posval = np.r_[1, self.u[:0:-1].astype(object).cumprod()][::-1]
         else:
-            self.posval = np.r_[1, self.u[:-1].cumprod()]
+            self.posval = np.r_[1, self.u[:-1].astype(object).cumprod()]
     
     def __getitem__(self, i):
         """p[i] is a synonym for p.int2vec(i)."""
@@ -140,25 +141,26 @@ class Placevalue(object):
         
         >>> arr = p.int2vec(range(3))
         >>> p.vec2int(arr)
-        array([0, 1, 2])
+        array([0, 1, 2], dtype=object)
         >>> arr = p.int2vec(range(p.maxint))
         >>> p.vec2int(arr.reshape(4,6,-1))
-        array([[ 0,  1,  2,  3,  4,  5],
-               [ 6,  7,  8,  9, 10, 11],
+        array([[0, 1, 2, 3, 4, 5],
+               [6, 7, 8, 9, 10, 11],
                [12, 13, 14, 15, 16, 17],
-               [18, 19, 20, 21, 22, 23]])
+               [18, 19, 20, 21, 22, 23]], dtype=object)
         
         Structured dtype.
         
         >>> dtype = [("a", np.int8), ("b", np.int8)]
         >>> pr = Placevalue(np.rec.fromrecords([[3, 4]], dtype=dtype))
         >>> pr.vec2int(pr.int2vec(11))
-        array([11])
+        array([11], dtype=object)
         >>> pr.vec2int(np.concatenate(list(pr)))
-        array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11])
+        array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], dtype=object)
         """
-        # currently no support for len(v) < len(self.u)
         v = unstruct(v)
+        if False and len(v) != len(self.u):
+            raise ValueError("Expected vector with {} elements, got {}: {}".format(len(self.u), len(v), v))
         if (v >= self.u).any():
             raise OverflowError("Digit exceeds allowed range of %s" % self.u)
         return (self.posval * v).sum(axis=v.ndim-1)
@@ -326,7 +328,7 @@ class Genotype(Placevalue):
         0
         >>> v = np.concatenate(list(gt))
         >>> gt.vec2int(v)
-        array([0, 1, 2, 3, 4, 5, 6, 7, 8])
+        array([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype=object)
         """
         return super(Genotype, self).vec2int(self.code[unstruct(v)])
     
