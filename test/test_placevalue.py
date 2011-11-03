@@ -30,12 +30,17 @@ def test_int2vec_2d():
     a = Placevalue([3])
     assert_equal(a.int2vec(range(4)), [[0], [1], [2], [3]])
 
-@unittest.skip("vec2int() overflows if maxint > range of fixed-size integers")
 def test_vec2int_huge():
-    a = Placevalue([[2] * 64])
-    v = [0] + [1] * 63
-    i = a.vec2int(v)
-    # Overflows to -1
-    assert_equal(i, 2**64-1)
-    # Overflows to array([-1, -1,  1,  1,  1,  ...
-    assert_equal(a.int2vec(i)[:5], [0, 1, 1, 1, 1])
+    """
+    Verify that vec2int works even if maxint is huge.
+    
+    Placevalue.posval needs dtype=object so it will use Python's long integers.
+    These work automagically with ufuncs like .sum(), and will not overflow 
+    like e.g. np.int64.
+    """
+    for bits in 63, 64, 65:
+        a = Placevalue([[2] * bits])
+        v = [0] + [1] * (bits - 1)
+        i = a.vec2int(v)
+        yield assert_equal, i, 2**(bits - 1) - 1
+        yield assert_equal, a.int2vec(i), v

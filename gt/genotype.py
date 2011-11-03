@@ -74,7 +74,7 @@ class Genotype(Placevalue):
         0
         >>> v = np.concatenate(list(gt))
         >>> gt.vec2int(v)
-        array([0, 1, 2, 3, 4, 5, 6, 7, 8])
+        array([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype=object)
         """
         return super(Genotype, self).vec2int(self.code[unstruct(v)])
     
