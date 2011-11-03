@@ -1,7 +1,7 @@
+"""cGPtoolbox documentation build configuration file."""
 # -*- coding: utf-8 -*-
 #
-# cGPtoolbox documentation build configuration file, created by
-# sphinx-quickstart on Wed Sep 07 17:12:09 2011.
+# Created by sphinx-quickstart on Wed Sep 07 17:12:09 2011.
 #
 # This file is execfile()d with the current directory set to its containing dir.
 #
@@ -16,7 +16,7 @@ import sys, os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('../..'))
 
 # -- General configuration -----------------------------------------------------
 
@@ -28,14 +28,12 @@ needs_sphinx = '1.1'
 extensions = [
     'matplotlib.sphinxext.ipython_console_highlighting',
     'matplotlib.sphinxext.only_directives',
-    # 'matplotlib.sphinxext.plot_directive_tip',
-    'utils.plot_directive_tip',
-    'utils.plot_directive_ggplot',
+    'matplotlib.sphinxext.plot_directive',
+    # 'utils.plot_directive_ggplot',
     'sphinx.ext.graphviz',
-    # 'sphinx.ext.inheritance_diagram',
-    'utils.inheritance_diagram',
+    'sphinx.ext.inheritance_diagram',
+    # 'utils.inheritance_diagram',
     'sphinx.ext.mathjax', 
-    # 'sphinx.ext.pngmath',
     'sphinx.ext.autodoc', 
     'sphinx.ext.autosummary', 
     'sphinx.ext.doctest', 
@@ -77,6 +75,10 @@ release = '0.1'
 
 # -- autodoc options --
 #autoclass_content = "both"
+autodoc_member_order = "bysource"  # "alphabetical", "groupwise", "bysource"
+
+# -- doctest options --
+trim_doctest_flags = True
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -258,8 +260,10 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'cgptoolbox', u'cgptoolbox Documentation', u'Jon Olav Vik, Arne Bjørke Gjuvsland, Yunpeng Wang',
-   'cgptoolbox', 'Toolbox for causally cohesive genotype-phenotype modelling studies.', 'Miscellaneous'),
+  ('index', 'cgptoolbox', u'cgptoolbox Documentation', 
+    u'Jon Olav Vik, Arne Bjørke Gjuvsland, Yunpeng Wang', 'cgptoolbox', 
+    'Toolbox for causally cohesive genotype-phenotype modelling studies.', 
+    'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.
@@ -289,7 +293,8 @@ intersphinx_mapping = {
     'ipython': ('http://ipython.org/ipython-doc/stable', None),
     'numpy': ('http://docs.scipy.org/doc/numpy-1.6.0/', None),
 }
-# Number of days to cache intersphinx inventories. Use "make clean" to force rebuild.
+# Number of days to cache intersphinx inventories. 
+# Use "make clean" to force rebuild.
 #intersphinx_cache_limit = -1
 
 # -- Options for external links --
