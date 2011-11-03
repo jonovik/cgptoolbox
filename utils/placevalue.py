@@ -5,7 +5,8 @@ A Placevalue object can be indexed, iterated over, or converted to a list,
 returning vectors corresponding to successive integers.
 Conversely, vec2int() gives the integer corresponding to a given vector.
 
-USAGE
+Usage
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Default is most significant digit first, so that the last digit changes fastest.
 
@@ -40,7 +41,8 @@ A single array is more compact.
 >>> np.array(list(p))                                       # doctest: +ELLIPSIS
 array([[0, 0, 0], [0, 0, 1], ..., [1, 2, 3]])
 
-NAMED POSITIONS
+Named positions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Using a structured array with named fields to construct the Placevalue object.
 
@@ -51,7 +53,8 @@ array([(2, 1)], dtype=[('a', '<i2'), ('b', '<i2')])
 >>> np.concatenate(list(pr))                                # doctest: +ELLIPSIS
 array([(0, 0), (0, 1), ..., (1, 1), (1, 2)], dtype=[('a', '<i2'), ('b', '<i2')])
 
-DETAILS
+Details
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The i-vectors correspond to a place-value system with prod(n) unique values.
 If i[0] is the least significant digit, position j has value prod(n[:j]).
@@ -60,8 +63,6 @@ numbers left-to-right.
 
 The integer is computed by multiplying each vector element with its place value 
 and summing the result, just like 123 = 1*100 + 2*10 + 3*1.
-
-This module also has a Python 2.5.2 replacement for bin().
 """
 import operator
 import numpy as np
@@ -100,17 +101,7 @@ class Placevalue(object):
     """
     
     def __init__(self, n, msd_first=True):
-        """
-        >>> p = Placevalue([4, 3, 2])
-        >>> p.n
-        array([4, 3, 2])
-        >>> p.maxint
-        24
-        >>> p.posval
-        array([6, 2, 1])
-        >>> Placevalue([4, 3, 2], msd_first=False).posval
-        array([ 1,  4, 12])
-        """
+        """Constructor for :class:`Placevalue`."""
         # Copy n into an array and make an unstructured view into it
         self.n = np.atleast_1d(n).copy()
         self.u = np.atleast_1d(np.squeeze(unstruct(self.n)))
@@ -165,13 +156,6 @@ class Placevalue(object):
         array([11])
         >>> pr.vec2int(np.concatenate(list(pr)))
         array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11])
-        
-        Range checking for digits.
-        
-        >>> p.vec2int([0, 0, 2])
-        Traceback (most recent call last):
-        ...
-        OverflowError: Digit exceeds allowed range of [4 3 2]
         """
         # currently no support for len(v) < len(self.u)
         v = unstruct(v)
@@ -213,28 +197,6 @@ class Placevalue(object):
         >>> np.concatenate(list(pr)) # doctest: +ELLIPSIS
         array([(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), ..., (2, 3)],
             dtype=[('a', '|i1'), ('b', '|i1')])
-        
-        Verify bugfix: If i is a sequence, the output should be a 2-d array 
-        so that "for v in pv.int2vec(i)" works. Previously, this failed when 
-        there was only one position.
-        
-        >>> a = Placevalue([3])
-        >>> a.int2vec(range(4)) # doctest: +NORMALIZE_WHITESPACE
-        array([[0], [1], [2], [3]])
-        
-        Bug if maxint exceeds the range of fixed-size integers.
-        
-        >>> a = Placevalue([[2] * 64])
-        >>> v = [0] + [1] * 63
-        >>> i = a.vec2int(v)
-        >>> i
-        9223372036854775807
-        >>> a.int2vec(i) # doctest: +ELLIPSIS
-        array([0, 1, 1, 1, 1, ...
-        
-        The actual result has overflowed:
-        
-        array([-1, -1,  1,  1,  1,  ...
         """
         i = np.atleast_1d(i).copy()
         result = np.zeros(i.shape + self.posval.shape, dtype=self.fieldtype)
@@ -249,9 +211,11 @@ class Placevalue(object):
         if len(self.u) == 1 and len(i) > 1:
             result = np.c_[result]
         return np.ascontiguousarray(result).view(self.dtype)
-    
+       
     def __repr__(self):
         """
+        String representation of :class:`Placevalue`.
+        
         >>> Placevalue([4, 3, 2])
         Placevalue(array([4, 3, 2]), msd_first=True)
         
@@ -323,85 +287,6 @@ class Placevalue(object):
         """
         return (self.int2vec(i) for i in range(self.maxint))
 
-class Genotype(Placevalue):
-    """
-    Genotype: Full factorial design for three levels of a variable.
-    
-    Within each locus, levels are given in order [1, 0, 2], for 
-    the baseline heterozygote, low homozygote, and high homozygote.
-    This ensures that the first 3**k genotypes make up a full factorial design 
-    with k factors, keeping the remaining n-k loci as heterozygotes.
-    """
-    code = np.array([1, 0, 2])
-    def int2vec(self, i):
-        """
-        Vector [i0, i1, ...] corresponding to an integer. Code order = 1, 0, 2.
-        
-        >>> gt = Genotype(np.rec.fromrecords([[3, 3]], names=["a", "b"]))
-
-        The heterozygote (baseline) scenario comes first.
-        
-        >>> gt.int2vec(0) == np.array([(1, 1)], dtype=[('a', int), ('b', int)])
-        array([ True], dtype=bool)        
-        >>> np.concatenate(list(gt)) # doctest: +ELLIPSIS
-        array([(1, 1), (1, 0), (1, 2), 
-               (0, 1), (0, 0), (0, 2), 
-               (2, 1), (2, 0), (2, 2)], dtype=[('a', '<i...'), ('b', '<i...')])
-        """
-        v = super(Genotype, self).int2vec(i)
-        vi = v.view(self.fieldtype)
-        vi[:] = self.code[vi]
-        return v
-    
-    def vec2int(self, v):
-        """
-        Integer corresponding to a vector [i0, i1, ...]. Code order = 1, 0, 2.
-        
-        >>> gt = Genotype(np.rec.fromrecords([[3, 3]], names=["a", "b"]))
-        >>> gt.vec2int([1, 1])
-        0
-        >>> v = np.concatenate(list(gt))
-        >>> gt.vec2int(v)
-        array([0, 1, 2, 3, 4, 5, 6, 7, 8])
-        """
-        return super(Genotype, self).vec2int(self.code[unstruct(v)])
-    
-    def __init__(self, n, msd_first=True):
-        """
-        >>> np.array(Genotype([3, 2]))
-        array([[1, 1],
-               [1, 0],
-               [0, 1],
-               [0, 0],
-               [2, 1],
-               [2, 0]])
-        >>> Genotype([4, 4])
-        Traceback (most recent call last):
-        AssertionError: Genotype only implemented for biallelic loci
-        """
-        msg = "Genotype only implemented for biallelic loci"
-        assert all(unstruct(n).squeeze() <= 3), msg
-        return super(Genotype, self).__init__(n, msd_first)
-
-def bin(i, ndigits=0):
-    """
-    >>> bin(13)
-    '1101'
-    >>> bin(13, 8)
-    '00001101'
-    >>> int(bin(13), 2)
-    13
-    """
-    L = []
-    digits = "01"
-    while True:
-        i, carry = divmod(i, 2)
-        L.append(digits[carry])
-        if i == 0:
-            break
-    L.reverse()
-    return "".join(L).rjust(ndigits, "0")
-
 def binarray(i, ndigits=0, dtype=int):
     """
     Numpy array of binary digits (most significant digit in position 0).
@@ -411,7 +296,10 @@ def binarray(i, ndigits=0, dtype=int):
     >>> binarray(13, 8)
     array([0, 0, 0, 0, 1, 1, 0, 1])
     """
-    return np.array(list(bin(i, ndigits)), dtype=dtype)
+    result = ["0"] * ndigits
+    s = bin(i)[2:]
+    result[-len(s):] = s
+    return np.array(result, dtype=dtype)
 
 
 if __name__ == "__main__":
