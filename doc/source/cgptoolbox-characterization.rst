@@ -1,13 +1,13 @@
 .. _tool-characterization:
 
 VPH ToolKit Tool Characterisation for the cGPtoolbox
-==========================================================================
+====================================================
 
 In reference to 
 `VPH_ToolKit_Guideline_G01_Tool_Characterisation_1v0.pdf`, p. 16.
 
 Tool information
---------------------------------------------------------------------------
+----------------
 
 Name
   cGPtoolbox
@@ -32,7 +32,7 @@ Certification
   None; this is currently just a research tool.
 
 Tool specification
---------------------------------------------------------------------------
+------------------
 
 Language
   Python, interacting with other languages as necessary (for example: R for 
@@ -48,12 +48,14 @@ Installation recommendation
   A scientific Python distribution. Separate installs for R, Sundials, and 
   other required software.
 Third-party libraries
+  N/A
 Type of tool
+  Software framework for causally cohesive genotype-phenotype modelling
 Type of computation
   Flexible, including HPC for parallel computation of phenotypes from genotypes.
 
 Tool description
---------------------------------------------------------------------------
+----------------
 
 Short purpose
   Workflow and building blocks for causally cohesive genotype-phenotype 
@@ -100,7 +102,7 @@ Download links
   .. todo:: Link to downloads.
 
 Tool context
---------------------------------------------------------------------------
+------------
 
 People involvement
   * Jon Olav Vik
@@ -156,7 +158,7 @@ Rights
   .. todo:: Determine licence.
 
 Tool functionality and speciality
---------------------------------------------------------------------------
+---------------------------------
 
 The cGP approach potentially encompasses all types of models described in the 
 Model characterization guidelines (G02), Figure 1 (p. 12). We will illustrate 
@@ -185,7 +187,7 @@ Supported data and model resources
   * more to follow depending on user response
 
 Tool usability
---------------------------------------------------------------------------
+--------------
 
 Documentation and examples will be integrated into the source code in standard 
 Python docstrings. Thus, function descriptions and call signatures are 

@@ -1,12 +1,12 @@
 """
 Enumerate haploid or diploid genotypes with two alleles at *n* loci.
 
-.. inheritance-diagram:: utils.placevalue.Placevalue Genotype
+.. inheritance-diagram:: cgp.utils.placevalue.Placevalue Genotype
 
 These classes are suitable for studies enumerating or sampling from all possible
 genotypes. For a single locus, the three genotypes *aa, Aa, AA* map to 0, 1, 2
 respectively. Thus, for instance, the three-locus genotype *AabbCC* would be
-`[1, 0, 2]`. Such a vector representation of a genotype could be fed into a
+``[1, 0, 2]``. Such a vector representation of a genotype could be fed into a
 genotype-to-parameter map function. An efficient mapping of each genotype to a
 unique integer index facilitates easy sampling and indexing. We can list all
 vectors/genotypes of a placevalue/genotype object by converting it to an array.

@@ -1,5 +1,5 @@
 A toolbox for causally cohesive genotype-phenotype modeling
-==========================================================================
+===========================================================
 
 A comprehensive understanding of how genetic variation causes phenotypic 
 variation of a complex trait is a long-term disciplinary goal of genetics. The 
@@ -65,7 +65,7 @@ Integrating genetics, genomics, and multiscale models in a population context
 .. contents::
 
 Aims of the toolbox
-==========================================================================
+===================
 
 The cGPtoolbox aims to facilitate researchers' entry into cGP modeling by 
 providing a cGP modelling framework in a population context, integrating and 
@@ -99,7 +99,7 @@ closer to its key goal of achieving more integration across multiple
 spatial and temporal scales.
 
 Design philosophy
-==========================================================================
+=================
 
 
 The cGP toolbox will provide a streamlined interface from genomic 
@@ -132,7 +132,7 @@ should apply equally well to eventual whole-organ cGP studies.
 .. _design-patterns:
 
 Design patterns for cGP studies
---------------------------------------------------------------------------
+-------------------------------
 
 .. figure:: workflow.png
 
@@ -145,8 +145,8 @@ Design patterns for cGP studies
    system's response to external stimuli.
 
 
-About the cgptoolbox 
-==========================================================================
+About the cgptoolbox
+====================
 
 Genetics is defined as the :wiki:`science of genes, heredity, and the 
 variation of organisms <genetics>`. Gaining a real understanding of the 
@@ -180,7 +180,7 @@ of community tools facilitating the use of such a modelling framework is
 the planned core deliverable of this exemplar project.
 
 Glossary
-==========================================================================
+========
 
 .. glossary::
    :sorted:   
@@ -198,10 +198,14 @@ Glossary
 
 
 Contents
-==========================================================================
+========
 
 .. toctree::
    :maxdepth: 2
+   
+   cgp-programme
+   cgptoolbox-characterization
+   cgp
 
 Indices and tables
 ==================

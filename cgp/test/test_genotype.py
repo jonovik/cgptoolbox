@@ -1,4 +1,4 @@
-"""Tests for :mod:`gt.genotype`."""
+"""Tests for :mod:`cgp.gt.genotype`."""
 
 import numpy as np
 from numpy.testing import assert_equal

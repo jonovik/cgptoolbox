@@ -1,6 +1,4 @@
-"""Tests for :mod:`utils.placevalue`."""
-
-import unittest
+"""Tests for :mod:`cgp.utils.placevalue`."""
 
 from numpy.testing import assert_equal, assert_raises
 
