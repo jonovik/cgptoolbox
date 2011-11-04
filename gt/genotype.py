@@ -20,12 +20,30 @@ Here is an example with two biallelic loci::
     >>> pv.vec2int(AaBB)  # 1 * 3**1 + 2 * 3**0
     5
     >>> np.array(pv)
+    array([[0, 0],
+           [0, 1],
+           [0, 2],
+           [1, 0],
+           [1, 1],
+           [1, 2],
+           [2, 0],
+           [2, 1],
+           [2, 2]])
 
 The difference between class Genotype and Placevalue lies in how they order
 genotypes. Class :class:`Genotype` puts  heterozygotes first, ensuring that the first
 3**k genotypes make up a 3**k full factorial design in the first k parameters::
 
     >>> np.array(Genotype([3, 3]))
+    array([[1, 1],
+           [1, 0],
+           [1, 2],
+           [0, 1],
+           [0, 0],
+           [0, 2],
+           [2, 1],
+           [2, 0],
+           [2, 2]])
 """
 
 import numpy as np
