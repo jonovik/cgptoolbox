@@ -26,13 +26,12 @@ def unstruct(x):
     (1, 2)
     >>> x = np.arange(4, dtype=fieldtype).view(dtype)
     
-    Note: For some reason, assignment to u does not affect x.
-    The reshaping seems to make a copy.
+    Assignment to u will also affect x.
     
     >>> u = unstruct(x)
-    >>> u[:] = 0
-    >>> x # no change
-    array([(0, 1), (2, 3)], dtype=[('a', '<i4'), ('b', '<i4')])    
+    >>> u[:] = 2
+    >>> x
+    array([(2, 2), (2, 2)], dtype=[('a', '<i4'), ('b', '<i4')])    
     
     (Some examples below use ELLIPSIS to allow for 64-bit Numpy tacking 
     ", dtype=np.int32" onto the output.)
@@ -125,7 +124,7 @@ def unstruct(x):
     >>> unstruct(x1)
     array([0, 1])
     """
-    x = np.array(x)
+    x = np.asanyarray(x)
     if x.dtype == object:
         x = np.concatenate([np.atleast_1d(i) for i in x])
     if x.dtype.fields is None:
@@ -142,7 +141,9 @@ def unstruct(x):
     # ValueError: new type not compatible with array.
     # So promote to 1d once we're done computing the new shape.
     x = np.atleast_1d(x) # avoid ValueError
-    return x.view(fieldtype).reshape(shape)  # pylint: disable=E1103 
+    xv = x.view(fieldtype)  # pylint: disable=E1103
+    xv.shape = shape
+    return xv
 
 if __name__ == "__main__":
     import doctest
