@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+"""Dictionary allowing d.key = value"""
+
 import pprint
 
 class Dotdict(dict):

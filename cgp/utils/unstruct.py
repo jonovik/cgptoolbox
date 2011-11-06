@@ -88,8 +88,8 @@ def unstruct(x):
     # Arrays of shape 0 cannot be .view()'ed, raising
     # ValueError: new type not compatible with array.
     # So promote to 1d once we're done computing the new shape.
-    x = np.atleast_1d(x) # avoid ValueError
-    xv = x.view(fieldtype)  # pylint: disable=E1103
+    x = np.atleast_1d(x)
+    xv = x.view(fieldtype)
     return xv.reshape(shape)
 
 if __name__ == "__main__":

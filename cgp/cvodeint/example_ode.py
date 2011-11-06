@@ -145,7 +145,6 @@ import math
 fmtstr = "%(" + ")s\t%(".join(
     "asctime levelname name lineno process message".split()) + ")s"
 
-# this does its own exception checking -- it was the first step to figuring this out
 def logging_ode(t, y, ydot, f_data):
     """
     Check if CVODE allows handling of exceptions that occur in the ODE.
@@ -170,10 +169,12 @@ def logging_ode(t, y, ydot, f_data):
     ValueError: math domain error
     -1
     """
+    import numpy as np
     logging.debug("Evaluating ODE...")
     try:
-        ydot[0] = math.log(y[1])
-        ydot[1] = 1 / y[0] - t # will eventually turn negative
+        with np.errstate(divide="ignore"):
+            ydot[0] = math.log(y[1])
+            ydot[1] = 1 / y[0] - t # will eventually turn negative
     except StandardError: # allow KeyboardInterrupt, etc., to work
         logging.exception("Caught an exception when evaluating ODE.")
         return -1

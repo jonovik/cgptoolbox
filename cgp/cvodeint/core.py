@@ -52,8 +52,7 @@ import ctypes # required for communicating with cvode
 from pysundials import cvode
 import numpy as np
 import logging
-import sys
-from cvodefun import cvodefun # wrap RHS to conform to CVODE convention
+from .cvodefun import cvodefun # wrap RHS to conform to CVODE convention
 
 __all__ = "CvodeException", "Cvodeint", "flags"
 
@@ -64,14 +63,16 @@ __all__ = "CvodeException", "Cvodeint", "flags"
 # logging
 log = logging.getLogger("cvodeint")
 log.addHandler(logging.StreamHandler())
-# tab-delimited format string, see http://docs.python.org/library/logging.html#formatter-objects
+# tab-delimited format string, see 
+# http://docs.python.org/library/logging.html#formatter-objects
 fmtstr = "%(" + ")s\t%(".join(
     "asctime levelname name lineno process message".split()) + ")s"
 log.handlers[0].setFormatter(logging.Formatter(fmtstr))
 
 # CVODE return flags: dict of messages for each return value. 
 # See also cvode.CVodeGetReturnFlagName()
-cv_ = dict([(k, v) for k, v in cvode.__dict__.iteritems() if k.startswith("CV_")])
+cv_ = dict([(k, v) for k, v in cvode.__dict__.iteritems() 
+            if k.startswith("CV_")])
 flags = dict([(v, [k1 for k1, v1 in cv_.iteritems() if v1==v]) 
     for v in np.unique(cv_.values())]) # example: flag = -12; print flags[flag]
 del cv_
@@ -171,7 +172,8 @@ def assert_assigns_all(fun, y, f_data=None):
             msg += " in module " + fun.__module__
         except AttributeError:
             pass
-        msg += " failed to assign finite value(s) to element(s) %s of rate vector" % i
+        msg += " failed to assign finite value(s)"
+        msg += " to element(s) %s of rate vector" % i
         try:
             if fun.traceback:
                 msg += ":" + fun.traceback
@@ -449,7 +451,7 @@ class Cvodeint(object):
         self.RootInit(nrtfn, g_rtfn, g_data)
     
     def integrate(self, t=None, y=None, nrtfn=None, g_rtfn=None, g_data=None, 
-        assert_flag=None, ignore_flags=False):
+        assert_flag=None, ignore_flags=False):  # pylint: disable=R0913
         """
         Integrate over time interval, init'ing solver or rootfinding as needed.
         
@@ -659,7 +661,8 @@ class Cvodeint(object):
             if len(t) == 1:
                 # @todo: Check if this is the internal step; we risk skipping
                 # a beat after rootfinding. Simple check: same answer if
-                # integrate(t = [last_time, next_time]) instead of integrate(next_time)
+                # integrate(t = [last_time, next_time]) instead of 
+                # integrate(next_time).
                 self.t = [self.tret.value, t[0]]
                 if y is None:
                     # CVodeGetDky returns nan if called before CVode().
@@ -672,7 +675,8 @@ class Cvodeint(object):
                     try:
                         self.y[:] = y
                     except TypeError:
-                        self.y[:] = y.item() # for numpy structured or record array
+                        # for numpy structured or record array
+                        self.y[:] = y.item()
                 # self.t = [cvode.CVodeGetCurrentTime(self.cvode_mem), t[0]]
             else:
                 self.t = t
@@ -740,13 +744,15 @@ class Cvodeint(object):
         CV_SUCCESS = cvode.CV_SUCCESS # cdef int
         CV_ROOT_RETURN = cvode.CV_ROOT_RETURN # cdef int
         CV_TSTOP_RETURN = cvode.CV_TSTOP_RETURN # cdef int
-        CV_ONE_STEP_TSTOP = cvode.CV_ONE_STE_TSTOP # note typo in cvode # cdef int
+        CV_ONE_STEP_TSTOP = cvode.CV_ONE_STE_TSTOP # typo in cvode # cdef int
+        flag = None
         while self.tret < tstop:
             if i >= maxsteps:
                 # truncate to drop unused array elements
                 Y.resize((i, self.n), refcheck=False)
                 t.resize(i, refcheck=False)
-                raise CvodeException("Maximum number of steps exceeded", (t, Y, flag))
+                raise CvodeException("Maximum number of steps exceeded", 
+                                     (t, Y, flag))
             # solve ode for one internal time step
             # (pysundials has a typo in the name of the ONE_STEP_TSTOP constant)
             flag = CVode(cvode_mem, tstop, y, 
@@ -755,10 +761,10 @@ class Cvodeint(object):
             ## even if logging is set to ignore debug messages. Disable for now.
             # if (i % 10) == 0 and logging.DEBUG >= log.getEffectiveLevel():
             #     log.debug(top())
-            if (flag==CV_SUCCESS or flag==CV_TSTOP_RETURN or flag==CV_ROOT_RETURN):
+            if flag in (CV_SUCCESS, CV_TSTOP_RETURN, CV_ROOT_RETURN):
                 # log.debug("OK: %s: %s" % (i, flags[flag]))
                 Y[i], t[i] = y, self.tret.value # copy solver state & time
-                if flag==CV_ROOT_RETURN:
+                if flag == CV_ROOT_RETURN:
                     i += 1
                     break
             else:
@@ -793,7 +799,7 @@ class Cvodeint(object):
         (array([ 0. ,  0.5,  2. ]), array([[ 0.1  ], [ 0.155], [ 0.451]]), 0)
         """
         imax = len(self.t)
-        Y = np.empty(shape=(imax,self.n))
+        Y = np.empty(shape=(imax, self.n))
         t = np.empty(shape=(imax,))
         Y[0] = np.array(self.y).copy()
         t[0] = self.t0.value
@@ -801,10 +807,10 @@ class Cvodeint(object):
         # cdef long lptret = ctypes.addressof(tret)
         # cdef double* ptret = <double*>lptret
         # cdef double
-        tstop = self.tstop
         cvode_mem = self.cvode_mem
         y = self.y
         # cdef double* pt = bufarr(self.t)
+        i = 0
         for i in range(1, imax):
             # solve ode for one specified time step
             flag = cvode.CVode(cvode_mem, self.t[i], y, 
@@ -853,7 +859,8 @@ class Cvodeint(object):
         if nrtfn is not None:
             cvode.CVodeRootInit(self.cvode_mem, int(nrtfn), g_rtfn, g_data)
         elif (g_rtfn is not None) or (g_data is not None):
-            raise CvodeException("If g_rtfn or g_data is given, nrtfn is required.")
+            raise CvodeException(
+                "If g_rtfn or g_data is given, nrtfn is required.")
         
     def __repr__(self):
         """
@@ -873,9 +880,12 @@ class Cvodeint(object):
         """
         import inspect
         try:
-            args, varargs, varkw, defaults = inspect.getargspec(self.__init__)
+            # Ignore *args, **kwargs
+            args, _, _, defaults = inspect.getargspec(self.__init__)
         except TypeError: # "arg is not a Python function" problem in Cython
-            return "%s %s\ngetargspec(__init__) is not available when running under Cython" % (self.__class__, self.f_ode)
+            msg = "%s %s\ngetargspec(__init__) is not available"
+            msg += " when running under Cython"
+            return msg % (self.__class__, self.f_ode)
         del args[0] # remove self from argument list
         # pad list of defaults to same length as args
         defaults = [None] * (len(args) - len(defaults)) + list(defaults)
@@ -938,7 +948,8 @@ class Cvodeint(object):
         """
         import textwrap, difflib
         s, o = [textwrap.wrap(repr(x)) for x in self, other]
-        return "\n".join([li.strip() for li in difflib.ndiff(s, o) if not li.startswith(" ")])
+        return "\n".join([li.strip() for li in difflib.ndiff(s, o) 
+                          if not li.startswith(" ")])
 
 if __name__ == "__main__":
     import doctest

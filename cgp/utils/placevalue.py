@@ -160,7 +160,8 @@ class Placevalue(object):
         """
         v = unstruct(v)
         if False and len(v) != len(self.u):
-            raise ValueError("Expected vector with {} elements, got {}: {}".format(len(self.u), len(v), v))
+            msg = "Expected vector with {} elements, got {}: {}"
+            raise ValueError(msg.format(len(self.u), len(v), v))
         if (v >= self.u).any():
             raise OverflowError("Digit exceeds allowed range of %s" % self.u)
         return (self.posval * v).sum(axis=v.ndim-1)
