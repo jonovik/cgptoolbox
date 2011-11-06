@@ -4,7 +4,7 @@ Simple replacement for :func:`scipy.integrate.odeint` based on Sundials.
 See :func:`odeint`.
 """
 
-from cvodeint import Cvodeint
+from .core import Cvodeint
 
 def odeint(func, y0_in, t_in, args=()):
     """

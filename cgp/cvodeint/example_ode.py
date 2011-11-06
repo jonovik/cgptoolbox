@@ -9,7 +9,7 @@ For each ode(t, y, ydot, f_data), there is also an ode_sol(t, y0).
 
 Sundials requires that ODE function returns 0 on success and <0 on 
 unrecoverable error. However, you don't need to worry about this convention. 
-Class :class:`~cvodeint.core.Cvodeint` will check that the ODE function 
+Class :class:`~cgp.cvodeint.core.Cvodeint` will check that the ODE function 
 follows the convention, and if not, wrap it in a 
 :func:`~cvodeint.cvodefun.cvodefun` decorator to make it 
 compatible. (:mod:`~cvodeint.cvodefun` is a separate, pure-Python module 

@@ -10,11 +10,11 @@ workhorses of this module.
 
 Usage::
 
-    from cvodeint import *
+    from cgp.cvodeint import *
 
 or::
 
-    import cvodeint.core
+    import cgp.cvodeint.core
 
 Simple example (see :class:`Cvodeint` for details):
 
@@ -191,7 +191,7 @@ class Cvodeint(object):
         some of them.
     :param array_like t: Time, either [start end] or a vector of desired 
         return times. This determines whether 
-        :meth:`~cvodeint.core.Cvodeint.integrate` returns time steps chosen 
+        :meth:`~cgp.cvodeint.core.Cvodeint.integrate` returns time steps chosen 
         adaptively by CVODE, or just a copy of *t*.
     :param array_like y: Initial state vector, will be coerced to 
         cvode.NVector().
@@ -269,7 +269,7 @@ class Cvodeint(object):
        :include-source:
        :width: 300
        
-       from cvodeint.core import Cvodeint
+       from cgp.cvodeint.core import Cvodeint
        from math import pi, sin
        r, K, amplitude, period = 1.0, 1.0, 0.25, 1.0
        def ode(t, y, ydot, f_data):
@@ -343,7 +343,7 @@ class Cvodeint(object):
     
     Rootfinding:
     
-    >>> from cvodeint.example_ode import exp_growth, g_rtfn_y
+    >>> from cgp.cvodeint.example_ode import exp_growth, g_rtfn_y
     >>> from ctypes import c_float, byref
     >>> cvodeint = Cvodeint(exp_growth, t=[0, 3], y=[1],
     ...     nrtfn=1, g_rtfn=g_rtfn_y, g_data=byref(c_float(np.exp(2))))
@@ -357,8 +357,8 @@ class Cvodeint(object):
        :include-source:
        
        >>> from ctypes import byref, c_float
-       >>> from cvodeint.core import Cvodeint
-       >>> from cvodeint.example_ode import vdp, g_rtfn_y
+       >>> from cgp.cvodeint.core import Cvodeint
+       >>> from cgp.cvodeint.example_ode import vdp, g_rtfn_y
        >>> cvodeint = Cvodeint(vdp, [0, 20], [0, -2], reltol=1e-3)
        >>> res = [cvodeint.integrate(nrtfn=1, g_rtfn=g_rtfn_y,
        ...     g_data=byref(c_float(thr))) for thr in np.arange(-1.5, 1.5, 0.6)]
@@ -382,7 +382,7 @@ class Cvodeint(object):
     
     Produces error message and traceback that are ignored by doctest:
         
-    >>> from cvodeint.example_ode import logging_ode
+    >>> from cgp.cvodeint.example_ode import logging_ode
     >>> cvodeint = Cvodeint(logging_ode, [0, 4], [1, 1])        
     """
     def __init__(self, f_ode, t, y, reltol=1e-8, abstol=1e-8, nrtfn=None, 
@@ -477,8 +477,8 @@ class Cvodeint(object):
         * If len(t) > 2, integrate from t[0] and return fixed time steps = t.
         * y : solver state for re-init; default: resume from current solver state.
         
-        >>> from cvodeint.core import Cvodeint
-        >>> from cvodeint.example_ode import exp_growth, exp_growth_sol
+        >>> from cgp.cvodeint.core import Cvodeint
+        >>> from cgp.cvodeint.example_ode import exp_growth, exp_growth_sol
         >>> t, y = [0, 2], [0.1]
         >>> cvodeint = Cvodeint(exp_growth, t, y)
         
@@ -506,8 +506,8 @@ class Cvodeint(object):
         .. plot::
             :width: 300
             
-            from cvodeint.core import Cvodeint
-            from cvodeint.example_ode import exp_growth, exp_growth_sol
+            from cgp.cvodeint.core import Cvodeint
+            from cgp.cvodeint.example_ode import exp_growth, exp_growth_sol
             cvodeint = Cvodeint(exp_growth, t=[0, 2], y=[0.1])
             t, Y, flag = cvodeint.integrate()
             Ysol = exp_growth_sol(t, Y[0])
@@ -518,7 +518,7 @@ class Cvodeint(object):
         
         In case of error, the solution so far will be returned:
         
-        >>> from cvodeint.core import CvodeException
+        >>> from cgp.cvodeint.core import CvodeException
         >>> import math
         >>> def ode(t, y, ydot, f_data):
         ...     ydot[0] = math.log(y[1])

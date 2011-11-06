@@ -5,16 +5,16 @@ from collections import namedtuple
 
 import numpy as np
 
-from cvodeint.core import Cvodeint
-from utils.dotdict import Dotdict
+from .core import Cvodeint
+from ..utils.dotdict import Dotdict
 
 class Namedcvodeint(Cvodeint):
     """
     Cvode wrapper with named state variables and parameters.
     
-    Constructor arguments are as for :class:`~cvodeint.core.Cvodeint`, 
+    Constructor arguments are as for :class:`~cgp.cvodeint.core.Cvodeint`, 
     except that *p* is a recarray. Further ``*args, **kwargs``
-    are passed to :class:`~cvodeint.core.Cvodeint`.
+    are passed to :class:`~cgp.cvodeint.core.Cvodeint`.
         
     With no arguments, this returns the van der Pol model as an example.
         
@@ -36,7 +36,7 @@ class Namedcvodeint(Cvodeint):
     .. todo:: The cleanest design would be to share memory between a record array 
        and the NVector, but I haven't got that to work.
     
-    This example is similar to the one for :class:`~cvodeint.core.Cvodeint`. 
+    This example is similar to the one for :class:`~cgp.cvodeint.core.Cvodeint`. 
     Call the :class:`Namedcvodeint` constructor with arguments 
     ODE function, time, initial state and parameter array.
     
@@ -68,7 +68,7 @@ class Namedcvodeint(Cvodeint):
         y = np.rec.fromrecords([(-2.0, 0.0)], names="x y".split())
         p = np.rec.fromrecords([(1.0,)], names="epsilon")
         
-        def vanderpol(t, y, ydot, f_data):
+        def vanderpol(t, y, ydot, f_data):  # pylint: disable=C0111,W0613
             ydot[0] = y[1]
             ydot[1] = p.epsilon * (1 - y[0] * y[0]) * y[1] - y[0]
         
@@ -77,9 +77,7 @@ class Namedcvodeint(Cvodeint):
     
     def __init__(self, f_ode=None, t=None, y=None, p=None, *args, **kwargs):
         if f_ode is None:
-            self.__init__(*self.example())
-            return
-        
+            f_ode, t, y, p = self.example()
         super(Namedcvodeint, self).__init__(f_ode, t, y.view(float), 
             *args, **kwargs)
         self.yr = Recarraylink(self.y, y.dtype)
@@ -101,7 +99,7 @@ class Namedcvodeint(Cvodeint):
         """
         Return Cvodeint.integrate() of CellML model; convert state to recarray
 
-        :parameters: See :meth:`cvodeint.core.Cvodeint.integrate`
+        :parameters: See :meth:`cgp.cvodeint.core.Cvodeint.integrate`
         :return tuple:
             * **t** : time vector
             * **Yr** : state recarray. Yr[i] is state at time t[i]
@@ -136,7 +134,7 @@ class Namedcvodeint(Cvodeint):
         :param dict ``**kwargs``: dict of (name, value) for parameters or initial state
         
         In the following example, the assignment to epsilon and the call 
-        to :meth:`~cvodeint.core.Cvodeint.integrate`
+        to :meth:`~cgp.cvodeint.core.Cvodeint.integrate`
         change the parameters and state of the model object.
         This change is undone by the :meth:`autorestore` context manager.
         
@@ -185,7 +183,8 @@ class Namedcvodeint(Cvodeint):
         if _y is not None:
             try:
                 self.y[:] = _y
-            except ValueError: # can only convert an array of size 1 to a Python scalar
+            except ValueError:
+                # "can only convert an array of size 1 to a Python scalar"
                 self.y[:] = _y.squeeze()
             except TypeError: # float expected instead of numpy.void instance
                 self.y[:] = _y.item()
@@ -271,8 +270,10 @@ class Namedcvodeint(Cvodeint):
             #     if val == v:  print k, "should be", v, ", and it is"
             #     else:         print k, "should be", v, "but is", val
             
-            y_ = np.copy(y)  # CVODE forbids modifying the state directly...
-            y_[i] = v  # ...but may modify state variables even if ydot is always 0
+            # CVODE forbids modifying the state directly...
+            y_ = np.copy(y)
+            # ...but may modify state variables even if ydot is always 0
+            y_[i] = v
             self.f_ode(t, y_, ydot, f_data)
             ydot[i] = 0
             return 0
@@ -316,7 +317,6 @@ class Namedcvodeint(Cvodeint):
         """
         t = np.atleast_1d(t).astype(float)
         y = np.atleast_2d(y).view(float)
-        imax = len(t)
         ydot = np.zeros_like(y)
         with self.autorestore(_p=par):
             for i in range(len(t)):
