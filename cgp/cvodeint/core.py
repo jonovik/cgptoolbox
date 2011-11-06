@@ -2,21 +2,12 @@
 """
 PySundials CVODE wrapper to automate routine steps of initializing, iterating...
 
-This version uses pure Python. 
-A Cython implementation is in the accompanying ``*.pyx`` file.
-
 Class :class:`Cvodeint` and its :meth:`~Cvodeint.integrate` method are the 
-workhorses of this module.
+workhorses of this module. Importing with ``from cgp.cvodeint import *``
+includes :class:`Cvodeint`, :exc:`CvodeException`, the :data:`flags` constants
+and the :func:`cvodefun` decorator.
 
-Usage::
-
-    from cgp.cvodeint import *
-
-or::
-
-    import cgp.cvodeint.core
-
-Simple example (see :class:`Cvodeint` for details):
+Simple example:
 
 >>> from example_ode import exp_growth
 >>> cvodeint = Cvodeint(exp_growth, t=[0,2], y=[0.1])
@@ -24,23 +15,9 @@ Simple example (see :class:`Cvodeint` for details):
     (array([  0.00000000e+00,   2.34520788e-04,   ... 2.00000000e+00]),
     array([[ 0.1       ], [ 0.10002346], ... [ 0.73890686]]), 1)
 
-The module :mod:`cvodeint.example_ode` defines some functions that are used in 
-doctests.
-
-A replacement for :func:`scipy.integrate.odeint` is in module 
-:mod:`cvodeint.odeint`.
-
-:func:`~cvodeint.cvodefun.cvodefun` (in a separate, pure-Python module) is a 
-function decorator (a wrapper) that evaluates any function, passes on the 
-return value if not None, returns -1 on exception and 0 otherwise. This 
-satisfies CVODE's requirements that right-hand-side ODE functions return 0 on 
-success, a negative value on "unrecoverable" error, and a positive value on 
-"recoverable" error (see :func:`~cvodeint.cvodefun.cvodefun`). An annoying 
-side effect is that the function name and source code refer to the decorator, 
-not the function that does the actual work.
-
-Without this wrapper, a function failing to return 0 would cause CVODE to loop 
-forever with the message "An integer is required".
+The module :mod:`.example_ode` defines some functions that are used in 
+doctests. A replacement for :func:`scipy.integrate.odeint` is in module 
+:mod:`.odeint`.
 
 .. data:: flags
 
@@ -48,13 +25,14 @@ forever with the message "An integer is required".
    
    .. seealso:: :func:`pysundials.cvode.CVodeGetReturnFlagName`
 """
-import ctypes # required for communicating with cvode
+
+import traceback
+import ctypes  # required for communicating with cvode
 from pysundials import cvode
 import numpy as np
 import logging
-from .cvodefun import cvodefun # wrap RHS to conform to CVODE convention
 
-__all__ = "CvodeException", "Cvodeint", "flags"
+__all__ = "CvodeException", "Cvodeint", "flags", "cvodefun"
 
 # cdef inline double* bufarr(x):
 #     """Fast access to internal data of ndarray"""
@@ -88,7 +66,7 @@ class CvodeException(StandardError):
     The CvodeException object has a *result* attribute for 
     ``t, Y, flag`` = results so far.
     If the right-hand side function is decorated with 
-    :func:`cvodefun.cvodefun` and raised an exception, the traceback is 
+    :func:`cvodefun` and raised an exception, the traceback is 
     available as ``ode.exc``, where ``ode`` is the wrapped function.
     
     Here's an example contrived to raise an exception shortly after  
@@ -183,6 +161,92 @@ def assert_assigns_all(fun, y, f_data=None):
         err.i = i
         raise err
 
+def cvodefun(fun):
+    """
+    Wrap ODE right-hand side function for use with CVODE in Pysundials.
+    
+    A `CVRhsFn 
+    <https://computation.llnl.gov/casc/sundials/documentation/cv_guide/node5.html#SECTION00561000000000000000>`_ 
+    (CVODE right-hand side function) is called for its side effect,
+    modifying the *ydot* output vector. It should return 0 on success,
+    a positive value if a recoverable error occurs,
+    and a negative value if it failed unrecoverably.
+    
+    This decorator allows you to code the CVRhsFn without explicitly assigning
+    the return value. It returns a callable object that returns -1 on exception
+    and 0 otherwise. In case of exception, the traceback text is stored as a
+    "traceback" attribute of the object.
+    
+    Below, :func:`ode` does not return anything. 
+    It raises an exception if y[0] == 0.
+    
+    >>> @cvodefun
+    ... def ode(t, y, ydot, f_data):
+    ...     ydot[0] = 1 / y[0]
+    >>> ydot = [None]
+    >>> ode(0, [1], ydot, None)
+    0
+    >>> ydot
+    [1]
+    >>> ode(0, [0], ydot, None)
+    -1
+    >>> print ode.traceback
+    Traceback (most recent call last):
+    ...
+    ZeroDivisionError: integer division or modulo by zero
+
+    The wrapped function is a proper CVRhsFn with a return value. 
+    In case of exception, the return value is set to -1, otherwise the return 
+    value is passed through.
+    
+    >>> @cvodefun
+    ... def ode(t, y, ydot, f_data):
+    ...     ydot[0] = 1 / y[0]
+    ...     return y[0]
+    
+    >>> ode
+    @cvodefun wrapper around <function ode at 0x...>
+    >>> ode(0, [2], ydot, None)
+    2
+    >>> ode(0, [-2], ydot, None)
+    -2
+    >>> ode(0, [0], ydot, None)
+    -1
+    >>> print ode.traceback
+    Traceback (most recent call last):
+    ...
+    ZeroDivisionError: integer division or modulo by zero
+    
+    Pysundials relies on the ODE right-hand side behaving like a function.
+    
+    >>> ode.__name__
+    'ode'
+    >>> ode.func_name
+    'ode'
+    """
+    class odefun(object):
+        """Wrapper for a CVODE right-hand side function"""
+        def __init__(self):
+            self.__name__ = fun.__name__ # used by pysundials/cvode.py
+            self.func_name = fun.__name__ # used by pysundials/cvode.py
+            self.traceback = ""
+        def __call__(self, *args, **kwargs):
+            """Return function value if defined, -1 if exception, 0 otherwise"""
+            self.traceback = ""
+            try:
+                result = fun(*args, **kwargs)
+                if result is None:
+                    return 0
+                else:
+                    return result
+            except StandardError: # allow KeyboardInterrupt, etc., to work
+                self.traceback = traceback.format_exc()
+                return -1
+        def __repr__(self):
+            return "@cvodefun wrapper around %s" % fun
+    return odefun()
+
+
 class Cvodeint(object):
     """
     Wrapper for common uses of :mod:`pysundials.cvode`
@@ -235,20 +299,8 @@ class Cvodeint(object):
     
     >>> cvodeint = Cvodeint(ode, [0, 4], [0.1])
     
-    String representation of the :class:`Cvodeint` object. Unfortunately not as 
-    detailed under Cython as in pure Python.
-    
-    >>> from doctest import _ellipsis_match # comparison with ... ellipsis
-    >>> got = repr(cvodeint)
-    >>> wants = ["Cvodeint(f_ode=ode, t=array([0, 4]), y=[0.1...], " + 
-    ...     "abstol=c_double(1e-08))", 
-    ...     "<class 'cvodeint.Cvodeint'> <function ode at 0x..." + 
-    ...     "getargspec(__init__) is not available when running under Cython"]
-    >>> any([_ellipsis_match(want, got) for want in wants])
-    True
-    
     This function returns no value, so :class:`Cvodeint` will decorate it with 
-    :func:`cvodefun.cvodefun`.
+    :func:`cvodefun`.
     This brings only a 5% slowdown in this case; less if the RHS does more 
     computation.
     
@@ -379,13 +431,8 @@ class Cvodeint(object):
            [ 3.418,  0.3  ],
            [ 3.65 ,  0.9  ]])
     
-    :func:`cvodefun.cvodefun` decorator is not applied if the right-hand side 
+    The :func:`cvodefun` decorator is not applied if the right-hand side 
     does return 0 on success and <0 on failure.
-    
-    Produces error message and traceback that are ignored by doctest:
-        
-    >>> from cgp.cvodeint.example_ode import logging_ode
-    >>> cvodeint = Cvodeint(logging_ode, [0, 4], [1, 1])        
     """
     def __init__(self, f_ode, t, y, reltol=1e-8, abstol=1e-8, nrtfn=None, 
         g_rtfn=None, f_data=None, g_data=None, chunksize=2000, maxsteps=1e4, 
@@ -614,41 +661,10 @@ class Cvodeint(object):
         """
         Interpret/set time, state; call SetStopTime(), ReInit() if needed.
         
-        If t is None, self.t is used to re-initialize at tret==t0==self.t[0],
-        tstop = self.t[-1].
-        If y is None, the current y is used at time tret.
-        
-        >>> from example_ode import exp_growth
-        >>> t, y = [0, 2], [0.5]
-        >>> o = Cvodeint(exp_growth, t, y)
-        >>> for y in [None, [0.25]]:
-        ...     for t in [None, 1, [1], [1, 2], [1, 2, 3]]:
-        ...         o._ReInit_if_required(t, y)
-        ...         print y, o.y, t, o.t, o.t0, o.tstop
-        None [0.5] None [0 2] c_double(0.0) 2
-        None [0.5] 1 [0.0, 1] c_double(0.0) 1
-        None [0.5] [1] [0.0, 1] c_double(0.0) 1
-        None [0.5] [1, 2] [1 2] c_double(1.0) 2
-        None [0.5] [1, 2, 3] [1 2 3] c_double(1.0) 3
-        [0.25] [0.25] None [1 2 3] c_double(1.0) 3
-        [0.25] [0.25] 1 [1.0, 1] c_double(1.0) 1
-        [0.25] [0.25] [1] [1.0, 1] c_double(1.0) 1
-        [0.25] [0.25] [1, 2] [1 2] c_double(1.0) 2
-        [0.25] [0.25] [1, 2, 3] [1 2 3] c_double(1.0) 3
-
-        Note that t0 is initialized to the current tret.value (here 0.0)
-        when t is a scalar.
-        
-        If y is a Numpy structured or record array, its .item() method is used 
-        to get a plain tuple. Testing this both with and without t specified.
-        
-        >>> yrec = np.rec.fromarrays([[1]], names="fieldname")
-        >>> o._ReInit_if_required(t=None, y=yrec)
-        >>> print y, o.y, t, o.t, o.t0, o.tstop
-        [0.25] [1.0] [1, 2, 3] [1 2 3] c_double(1.0) 3
-        >>> o._ReInit_if_required(t=2, y=yrec)
-        >>> print y, o.y, t, o.t, o.t0, o.tstop
-        [0.25] [1.0] [1, 2, 3] [1.0, 2] c_double(1.0) 2
+        If *t* is None, ``self.t`` is used to re-initialize at `
+        ``tret==t0==self.t[0], tstop = self.t[-1]``.
+        If *y* is ``None``, the current *y* is used at time ``tret``.
+        If *t* is a scalar, *t0* is initialized to the current ``tret.value``.
         """
         # cdef long lptret = ctypes.addressof(self.tret)
         # cdef double* ptret = <double*>lptret
@@ -705,24 +721,6 @@ class Cvodeint(object):
         >>> cvodeint.integrate() # t, y, flag
         (array([ 0.   ,  0.026,  0.053, ...,  1.407,  1.647,  2.   ]),
         array([[ 0.1  ], [ 0.102], [ 0.105], ..., [ 0.312], [ 0.366], [ 0.451]]), 1)
-        
-        Verify bugfix for 
-        "UnboundLocalError: local variable 'flag' referenced before assignment" 
-        when integrating to some time <= the current time.
-        
-        >>> t, y, flag = cvodeint.integrate(t=1)
-        >>> flag == cvode.CV_TSTOP_RETURN
-        True
-        
-        Verify that the maxsteps argument is honored.        
-        
-        >>> Cvodeint(logistic_growth, t=[0, 2], y=[0.1], maxsteps=3).integrate()
-        Traceback (most recent call last):
-        CvodeException: Maximum number of steps exceeded
-        
-        Test the adding of new chunks of memory.
-        
-        >>> t, y, flag = Cvodeint(logistic_growth, t=[0, 2], y=[0.1], chunksize=30).integrate()
         """
         Y = np.empty(shape=(self.chunksize, self.n)) # cdef np.ndarray
         t = np.empty(shape=(self.chunksize,)) # cdef np.ndarray
@@ -867,16 +865,6 @@ class Cvodeint(object):
         String representation of Cvodeint object
         
         Unfortunately not as detailed under Cython as in pure Python.
-        
-        >>> from doctest import _ellipsis_match # comparison with ... ellipsis
-        >>> from example_ode import exp_growth
-        >>> got = repr(Cvodeint(exp_growth, t=[0,2], y=[0.1]))
-        >>> wants = ["Cvodeint(f_ode=exp_growth, t=array([0, 2]), y=[0.1...], " +
-        ...     "abstol=c_double(1e-08))",
-        ...     "<class 'cvodeint.Cvodeint'> <function ode at 0x..." + 
-        ...     "getargspec(__init__) is not available when running under Cython"]
-        >>> if not any([_ellipsis_match(want, got) for want in wants]):
-        ...     print "Wanted:", wants, "\\n", "Got:", got
         """
         import inspect
         try:
