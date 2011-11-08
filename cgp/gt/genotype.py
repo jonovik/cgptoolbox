@@ -31,8 +31,9 @@ Here is an example with two biallelic loci::
            [2, 2]])
 
 The difference between class Genotype and Placevalue lies in how they order
-genotypes. Class :class:`Genotype` puts  heterozygotes first, ensuring that the first
-3**k genotypes make up a 3**k full factorial design in the first k parameters::
+genotypes. Class :class:`Genotype` puts  heterozygotes first, ensuring that 
+the first :math:`3^k` genotypes make up a :math:`3^k` full factorial design 
+in the first *k* parameters::
 
     >>> np.array(Genotype([3, 3]))
     array([[1, 1],

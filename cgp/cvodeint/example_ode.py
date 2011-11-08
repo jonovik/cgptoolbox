@@ -140,47 +140,6 @@ def vdp(t, y, ydot, f_data):
     ydot[1] = eps[0] * (1 - y[0] * y[0]) * y[1] - y[0]
 
 
-import logging
-import math
-fmtstr = "%(" + ")s\t%(".join(
-    "asctime levelname name lineno process message".split()) + ")s"
-
-def logging_ode(t, y, ydot, f_data):
-    """
-    Check if CVODE allows handling of exceptions that occur in the ODE.
-    
-    >>> import sys
-    >>> logging.basicConfig(format=fmtstr, level=logging.DEBUG, stream=sys.stdout)
-    >>> import numpy as np
-    >>> t = np.array([0.0])
-    >>> y = np.array([0.0, 1.0])
-    >>> ydot = np.zeros_like(y)
-    >>> f_data = None
-    >>> logging_ode(t, y, ydot, f_data)
-    20...     DEBUG   root    ...   Evaluating ODE...
-    20...     DEBUG   root    ...   ODE evaluated without error.
-    0
-    >>> y[1] = -1.0
-    >>> logging_ode(t, y, ydot, f_data)
-    20...     DEBUG   root    ...   Evaluating ODE...
-    20...     ERROR   root    ...   Caught an exception when evaluating ODE.
-    Traceback (most recent call last):
-    ...
-    ValueError: math domain error
-    -1
-    """
-    import numpy as np
-    logging.debug("Evaluating ODE...")
-    try:
-        with np.errstate(divide="ignore"):
-            ydot[0] = math.log(y[1])
-            ydot[1] = 1 / y[0] - t # will eventually turn negative
-    except StandardError: # allow KeyboardInterrupt, etc., to work
-        logging.exception("Caught an exception when evaluating ODE.")
-        return -1
-    logging.debug("ODE evaluated without error.")
-    return 0
-
 if __name__ == "__main__":
     import doctest
     doctest.testmod(optionflags=doctest.ELLIPSIS | doctest.NORMALIZE_WHITESPACE)

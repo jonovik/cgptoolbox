@@ -30,6 +30,7 @@ def odeint(func, y0_in, t_in, args=()):
     6.82502e-07
     """
     def ode(t, y, ydot, f_data):
+        """Right-hand side."""
         ydot[:] = func(y, t, args) if args else func(y, t)
         return 0
     cvodeint = Cvodeint(ode, t_in, y0_in)

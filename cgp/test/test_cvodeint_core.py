@@ -1,10 +1,45 @@
 """Tests for :mod:`..cvodeint.core`."""
 
+from doctest import _ellipsis_match # comparison with ... ellipsis
+
 import numpy as np
 from nose.tools import raises
 from pysundials import cvode
 
-from ..cvodeint import *
+from ..cvodeint import Cvodeint, CvodeException, example_ode
+
+def test_CvodeException():
+    """
+    Test :exc:`cgp.cvodeint.CvodeException`.
+    
+    >>> i = 5     # countdown
+    >>> @cvodefun
+    ... def failsoon(t, y, ydot, f_data):
+    ...     global i
+    ...     if i:
+    ...         ydot[0] = i    # trick solver into many evaluations
+    ...         i -= 1
+    ...     else:
+    ...         raise StandardError("Testing CvodeException")
+    >>> cvodeint = Cvodeint(failsoon, [0, 1], [1])
+    >>> try:
+    ...     cvodeint.integrate()
+    ... except CvodeException, exc:
+    ...     print exc.result
+    ...     print exc # str(exc) supersedes exc.message, see http://docs.python.org/tutorial/errors.html
+    ...     print failsoon.traceback
+    (array([ 0.]), array([[ 1.]]), -8)
+    CVode returned CV_RHSFUNC_FAIL
+    Traceback (most recent call last):
+    ...
+    StandardError: Testing CvodeException
+    
+    In addition, CVODE will print this message outside of standard output/error::
+    
+        [CVODE ERROR]  CVode
+          At t = 0, the right-hand side routine failed in an unrecoverable manner.
+    """
+    pass
 
 def test_ReInit():
     """
@@ -49,7 +84,7 @@ def test_integrate_adaptive_steps():
     """
     c = Cvodeint(example_ode.logistic_growth, t=[0, 2], y=[0.1], reltol=1e-3)
     c.integrate()
-    t, y, flag = c.integrate(t=1)
+    _t, _y, flag = c.integrate(t=1)
     np.testing.assert_equal(flag, cvode.CV_TSTOP_RETURN)
 
 @raises(CvodeException)
@@ -67,8 +102,7 @@ def test_newchunk():
 
 def test_repr():
     """Test string representation of Cvodeint object."""
-    from doctest import _ellipsis_match # comparison with ... ellipsis
-    got = repr(Cvodeint(example_ode.exp_growth, t=[0,2], y=[0.1]))
+    got = repr(Cvodeint(example_ode.exp_growth, t=[0, 2], y=[0.1]))
     wants = ["Cvodeint(f_ode=exp_growth, t=array([0, 2]), y=[0.1...], " +
              "abstol=c_double(1e-08))",
             "<class 'cvodeint.Cvodeint'> <function ode at 0x..." + 
@@ -76,6 +110,73 @@ def test_repr():
     if not any([_ellipsis_match(want, got) for want in wants]):
         print "Wanted:", wants, "\\n", "Got:", got
 
-def test_logging():
-    """Produces error message and traceback that are ignored by doctest."""
-    cvodeint = Cvodeint(example_ode.logging_ode, [0, 4], [1, 1])
+import logging
+from cStringIO import StringIO
+import math
+fmtstr = "%(" + ")s\t%(".join(
+    "asctime levelname name lineno process message".split()) + ")s"
+
+def test_logging():    
+    """CVODE allows handling/logging of exceptions that occur in the ODE."""
+    
+    sio = StringIO()
+    logger = logging.getLogger("test_logging")
+    logger.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler(sio)
+    handler.setFormatter(logging.Formatter(fmtstr))
+    logger.addHandler(handler)
+
+    def logging_ode(t, y, ydot, f_data):
+        """An ODE with logging as a side effect."""
+        logger.debug("Evaluating ODE...")
+        try:
+            with np.errstate(divide="ignore"):
+                ydot[0] = math.log(y[1])
+                ydot[1] = 1 / y[0] - t # will eventually turn negative
+        except StandardError: # allow KeyboardInterrupt, etc., to work
+            logger.exception("Caught an exception when evaluating ODE.")
+            return -1
+        logger.debug("ODE evaluated without error.")
+        return 0
+    
+    def assert_ellipsis_match(want):
+        """Match like doctest +ELLIPSIS, tolerating "..."."""
+        got = sio.getvalue().strip()
+        if not _ellipsis_match(want, got):
+            msg = "Logging output differs from the expected.\n"
+            msg += "Wanted:\n{}\n\nGot:\n{}".format(want, got)
+            raise AssertionError(msg)
+    
+    # Evaluate the ODE at a valid state
+    t = np.array([0.0])
+    y = np.array([0.0, 1.0])
+    ydot = np.zeros_like(y)
+    f_data = None
+    want = "20...\tDEBUG\ttest_logging\t...\tEvaluating ODE...\n"
+    want += "20...\tDEBUG\ttest_logging\t...\tODE evaluated without error."
+    assert 0 == logging_ode(t, y, ydot, f_data)
+    assert_ellipsis_match(want)
+    # Reset the logger
+    sio.reset()
+    sio.truncate()
+    # Evaluate the ODE at an invalid state
+    y[1] = -1.0
+    want = "20...\tDEBUG\ttest_logging\t...\tEvaluating ODE...\n"
+    want += "20...\tERROR\ttest_logging\t...\t"
+    want += "Caught an exception when evaluating ODE.\n"
+    want += "Traceback (most recent call last):\n...\n"
+    want += "ValueError: math domain error"
+    assert -1 == logging_ode(t, y, ydot, f_data)
+    assert_ellipsis_match(want)
+
+def test_simple_example():
+    """
+    Simple example.
+    
+    >>> from ..cvodeint.example_ode import exp_growth
+    >>> cvodeint = Cvodeint(exp_growth, t=[0,2], y=[0.1])
+    >>> cvodeint.integrate()
+        (array([  0.00000000e+00,   2.34520788e-04,   ... 2.00000000e+00]),
+        array([[ 0.1       ], [ 0.10002346], ... [ 0.73890686]]), 1)
+    """
+    pass

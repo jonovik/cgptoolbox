@@ -67,7 +67,7 @@ and summing the result, just like 123 = 1*100 + 2*10 + 3*1.
 import operator
 import numpy as np
 
-from unstruct import unstruct
+from .unstruct import unstruct
 
 class Placevalue(object):
     """

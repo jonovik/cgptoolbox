@@ -9,11 +9,17 @@ and the :func:`cvodefun` decorator.
 
 Simple example:
 
->>> from example_ode import exp_growth
->>> cvodeint = Cvodeint(exp_growth, t=[0,2], y=[0.1])
->>> cvodeint.integrate()
-    (array([  0.00000000e+00,   2.34520788e-04,   ... 2.00000000e+00]),
-    array([[ 0.1       ], [ 0.10002346], ... [ 0.73890686]]), 1)
+.. plot::
+   :include-source:
+   :width: 300
+   
+   from cgp.cvodeint import *
+   cvodeint = Cvodeint(example_ode.exp_growth, t=[0,2], y=[0.1])
+   t, y, flag = cvodeint.integrate()
+   plt.plot(t, y, '.-')
+   plt.xlabel("t")
+   plt.ylabel("y")
+   plt.title("$y = 0.1e^t$")
 
 The module :mod:`.example_ode` defines some functions that are used in 
 doctests. A replacement for :func:`scipy.integrate.odeint` is in module 
@@ -21,9 +27,8 @@ doctests. A replacement for :func:`scipy.integrate.odeint` is in module
 
 .. data:: flags
 
-   CVODE return flags: dict of messages for each return value. 
-   
-   .. seealso:: :func:`pysundials.cvode.CVodeGetReturnFlagName`
+   CVODE return flags: dict of messages for each return value, as 
+   returned by :func:`pysundials.cvode.CVodeGetReturnFlagName`.
 """
 
 import traceback
@@ -68,36 +73,6 @@ class CvodeException(StandardError):
     If the right-hand side function is decorated with 
     :func:`cvodefun` and raised an exception, the traceback is 
     available as ``ode.exc``, where ``ode`` is the wrapped function.
-    
-    Here's an example contrived to raise an exception shortly after  
-    initialization of the :class:`Cvodeint` object.
-    
-    >>> i = 5     # countdown
-    >>> @cvodefun
-    ... def failsoon(t, y, ydot, f_data):
-    ...     global i
-    ...     if i:
-    ...         ydot[0] = i    # trick solver into many evaluations
-    ...         i -= 1
-    ...     else:
-    ...         raise StandardError("Testing CvodeException")
-    >>> cvodeint = Cvodeint(failsoon, [0, 1], [1])
-    >>> try:
-    ...     cvodeint.integrate()
-    ... except CvodeException, exc:
-    ...     print exc.result
-    ...     print exc # str(exc) supersedes exc.message, see http://docs.python.org/tutorial/errors.html
-    ...     print failsoon.traceback
-    (array([ 0.]), array([[ 1.]]), -8)
-    CVode returned CV_RHSFUNC_FAIL
-    Traceback (most recent call last):
-    ...
-    StandardError: Testing CvodeException
-    
-    In addition, CVODE will print this message outside of standard output/error::
-    
-        [CVODE ERROR]  CVode
-          At t = 0, the right-hand side routine failed in an unrecoverable manner.
     """
     def __init__(self, flag_or_msg=None, result=None):
         if type(flag_or_msg) == int:
@@ -274,66 +249,113 @@ class Cvodeint(object):
         approximation to the Jacobian. CVDense is used by default if 
         *mupper* and *mlower* are both ``None``.
     
-    Usage example:
-    
-    (Optional: Define any parameters required by the ODE function.)
-    
-    >>> from math import pi, sin
-    >>> r, K, amplitude, period = 1.0, 1.0, 0.05, 1.0
-    >>> np.set_printoptions(threshold=5, precision=3) # for brief output
-    
-    Define an ODE function that takes args *(t, y, ydot, f_data)*;
-    *ydot* is a writable parameter for the actual result.
-    
-    >>> def ode(t, y, ydot, f_data):
-    ...     ydot[0] = r * y[0] * (1 - y[0]/K) + amplitude * sin(2 * pi * t/period)
-    
-    (*f_data* is for passing parameters to the ODE, but I couldn't get it to work.
-    However, you can freely access variables that were in scope when the ODE 
-    function was defined, as this example shows. To change parameter values 
-    after the function is defined, use a mutable variable for the parameter; 
-    see below.)
-    
-    Call the :meth:`Cvodeint` constructor with ODE function, time, and initial 
-    state.
-    
-    >>> cvodeint = Cvodeint(ode, [0, 4], [0.1])
-    
-    This function returns no value, so :class:`Cvodeint` will decorate it with 
-    :func:`cvodefun`.
-    This brings only a 5% slowdown in this case; less if the RHS does more 
-    computation.
-    
-    * *t* can be a scalar or iterable and is converted to numpy.array(t, ndmin=1).
-    * *y* can be any iterable and is automatically converted to NVector.
-    
-    >>> type(cvodeint.y)
-    <class '...nvecserial.NVector'>
-    
-    The :meth:`integrate` method returns time and state vectors, and the last 
-    flag returned by `pysundials.cvode.CVode`.
-    
-    >>> t, y, flag = cvodeint.integrate()
-    >>> t, y, flag   
-    (array([ 0.000e+00, 1.193e-04, 2.387e-04, ..., 
-             3.958e+00, 3.985e+00, 4.000e+00]), 
-     array([[ 0.1 ], [ 0.1 ], [ 0.1 ], ..., [ 0.856], [ 0.859], [ 0.86 ]]), 1)
+    **Usage example:**
     
     .. plot::
        :include-source:
-       :width: 300
+       :width: 400
        
-       from cgp.cvodeint.core import Cvodeint
-       from math import pi, sin
-       r, K, amplitude, period = 1.0, 1.0, 0.25, 1.0
-       def ode(t, y, ydot, f_data):
-           ydot[0] = r * y[0] * (1 - y[0]/K) + amplitude * sin(2 * pi * t/period)
-       cvodeint = Cvodeint(ode, [0, 4], [0.1])
-       t, y, flag = cvodeint.integrate()
-       plt.plot(t, y, '.-')
-       plt.title("Logistic growth + sinusoid")
+       >>> from cgp.cvodeint import *
+       >>> from pysundials import cvode
+       >>> from math import pi, sin
+       
+       Define the rate of change *dy/dt* as a function of the state *y*.
+       The differential equation may use existing Python variables as 
+       parameters. By convention, it must take arguments 
+       *(t, y, ydot, f_data)*, where *ydot* is a writable parameter for 
+       the actual result. See :func:`cvodefun` for details on CVODE's
+       requirements for an ODE right-hand side.
+       
+       >>> r, K, amplitude, period = 1.0, 1.0, 0.25, 1.0
+       >>> def ode(t, y, ydot, f_data):
+       ...     ydot[0] = r * y[0] * (1 - y[0]/K) + amplitude * sin(2 * pi * t/period)
+       
+       Call the :meth:`Cvodeint` constructor with ODE function, time, and 
+       initial state.
+       
+       >>> cvodeint = Cvodeint(ode, [0, 4], [0.1])
+
+       Integrate over the time interval specified above.
+       The :meth:`integrate` method returns the last *flag* returned by CVODE.
+       
+       >>> t, y, flag = cvodeint.integrate()
+       
+       >>> import matplotlib.pyplot as plt
+       >>> h = plt.plot(t, y, '.-')
+       >>> h = plt.title("Logistic growth + sinusoid")
+       >>> text = "Last flag: " + cvode.CVodeGetReturnFlagName(flag)
+       >>> h = plt.text(1, 0.8, text)
     
-    Technical note: CVODE offers void pointers f_data and g_data for passing 
+    .. note::
+    
+        *f_data* is intended for passing parameters to the ODE, but I couldn't
+        get it to work. However, you can freely access variables that were in
+        scope when the ODE function was defined, as this example shows.
+    
+    To change parameter values after the function is defined, use a mutable 
+    variable for the parameter. In the first integration below, the state is 
+    constant because the growth rate is zero.
+    
+    >>> growth_rate = [0.0]
+    >>> def exp_growth(t, y, ydot, f_data):
+    ...     ydot[0] = growth_rate[0] * y[0]
+    ...     return 0
+    >>> cvodeint = Cvodeint(exp_growth, t=[0, 0.5, 1], y=[0.25])
+    >>> t, y, flag = cvodeint.integrate()
+    >>> y
+    array([[ 0.25], [ 0.25], [ 0.25]])
+    
+    Modify the growth rate and integrate further. Now, there is about 
+    0.1 * 0.25 = 0.025 increase in y over 1 time unit.
+    
+    >>> growth_rate[0] = 0.1
+    >>> t, y, flag = cvodeint.integrate(t=[0, 0.1, 1])
+    >>> y.round(4)
+    array([[ 0.25  ], [ 0.2525], [ 0.2763]])
+    
+    If the ode function is discontinuous, the solver may need to be
+    reinitialized at the point of discontinuity.
+    
+    .. plot::
+       :include-source:
+       :width: 400
+       
+       from cgp.cvodeint import *
+       eps = [1, 10]
+       t_switch = 5
+       t = [0, 10]
+       def vdp(t, y, ydot, f_data): # van der Pol equation
+           _eps = eps[0] if t <= t_switch else eps[1]
+           ydot[0] = y[1]
+           ydot[1] = _eps * (1 - y[0] * y[0]) * y[1] - y[0]
+           return 0
+       cvodeint = Cvodeint(vdp, t, [-2, 0])
+       t0, y0, flag0 = cvodeint.integrate(t = [t[0], t_switch])
+       t1, y1, flag1 = cvodeint.integrate(t = [t_switch, t[1]])
+       plt.plot(t0, y0, t1, y1)    
+    
+    The :meth:`rootfinding <RootInit>` facilities of CVODE can be used 
+    to find zero-crossings of a function of the state vector (example:
+    :func:`~cgp.cvodeint.example_ode.g_rtfn_y`). Here we integrate the 
+    van der Pol model to a series of specified values for y[0].
+           
+    .. plot::
+       :include-source:
+       :width: 400
+       
+       >>> from ctypes import byref, c_float
+       >>> from cgp.cvodeint import *
+       >>> thresholds = np.arange(-1.5, 1.5, 0.6)
+       >>> cvodeint = Cvodeint(example_ode.vdp, [0, 20], [0, -2], reltol=1e-3)
+       >>> res = [cvodeint.integrate(nrtfn=1, g_rtfn=example_ode.g_rtfn_y,
+       ...     g_data=byref(c_float(thr))) for thr in thresholds]
+       
+       >>> import matplotlib.pyplot as plt
+       >>> h = [plt.plot(t, y, '.-') for t, y, flag in res]
+       >>> h = plt.hlines(thresholds, *plt.xlim(), color="grey")
+    """
+    """
+    CVODE offers void pointers f_data and g_data for passing 
     parameters to ODE and rootfinding functions, respectively. Numpy objects 
     have ctypes properties that makes it easy to pass them to C functions, e.g.
     
@@ -346,94 +368,7 @@ class Cvodeint(object):
     `2 <http://article.gmane.org/gmane.comp.python.scientific.devel/9331>`__
     `3 <http://article.gmane.org/gmane.comp.python.general/509212/>`__
     `4 <http://docs.python.org/library/struct.html>`__
-    
-    To change parameter values after the function is defined, use a mutable 
-    variable for the parameter; see below.
-    
-    >>> growth_rate = [0.0]
-    >>> def exp_growth(t, y, ydot, f_data):
-    ...     ydot[0] = growth_rate[0] * y[0]
-    ...     return 0
-    >>> cvodeint = Cvodeint(exp_growth, t=[0, 1], y=[0.25])
-    >>> cvodeint.integrate() # solution: constant state because growth_rate==[0]
-    (array([ 0.000e+00, 3.432e-05, 3.433e-01, 1.000e+00]), 
-    array([[ 0.25], [ 0.25], [ 0.25], [ 0.25]]), 1)
-
-    >>> growth_rate[0] = 0.1
-    >>> cvodeint.integrate() # about 0.1 * 0.25 = 0.025 incr over 1 time unit
-    (array([ 0.   ,  0.002,  0.003, ...,  0.774,  0.95 ,  1.   ]), 
-    array([[ 0.25 ], [ 0.25 ], [ 0.25 ], ..., [ 0.27 ], [ 0.275], [ 0.276]]), 1)
-    
-    Example with fixed time steps:
-    
-    >>> cvodeint = Cvodeint(ode, np.linspace(0, 4, 3), [0.1])
-    >>> cvodeint.integrate()
-    (array([ 0.,  2.,  4.]), array([[ 0.1  ], [ 0.464], [ 0.86 ]]), 0)     
-
-    Example with discontinuous right-hand-side:
-    
-    >>> eps = [1, 10]
-    >>> t_switch = 5
-    >>> t = [0, 10]
-    >>> def vdp(t, y, ydot, f_data): # van der Pol equation
-    ...     _eps = eps[0] if t <= t_switch else eps[1]
-    ...     ydot[0] = y[1]
-    ...     ydot[1] = _eps * (1 - y[0] * y[0]) * y[1] - y[0]
-    ...     return 0
-    >>> cvodeint = Cvodeint(vdp, t, [-2, 0])
-    
-    >>> cvodeint.integrate(t = [t[0], t_switch])
-    (array([  0.000e+00,   1.716e-10,   1.716e-06, ...,   4.937e+00,
-             4.972e+00,   5.000e+00]), array([[ -2.000e+00,   0.000e+00],
-           [ -2.000e+00,   3.432e-10], [ -2.000e+00,   3.433e-06], ...,
-           [  9.168e-01,  -1.234e+00], [  8.738e-01,  -1.273e+00],
-           [  8.371e-01,  -1.307e+00]]), 1)
-
-    >>> cvodeint.integrate(t = [t_switch, t[1]])
-    (array([  5.   ,   5.   ,   5.   , ...,   9.742,   9.886,  10.   ]), 
-    array([[ 0.837, -1.307], [ 0.837, -1.307], [ 0.837, -1.307], ..., 
-           [-1.716,  0.088], [-1.703,  0.089], [-1.693,  0.09 ]]), 1)
-           
-    
-    Rootfinding:
-    
-    >>> from cgp.cvodeint.example_ode import exp_growth, g_rtfn_y
-    >>> from ctypes import c_float, byref
-    >>> cvodeint = Cvodeint(exp_growth, t=[0, 3], y=[1],
-    ...     nrtfn=1, g_rtfn=g_rtfn_y, g_data=byref(c_float(np.exp(2))))
-    >>> t, y, flag = cvodeint.integrate()
-    >>> t[-1].round(5), np.log(y[-1]), cvode.CVodeGetReturnFlagName(flag)
-    (2.0, array([ 2.]), 'CV_ROOT_RETURN')
-    
-    .. plot::
-       :context:
-       :nofigs:
-       :include-source:
-       
-       >>> from ctypes import byref, c_float
-       >>> from cgp.cvodeint.core import Cvodeint
-       >>> from cgp.cvodeint.example_ode import vdp, g_rtfn_y
-       >>> cvodeint = Cvodeint(vdp, [0, 20], [0, -2], reltol=1e-3)
-       >>> res = [cvodeint.integrate(nrtfn=1, g_rtfn=g_rtfn_y,
-       ...     g_data=byref(c_float(thr))) for thr in np.arange(-1.5, 1.5, 0.6)]
-    
-    .. plot::
-        :context:
-        :width: 300
-        
-        plt.clf()
-        [plt.plot(t, y, '.-') for t, y, flag in res]
-    
-    >>> np.array([(t[-1], y[-1][0]) for t, y, flag in res]).round(4)
-    array([[ 0.658, -1.5  ],
-           [ 2.745, -0.9  ],
-           [ 3.138, -0.3  ],
-           [ 3.418,  0.3  ],
-           [ 3.65 ,  0.9  ]])
-    
-    The :func:`cvodefun` decorator is not applied if the right-hand side 
-    does return 0 on success and <0 on failure.
-    """
+    """  # pylint: disable=W0105
     def __init__(self, f_ode, t, y, reltol=1e-8, abstol=1e-8, nrtfn=None, 
         g_rtfn=None, f_data=None, g_data=None, chunksize=2000, maxsteps=1e4, 
         mupper=None, mlower=None):
@@ -498,33 +433,39 @@ class Cvodeint(object):
         self.RootInit(nrtfn, g_rtfn, g_data)
     
     def integrate(self, t=None, y=None, nrtfn=None, g_rtfn=None, g_data=None, 
-        assert_flag=None, ignore_flags=False):  # pylint: disable=R0913
+        assert_flag=None, ignore_flags=False):
         """
         Integrate over time interval, init'ing solver or rootfinding as needed.
         
         :param array_like t: new output time(s)
-        :param array_like y: new initial state
+        :param array_like y: new initial state (default: resume from current 
+            solver state
         :param int nrtfn: length of gout (required if *g_rtfn* is not ``None``)
-        :param function g_rtfn: new rootfinding function of *(t, y, gout, g_data)*,
+        :param function g_rtfn: new rootfinding function of 
+            *(t, y, gout, g_data)*,
             passed to :func:`~pysundials.cvode.CVodeRootInit`
         :param g_data: new data for rootfinding function
-        :param int assert_flag: raise exception if the last flag returned by CVode
-            differs from *assert_flag* (see `flags`)
-        :param bool ignore_flags: overrides assert_flag and does not check CVode flag
+        :param int assert_flag: raise exception if the last flag returned by 
+            CVode differs from *assert_flag* (see `flags`)
+        :param bool ignore_flags: overrides assert_flag and does not check 
+            CVode flag
         :return tuple: 
-            * **tout**: time vector (equal to input time *t* if that has len > 2), 
+            * **tout**: time vector 
+              (equal to input time *t* if that has len > 2), 
             * **Y**: array of state vectors at time ``t[i]``
-            * **flag**: flag returned by :func:`~pysundials.cvode.CVode`, one of 
-              ``[cvode.CV_SUCCESS, cvode.CV_ROOT_RETURN, cvode.CV_TSTOP_RETURN]``
+            * **flag**: flag returned by :func:`~pysundials.cvode.CVode`, 
+              one of ``[cvode.CV_SUCCESS, cvode.CV_ROOT_RETURN, 
+              cvode.CV_TSTOP_RETURN]``
         
         * With no input arguments, integration continues from the current time 
-          and state until the end time specified for the :class:`Cvodeint` constructor.
-        * If t is None, init solver and use the value of t passed to Cvodeint().
-        * If t is a scalar, integrate to that time and return adaptive time steps.
+          and state until the end time passed to :meth:`Cvodeint`.
+        * If t is None, init solver and use the t passed to Cvodeint().
+        * If t is scalar, integrate to that time, return adaptive time steps.
         * If len(t) == 1, return output only for that time.
-        * If len(t) == 2, integrate from t[0] to t[1], return adaptive time steps.
+        * If len(t) == 2, integrate from t[0] to t[1], return adaptive time 
+          steps.
         * If len(t) > 2, integrate from t[0] and return fixed time steps = t.
-        * y : solver state for re-init; default: resume from current solver state.
+        * If y is None, resume from current solver state.
         
         >>> from cgp.cvodeint.core import Cvodeint
         >>> from cgp.cvodeint.example_ode import exp_growth, exp_growth_sol
@@ -552,9 +493,10 @@ class Cvodeint(object):
         >>> "%.5e %.5e" % (err.min(), err.max())
         '2.75108e-09 1.25356e-06'
         
-        .. plot::
+        ..  plot::
             :width: 300
             
+            import matplotlib.pyplot as plt
             from cgp.cvodeint.core import Cvodeint
             from cgp.cvodeint.example_ode import exp_growth, exp_growth_sol
             cvodeint = Cvodeint(exp_growth, t=[0, 2], y=[0.1])
@@ -567,21 +509,23 @@ class Cvodeint(object):
         
         In case of error, the solution so far will be returned:
         
-        >>> from cgp.cvodeint.core import CvodeException
-        >>> import math
-        >>> def ode(t, y, ydot, f_data):
-        ...     ydot[0] = math.log(y[1])
-        ...     ydot[1] = 1 / y[0] - t # will eventually turn negative
-        >>> cvodeint = Cvodeint(ode, [0, 4], [1, 1])
-        >>> try:
-        ...     cvodeint.integrate()    # Logs error and prints traceback,   
-        ... except CvodeException, exc: # both ignored by doctest.
-        ...     t, Y, flag = exc.result
-        ...     print flags[flag], len(t), Y
-        ['CV_RHSFUNC_FAIL'] 162 
-        [[  1.000e+00   1.000e+00] [  1.000e+00   1.000e+00] [  1.000e+00   1.000e+00]
-         ...,
-         [  6.149e-01   3.419e-06] [  6.149e-01   1.725e-06] [  6.148e-01   8.282e-07]]
+        ..  plot::
+            :include-source:
+            :width: 400
+            
+            from cgp.cvodeint import *
+            import matplotlib.mpl as plt
+            import math
+            def ode(t, y, ydot, f_data):
+                ydot[0] = math.log(y[1])
+                ydot[1] = 1 / y[0] - t # will eventually turn negative
+            cvodeint = Cvodeint(ode, [0, 4], [1, 1])
+            try:
+                cvodeint.integrate()    # Logs error and prints traceback,   
+            except CvodeException, exc: # both ignored by doctest.
+                t, y, flag = exc.result
+                plt.plot(t, y, '.-')
+                plt.text(1, 1, "Flag: %s" % flags[flag])
         
         Another example:
         
@@ -595,27 +539,31 @@ class Cvodeint(object):
         
         With len(t) == 2, re-initialize at t[0] and set tstop = t[-1]:
         
-        >>> cvodeint.integrate(t=[2, 3])
-        (array([ 2.   ,  2.001,  2.001, ...,  2.966,  2.995,  3.   ]), 
-        array([[ 0.451], [ 0.451], [ 0.451], ..., 
-               [ 0.683], [ 0.69 ], [ 0.691]]), 1)
-               
+        >>> t, y, flag = cvodeint.integrate(t=[2, 3])
+        >>> print np.array2string(t, precision=3)
+        [ 2.     2.001  2.001  2.002  ... 2.966  2.995  3.   ]
+        >>> print np.array2string(y, precision=3)
+        [[ 0.451] [ 0.451] [ 0.451] ... [ 0.683] [ 0.69 ] [ 0.691]]
+        
         With t omitted, re-initialize at existing t0 with current state:
         
-        >>> cvodeint.integrate(y=[0.2])
-        (array([ 2. , 2. , 2.001, ..., 2.924, 2.973, 3. ]), array([[ 0.2 ],
-               [ 0.2  ], [ 0.2  ], ..., [ 0.387], [ 0.398], [ 0.405]]), 1)
+        >>> t, y, flag = cvodeint.integrate(y=[0.2])
+        >>> print np.array2string(t, precision=3)
+        [ 2.     2.     2.001 ... 2.924  2.973  3.   ]
+        >>> print np.array2string(y, precision=3)
+        [[ 0.2 ] [ 0.2  ] [ 0.2  ] ... [ 0.387] [ 0.398] [ 0.405]]
 
         With both t and y given:
         
-        >>> cvodeint.integrate(t=np.linspace(0, 2, 3), y=[0.3])
-        (array([ 0.,  1.,  2.]), array([[ 0.3  ], [ 0.538], [ 0.76 ]]), 0)
+        >>> t, y, flag = cvodeint.integrate(t=[0, 1, 2], y=[0.3])
+        >>> print np.array2string(y, precision=3)
+        [[ 0.3  ] [ 0.538] [ 0.76 ]]
         
         Example with discontinuous right-hand-side:
         
         >>> eps = [1, 10]
         >>> t_switch = 5
-        >>> t = [0, 10]
+        >>> tspan = [0, 10]
         >>> def vdp(t, y, ydot, f_data): # van der Pol equation
         ...     _eps = eps[0] if t <= t_switch else eps[1]
         ...     ydot[0] = y[1]
@@ -625,20 +573,16 @@ class Cvodeint(object):
         
         Integrate until RHS discontinuity:
         
-        >>> cvodeint.integrate(t = [t[0], t_switch])
-        (array([  0.000e+00,   1.716e-10,   1.716e-06, ...,   4.937e+00,
-                  4.972e+00,   5.000e+00]), array([[ -2.000e+00,   0.000e+00],
-               [ -2.000e+00,   3.432e-10], [ -2.000e+00,   3.433e-06], ...,
-               [  9.168e-01,  -1.234e+00], [  8.738e-01,  -1.273e+00], 
-               [  8.371e-01,  -1.307e+00]]), 1)
+        >>> t, y, flag = cvodeint.integrate(t = [tspan[0], t_switch])
+        >>> t[-1], y[-1]
+        (5.0, array([ 0.83707776, -1.30708838]))
 
         Calling :meth:`Cvodeint.integrate` again will do the necessary 
         re-initialization:
         
-        >>> cvodeint.integrate(t = [t_switch, t[1]])
-        (array([  5.   ,   5.   ,   5.   , ...,   9.742,   9.886,  10.   ]), 
-        array([[ 0.837, -1.307], [ 0.837, -1.307], [ 0.837, -1.307], ...,
-               [-1.716,  0.088], [-1.703,  0.089], [-1.693,  0.09 ]]), 1)
+        >>> t, y, flag = cvodeint.integrate(t = [t_switch, tspan[1]])
+        >>> t[0], t[-1], y[-1]
+        (5.0, 10.0, array([-1.69...,  0.090...]))
         """
         self._ReInit_if_required(t, y)
         self.RootInit(nrtfn, g_rtfn, g_data)
@@ -716,11 +660,16 @@ class Cvodeint(object):
         
         Output: t, Y, flag. See Cvodeint.integrate().
         
-        >>> from example_ode import logistic_growth
-        >>> cvodeint = Cvodeint(logistic_growth, t=[0, 2], y=[0.1], reltol=1e-3)
-        >>> cvodeint.integrate() # t, y, flag
-        (array([ 0.   ,  0.026,  0.053, ...,  1.407,  1.647,  2.   ]),
-        array([[ 0.1  ], [ 0.102], [ 0.105], ..., [ 0.312], [ 0.366], [ 0.451]]), 1)
+        ..  plot::
+            :include-source:
+            :width: 400
+            
+            import matplotlib.pyplot as plt
+            from cgp.cvodeint import *
+            cvodeint = Cvodeint(example_ode.logistic_growth, 
+                                t=[0, 2], y=[0.1], reltol=1e-3)
+            t, y, flag = cvodeint.integrate()
+            plt.plot(t, y, '.-')
         """
         Y = np.empty(shape=(self.chunksize, self.n)) # cdef np.ndarray
         t = np.empty(shape=(self.chunksize,)) # cdef np.ndarray
@@ -788,13 +737,21 @@ class Cvodeint(object):
         """
         Repeatedly call CVode() with task CV_ONE_STEP_TSTOP and tout=t[i]
         
-        Output: t, Y, flag. See Cvodeint.integrate().
-        The "maxsteps" setting is ignored when using fixed time steps.
+        Output: t, Y, flag. See :meth:`integrate`.
+        The *maxsteps* setting is ignored when using fixed time steps.
         
         >>> from example_ode import logistic_growth
         >>> cvodeint = Cvodeint(logistic_growth, t=[0, 0.5, 2], y=[0.1])
-        >>> cvodeint.integrate() # t, y, flag
-        (array([ 0. ,  0.5,  2. ]), array([[ 0.1  ], [ 0.155], [ 0.451]]), 0)
+        >>> cvodeint.integrate()
+        (array([ 0. , 0.5, 2. ]), array([[ 0.1 ], [ 0.154...], [ 0.45...]]), 0)
+        
+        ..  plot::
+            :width: 400
+            
+            from example_ode import logistic_growth
+            cvodeint = Cvodeint(logistic_growth, t=np.linspace(0, 2, 5), y=[0.1])
+            t, y, flag = cvodeint.integrate()
+            plt.plot(t, y, '.-')
         """
         imax = len(self.t)
         Y = np.empty(shape=(imax, self.n))
@@ -837,14 +794,16 @@ class Cvodeint(object):
         Details `here 
         <https://computation.llnl.gov/casc/sundials/documentation/cv_guide/node6.html#SECTION00670000000000000000>`__.
         
+        >>> from pysundials import cvode
         >>> from example_ode import exp_growth, g_rtfn_y
         >>> g_data = ctypes.c_float(2.5)
         >>> cvodeint = Cvodeint(exp_growth, t=[0, 3], y=[1],
         ...     nrtfn=1, g_rtfn=g_rtfn_y, g_data=ctypes.byref(g_data))
-        >>> cvodeint.integrate() # t, y, flag
-        (array([  0.000e+00,   1.000e-04,   2.000e-04, ...,   8.430e-01,
-        8.837e-01,   9.163e-01]), array([[ 1.   ], [ 1.   ], [ 1.   ],
-        ..., [ 2.323], [ 2.42 ], [ 2.5  ]]), 2)
+        >>> t, y, flag = cvodeint.integrate()
+        >>> y[-1]
+        array([ 2.5])
+        >>> cvode.CVodeGetReturnFlagName(flag)
+        'CV_ROOT_RETURN'
 
         Warn if nrtfn is not given but g_rtfn or g_data is given:
         

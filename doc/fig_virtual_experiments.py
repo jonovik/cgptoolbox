@@ -13,16 +13,14 @@ is easier to define as function than pass as arguments.
 Todo: Add illustration for models.
 """
 
-import numpy as np
 from matplotlib import pyplot as plt
-from matplotlib.pyplot import (plot, figure, xlabel, ylabel, title, 
-    tick_params, xlim, ylim, axis, box, setp, getp)
+from matplotlib.pyplot import (plot, ylabel, title, 
+    tick_params, xlim, axis, box, setp, getp)
 import os
 from joblib import Memory
 from ap_cvode import Bond
 from protocols import catrec, Clampable, markovplot, listify, Bond_protocol
 from splom import spij
-from utils.thinrange import thin
 
 ### Options, model and protocols
 
@@ -58,10 +56,10 @@ def vecvclamp(*args, **kwargs):
 @mem.cache
 def pacing_output():
     # Prepacing
-    for t, y, stats in cell.aps(n=nprepace):
+    for _t, _y, _stats in cell.aps(n=nprepace):
         pass
     # A few paces
-    t, y, stats = catrec(*cell.aps(n=npace), globalize_time=False)
+    t, y, _stats = catrec(*cell.aps(n=npace), globalize_time=False)
     dy, a = cell.rates_and_algebraic(t, y)
     return t, y, dy, a
 

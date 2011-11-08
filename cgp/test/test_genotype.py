@@ -1,4 +1,5 @@
 """Tests for :mod:`cgp.gt.genotype`."""
+# pylint: disable=C0111
 
 import numpy as np
 from numpy.testing import assert_equal

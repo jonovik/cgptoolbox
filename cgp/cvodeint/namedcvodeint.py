@@ -68,7 +68,8 @@ class Namedcvodeint(Cvodeint):
         y = np.rec.fromrecords([(-2.0, 0.0)], names="x y".split())
         p = np.rec.fromrecords([(1.0,)], names="epsilon")
         
-        def vanderpol(t, y, ydot, f_data):  # pylint: disable=C0111,W0613
+        def vanderpol(t, y, ydot, f_data):
+            """Van der Pol model."""
             ydot[0] = y[1]
             ydot[1] = p.epsilon * (1 - y[0] * y[0]) * y[1] - y[0]
         
@@ -206,18 +207,6 @@ class Namedcvodeint(Cvodeint):
         finally:
             self.RootInit(0) # Disable any rootfinding
             self.y[:], self.pr[:] = oldy, oldpar
-    
-    # TODO: Enable dynamic regulation of selected parameters, eg stim_amplitude.
-    # Create a new Namedcvodeint with a callback function as an attribute and 
-    # ODE right-hand side as follows:
-    #   Store original stim_amplitude
-    #   Compute new stim_amplitude from t, y, p using callback function
-    #   Compute ydot based on new stim_amplitude
-    #   Restore original stim_amplitude
-    #   Return ydot
-    # Now the callback function can be substituted and integration should still 
-    # work. The right-hand side could probably be included in the Cython code.
-    # For now, just combine stim_amplitude etc (for pacing) and clamp/dynclamp.
     
     @contextmanager
     def clamp(self, **kwargs):

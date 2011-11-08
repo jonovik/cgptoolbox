@@ -58,7 +58,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'cGPtoolbox'
-copyright = u'2011, Jon Olav Vik, Arne Bjørke Gjuvsland, Yunpeng Wang'
+copyright = u'2011, Jon Olav Vik, '  #@ReservedAssignment
+copyright += u'Arne Bjørke Gjuvsland, Yunpeng Wang'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
