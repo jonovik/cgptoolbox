@@ -107,7 +107,7 @@ databases to model parameter structures. At the population level, it
 provides functions for mating and recombining genomes, keeping track of 
 chromosomal organization and genetic distances (map units) between genes, 
 thereby simulating parameter values for the offspring. This 
-infrastructure is common to any cGP study. See the :ref:`tutorials` for 
+infrastructure is common to any cGP study. See the :doc:`tutorials` for 
 worked examples.
 
 The workflow illustrated in :ref:`design-patterns` exemplifies the 
@@ -140,7 +140,7 @@ Design patterns for cGP studies
    Blue arrows denote functions that generate genotypes or transform them 
    through successive mappings, genotype to parameter to "raw" phenotypes to 
    aggregated phenotypes. The surrounding text exemplifies different 
-   alternatives for each piece of the pipeline. :ref:`Virtual experiments` 
+   alternatives for each piece of the pipeline. :term:`Virtual experiment`\ s 
    interact with physiological models to generate phenotypes defined by the 
    system's response to external stimuli.
 
@@ -185,6 +185,11 @@ Glossary
 .. glossary::
    :sorted:   
 
+   parameter
+      Here, we define a parameter as a quantity that may differ between 
+      instances of a model system, but is constant over the time-scale of the 
+      particular model being studied. 
+   
    :wiki:`phenotype`
       An organism's observable characteristics or traits.
 
@@ -193,9 +198,12 @@ Glossary
       relationship to the individual's genotype, and higher-level phenotypes 
       emerge from the mathematical model describing the causal dynamic 
       relationships between these lower-level processes.
-
-
-
+   
+   virtual experiment
+      A simulated manipulation of a model system, designed to characterize 
+      certain aspects of its behaviour in response to perturbation. This 
+      provides a basis for comparing models with each other, and with real 
+      systems if the experiment has a real-world analogue.
 
 Contents
 ========
@@ -204,6 +212,8 @@ Contents
    :maxdepth: 4
    
    cgp-programme
+   features
+   tutorials
    cgptoolbox-characterization
    cgp
 

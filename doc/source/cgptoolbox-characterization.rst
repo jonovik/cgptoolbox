@@ -65,13 +65,12 @@ Short purpose
   workflow is more general than the implementation; users may wish to roll their 
   own building blocks using other languages and/or data formats.
 Documentation link
-  Python docstrings and doctests are used throughout. Doctests provide code 
-  examples and unit tests integrated with the documentation. Docstrings are 
-  automatically processed by Doxygen, pydoc (Doxygen-like tool that ships with 
-  Python) and the IPython interactive shell.
-  
-  .. todo:: Link to home.
-  .. todo:: Demonstration modules.
+  :doc:`Documentation <index>` is auto-generated using 
+  `Sphinx <http://sphinx.pocoo.org>`_, based on Python docstrings. Doctests 
+  provide code examples and unit tests integrated with the documentation and 
+  with the `IPython <http://ipython.org>`_ interactive shell.
+
+  .. todo:: Demonstration modules, see :doc:`tutorials`.
   
 Keywords
   causally cohesive genotype-phenotype modeling; 
@@ -88,7 +87,7 @@ Citation and reference papers
      * ...
 
 Long purpose
-  See :ref:`features`
+  See :doc:`features`
 
 Testing
   Python docstrings and doctests are used throughout. Doctests provide code 

@@ -1,5 +1,5 @@
 The cGP research programme
-===========================================================================
+==========================
 
 Our view is that a deep understanding of the genotype-phenotype map for a 
 given complex morphological, physiological or behavioural trait *P* 
@@ -13,11 +13,12 @@ defining the heritable unit by its statistical effect in an abstract
 model, we start out from a dynamic system of genes and gene effects, 
 deriving explicitly defined phenotypes as emergent properties of a 
 biologically interpretable dynamic system, rather than attributes of an 
-isolated genetic model. We use the term :term:`causally cohesive 
-genotype-phenotype model`s for models describing how :doi:`genetic 
-variation manifests in phenotypic variation at various systemic levels 
-<Rajasingh>` up to the tissue, organ and whole-organism level. The 
-articulated relationship to the individual's genotype is the 
+isolated genetic model. We use the term 
+:term:`causally cohesive genotype-phenotype models 
+<causally cohesive genotype-phenotype modeling>` for models describing how 
+:doi:`genetic variation manifests phenotypically at various systemic levels 
+<10.1534/genetics.108.087064>` up to the tissue, organ and whole-organism 
+levels. The articulated relationship to the individual's genotype is the 
 distinguishing feature of cGP models versus the broader class of 
 mathematical models describing how complex biological phenotypes arise 
 from the interactions of lower-level systemic entities. This is in stark 
