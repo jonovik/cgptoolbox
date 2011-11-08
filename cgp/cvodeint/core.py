@@ -514,7 +514,7 @@ class Cvodeint(object):
             :width: 400
             
             from cgp.cvodeint import *
-            import matplotlib.mpl as plt
+            import matplotlib.pyplot as plt
             import math
             def ode(t, y, ydot, f_data):
                 ydot[0] = math.log(y[1])
