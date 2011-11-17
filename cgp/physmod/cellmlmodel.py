@@ -6,16 +6,16 @@ from urllib import urlopen # to download from CellML Code Generation Service
 from contextlib import contextmanager
 from collections import namedtuple
 import os # to remove old compiled version of model modules
-from cvodeint.namedcvodeint import Namedcvodeint, Recarraylink
-from utils.commands import getstatusoutput
-from utils.dotdict import Dotdict
-from cvodeint import Cvodeint # CVODE wrapper
+from ..cvodeint.namedcvodeint import Namedcvodeint, Recarraylink
+from ..utils.commands import getstatusoutput
+from ..utils.dotdict import Dotdict
+from ..cvodeint import Cvodeint # CVODE wrapper
 import numpy as np
 from numpy import recarray # recarray allows named columns: y.V etc.
-import cellmlmodels
+from cgp import physmod as cellmlmodels
 import sys
 import warnings
-from utils.ordereddict import OrderedDict
+from ..utils.ordereddict import OrderedDict
 
 __all__ = ["Cellmlmodel"]
 
@@ -25,7 +25,7 @@ try:
     import cellml2py
 except ImportError:
     # deferred import to minimize dependencies
-    from utils.write_if_not_exists import write_if_not_exists
+    from ..utils.write_if_not_exists import write_if_not_exists
     dirname, _ = os.path.split(__file__)
     with write_if_not_exists(os.path.join(dirname, "cellml2py", "__init__.py")):
         pass # just create an empty __init__.py file
@@ -915,7 +915,8 @@ if __name__ == "__main__":
     # _demo()
     import doctest
     failure_count, test_count = doctest.testmod(optionflags=
-        doctest.NORMALIZE_WHITESPACE | doctest.ELLIPSIS)
+        doctest.NORMALIZE_WHITESPACE | doctest.ELLIPSIS | 
+        doctest.REPORT_ONLY_FIRST_FAILURE)
     print """
         NOTE: You may see AttributeError when pysundials tries to __del__
         NVector objects that are None. This is probably not a problem.
