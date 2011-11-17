@@ -371,7 +371,7 @@ def cp2cond(s):
     ifelse = " ".join("%s if %s else" % (v, c) for c, v in zip(cond, val))
     return "(%s 0)" % ifelse
 
-import codegen
+from ..utils import codegen
 
 def cp2cond(s):
     """
