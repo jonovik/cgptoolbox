@@ -210,20 +210,13 @@ def rates_and_algebraic(t, y):
     algebraic variables during integration. This function re-computes the rates 
     and algebraics at each time step for the given state.
     
-    This returns a simple float array; Cellmlmodel.rates_and_algebraic() will 
-    cast them to structured arrays with named fields.
+    This returns a simple float array; 
+    :meth:`cgp.physmod.cellmlmodel.Cellmlmodel.rates_and_algebraic`
+    will cast them to structured arrays with named fields.
     
-    This version is pure Python; cythonize() will generate a faster version.
-    
-    >>> from cgp.physmod.cellmlmodel import Cellmlmodel
-    >>> changeset_workspace = "11df840d0150d34c9716cd4cbdd164c8/bondarenko_szigeti_bett_kim_rasmusson_2004_apical"
-    >>> bond = Cellmlmodel(changeset_workspace, t=[0, 20], 
-    ...     use_cython=False, purge=True)
-    >>> bond.yr.V = 100 # simulate stimulus
-    >>> t, y, flag = bond.integrate()
-    >>> ydot, alg = bond.model.rates_and_algebraic(t, y)
-    >>> from pylab import * # doctest: +SKIP
-    >>> plot(t, alg.view(bond.dtype.a)["J_xfer"], '.-', t, y.Cai, '.-') # doctest: +SKIP
+    This version is pure Python; 
+    :func:`~cgp.physmod.cythonize.cythonize`
+    will generate a faster version.
     """
     imax = len(t)
     # y can be NVector, unstructured or structured Numpy array.
@@ -349,7 +342,7 @@ class Cellmlmodel(Namedcvodeint):
     
     >>> import hashlib
     >>> hashlib.sha1(vdp.py_code).hexdigest()
-    'bc31b4c3b5e1125a7ebd4a2e2e4f80daa5cd7d3f'
+    '39a967d808ced5178fdbb586ec8b28369acb4e67'
     
     Sundials requires that an ODE right-hand side function return 0 for success,
     <0 for unrecoverable error, and optionally >0 for recoverable error, e.g. if
@@ -751,21 +744,14 @@ class Cellmlmodel(Namedcvodeint):
         algebraic variables during integration. This function re-computes the rates 
         and algebraics at each time step for the given state.
         
-        >>> exposure_workspace = "b0b1820b1376263e16c6086ca64d513e/bondarenko_szigeti_bett_kim_rasmusson_2004_apical"
-        >>> bond = Cellmlmodel(exposure_workspace, t=[0, 20])
-        >>> bond.yr.V = 100 # simulate stimulus
-        >>> t, y, flag = bond.integrate()
-        >>> ydot, alg = bond.rates_and_algebraic(t, y)
-        >>> from pylab import * # doctest: +SKIP
-        >>> plot(t, alg.J_xfer, '.-', t, y.Cai, '.-') # doctest: +SKIP
+        ..  plot::
         
-        Check that this works without Cython as well.
-        
-        >>> bond = Cellmlmodel(exposure_workspace, t=[0, 20], 
-        ...     use_cython=False, purge=True)
-        >>> bond.yr.V = 100 # simulate stimulus
-        >>> t, y, flag = bond.integrate()
-        >>> ydot, alg = bond.rates_and_algebraic(t, y)
+            exposure_workspace = "b0b1820b1376263e16c6086ca64d513e/bondarenko_szigeti_bett_kim_rasmusson_2004_apical"
+            bond = Cellmlmodel(exposure_workspace, t=[0, 20])
+            bond.yr.V = 100 # simulate stimulus
+            t, y, flag = bond.integrate()
+            ydot, alg = bond.rates_and_algebraic(t, y)
+            plt.plot(t, alg.J_xfer, '.-', t, y.Cai, '.-')
         """
         m = self.model
         t = np.atleast_1d(t).astype(float)
