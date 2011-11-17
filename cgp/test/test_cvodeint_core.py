@@ -6,12 +6,14 @@ import numpy as np
 from nose.tools import raises
 from pysundials import cvode
 
-from ..cvodeint import Cvodeint, CvodeException, example_ode
+from ..cvodeint import (  # pylint: disable=F0401
+    Cvodeint, CvodeException, example_ode)
 
 def test_CvodeException():
     """
     Test :exc:`cgp.cvodeint.CvodeException`.
     
+    >>> from ..cvodeint import cvodefun
     >>> i = 5     # countdown
     >>> @cvodefun
     ... def failsoon(t, y, ydot, f_data):
