@@ -52,6 +52,35 @@ class Namedcvodeint(Cvodeint):
     
     >>> n.pr.epsilon
     array([ 1.])
+    
+    Note that the default initial state is a module-level variable shared by 
+    all instances of this model object. Subsequent calls to 
+    :meth:`Namedcvodeint` will see that the model is already imported and not 
+    redo the initialization.
+    
+    Verify guard against inadvertently changing which object .pr or .y points to.
+    
+    >>> newpr = np.copy(n.pr)
+    
+    This is the way to do it.
+    
+    >>> n.pr[:] = newpr
+    >>> n.integrate()
+    (array([...], dtype=[('x', '<f8'), ('y', '<f8')]), 1)
+    
+    This isn't.
+    
+    >>> n.pr = newpr
+    >>> n.integrate()
+    Traceback (most recent call last):
+    AssertionError:
+            To change initial values or parameters for a model,
+            use model.y[:] = ... or model.pr[:] = ...,
+            not just model.y = ... or model.pr = ...
+            The latter will cause the name model.y to point to a new object,
+            breaking the link to the CVODE object.
+            With Numpy arrays, using x[:] = ... is guaranteed to modify 
+            contents only.
     """
     
     @staticmethod
