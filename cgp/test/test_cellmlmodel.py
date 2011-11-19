@@ -1,11 +1,8 @@
 """Tests for :mod:`cgp.physmod.cellmlmodel`."""
-# pylint: disable=C0111
-
-from doctest import _ellipsis_match # comparison with ... ellipsis  
-from textwrap import dedent
+# pylint: disable=C0111, E0611, F0401, E1101
 
 import numpy as np
-from nose.tools import assert_equal, assert_raises
+from nose.tools import assert_equal
 
 from ..physmod.cellmlmodel import Cellmlmodel, Legend, parse_legend
 
@@ -14,12 +11,17 @@ vdp_compiled = Cellmlmodel(use_cython=True)
 vdp_uncompiled = Cellmlmodel(use_cython=False)
 
 def test_rates_and_algebraic():
-    exposure_workspace = "b0b1820b1376263e16c6086ca64d513e/bondarenko_szigeti_bett_kim_rasmusson_2004_apical"
+    exposure_workspace = ("b0b1820b1376263e16c6086ca64d513e/"
+                          "bondarenko_szigeti_bett_kim_rasmusson_2004_apical")
     for use_cython in False, True:
-        bond = Cellmlmodel(exposure_workspace, t=[0, 5], use_cython=use_cython, reltol=1e-5)
+        bond = Cellmlmodel(exposure_workspace, t=[0, 5], 
+                           use_cython=use_cython, reltol=1e-5)
         bond.yr.V = 100 # simulate stimulus
         t, y, _flag = bond.integrate()
-        _ydot, _alg = bond.rates_and_algebraic(t, y)
+        ydot, alg = bond.rates_and_algebraic(t, y)
+        actual = ydot.V[-1], ydot.Cai[-1], alg.i_Na[-1]
+        desired = [[-4.08092831], [ 0.06698888], [-1.70527191]]
+        np.testing.assert_allclose(actual, desired, rtol=1e-5, atol=1e-5)
     
 def test_parse_legend():
     """Protect against empty legend entry, bug in CellML code generation."""
