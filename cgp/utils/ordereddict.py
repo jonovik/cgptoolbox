@@ -34,7 +34,7 @@ class OrderedDict(dict, DictMixin):
 
     def __delitem__(self, key):
         dict.__delitem__(self, key)
-        key, prev, next = self.__map.pop(key)
+        key, prev, next = self.__map.pop(key) # pylint: disable=W0622
         prev[2] = next
         next[1] = prev
 
