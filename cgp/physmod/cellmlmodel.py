@@ -251,7 +251,8 @@ class Cellmlmodel(Namedcvodeint):
     Class to solve CellML model equations.
 
     ..  plot::
-    
+        
+        from cgp.physmod.cellmlmodel import Cellmlmodel
         vdp = Cellmlmodel() # default van der Pol model
         t, Yr, flag = vdp.integrate(t=[0, 20])
         plt.plot(t,Yr.view(float))
@@ -566,10 +567,12 @@ class Cellmlmodel(Namedcvodeint):
         and algebraics at each time step for the given state.
         
         ..  plot::
-        
-            exposure_workspace = "b0b1820b1376263e16c6086ca64d513e/bondarenko_szigeti_bett_kim_rasmusson_2004_apical"
+            
+            from cgp.physmod.cellmlmodel import Cellmlmodel
+            exposure_workspace = ("b0b1820b1376263e16c6086ca64d513e/"
+                "bondarenko_szigeti_bett_kim_rasmusson_2004_apical")
             bond = Cellmlmodel(exposure_workspace, t=[0, 20])
-            bond.yr.V = 100 # simulate stimulus
+            bond.yr.V = 100  # simulate stimulus
             t, y, flag = bond.integrate()
             ydot, alg = bond.rates_and_algebraic(t, y)
             plt.plot(t, alg.J_xfer, '.-', t, y.Cai, '.-')

@@ -101,7 +101,7 @@ def rates_and_algebraic(np.ndarray[dtype_t, ndim=1] t, y):
     algebraic variables during integration. This function re-computes the rates 
     and algebraics at each time step for the given state.
     
-    >>> from cellmlmodels.cellmlmodel import Cellmlmodel
+    >>> from cgp.physmod.cellmlmodel import Cellmlmodel
     >>> exposure_workspace=("11df840d0150d34c9716cd4cbdd164c8/"
     ...                     "bondarenko_szigeti_bett_kim_rasmusson_2004_apical")
     >>> bond = Cellmlmodel(exposure_workspace, t=[0, 20])
