@@ -42,7 +42,7 @@ def test_source():
     """Alert if code generation changes format."""
     import hashlib
     assert_equal(hashlib.sha1(vdp.py_code).hexdigest(), 
-        '39a967d808ced5178fdbb586ec8b28369acb4e67')
+        '6236832ecb45498c4cab07ea7c214371cd5fa1fe')
 
 def test_Sundials_convention():    
     """

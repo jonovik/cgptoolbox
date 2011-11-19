@@ -1,6 +1,8 @@
 """Cythonize the generated Python code for a CellML model."""
 import re # Used to replace certain functions with Cython versions
 
+from ..utils import codegen
+
 def cythonize_model(s, modelname=""):
     """
     Cythonize the generated Python code for a CellML model.
@@ -85,7 +87,7 @@ cpdef int ode(dtype_t t, y, ydot, f_data):
     # ydot.fill(0.0)
     for i in range(sizeStates):
         pydot[i] = 0.0
-     # algebraic.fill(0.0)
+    # algebraic.fill(0.0)
     for i in range(sizeAlgebraic):
         palgebraic[i] = 0.0
     compute_rates(t, py, pydot, pp, palgebraic)
@@ -327,51 +329,6 @@ def rep(s, old, new):
         after = after[:pos] + after[pos+1:]
         s = before + new + "(" + after
     return s
-
-def cp2cond(s):
-    """
-    Make a conditional expression to replace a call to custom_piecewise().
-    
-    The CellML code generator outputs "ternary if" expressions for C 
-    (cond ? val_if_true : val_if_false)
-    but not (val_if_true if cond else val_if_false) for Python.
-    Instead, it defines a custom_piecewise() function which is about 1000 times 
-    slower and barely legible. This function returns equivalent code that uses 
-    Python's native conditional expressions, which Cython can convert to 
-    efficient C.
-    
-    The typical case is one condition and 0 otherwise.
-    CellML then ends the list with True, 0.
-    The final "else 0" mimics the behaviour of custom_piecewise() and 
-    np.select() if no conditions match.
-    
-    >>> cp2cond('custom_piecewise([x<3, "<3", True, 0])')
-    '(("<3") if (x<3) else (0) if (True) else 0)'
-    
-    Two conditions, so the final "else 0" is not redundant.
-    
-    >>> cp2cond('custom_piecewise([x<3, "<3", x>5, ">5"])')
-    '(("<3") if (x<3) else (">5") if (x>5) else 0)'
-    
-    Two conditions and otherwise 0, as CellML might code it.
-    
-    >>> cp2cond('custom_piecewise([x<3, "<3", x>5, ">5", True, 0])')
-    '(("<3") if (x<3) else (">5") if (x>5) else (0) if (True) else 0)'
-    
-    For now, arguments to custom_piecewise() cannot contain commas, so nested 
-    calls to custom_piecewise() will not work.
-    """
-    start = "custom_piecewise(["
-    end = "])"
-    assert s.startswith(start) and s.endswith("])")
-    s = s[len(start):-len(end)]
-    L = ["(%s)" % i.strip() for i in s.split(",")]
-    cond = L[0::2]
-    val = L[1::2]
-    ifelse = " ".join("%s if %s else" % (v, c) for c, v in zip(cond, val))
-    return "(%s 0)" % ifelse
-
-from ..utils import codegen
 
 def cp2cond(s):
     """
