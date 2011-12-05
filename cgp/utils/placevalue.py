@@ -33,12 +33,12 @@ Conversion from vector to integer.
 
 Converting to list, equivalent to [i for i in p].
 
->>> list(p)                                                 # doctest: +ELLIPSIS
+>>> list(p)
 [array([0, 0, 0]), array([0, 0, 1]), ..., array([1, 2, 3])]
 
 A single array is more compact.
 
->>> np.array(list(p))                                       # doctest: +ELLIPSIS
+>>> np.array(p)
 array([[0, 0, 0], [0, 0, 1], ..., [1, 2, 3]])
 
 Named positions
@@ -50,7 +50,7 @@ Using a structured array with named fields to construct the Placevalue object.
 >>> pr = Placevalue(np.rec.fromrecords([[2,3]], dtype=dtype))
 >>> pr[7]
 array([(2, 1)], dtype=[('a', '<i2'), ('b', '<i2')])
->>> np.concatenate(list(pr))                                # doctest: +ELLIPSIS
+>>> np.concatenate(pr)
 array([(0, 0), (0, 1), ..., (1, 1), (1, 2)], dtype=[('a', '<i2'), ('b', '<i2')])
 
 Details
@@ -78,7 +78,7 @@ class Placevalue(object):
     integer to vector. Conversion from vector to integer is always sum(v*posval)
     
     >>> p = Placevalue([4, 3, 2])
-    >>> np.array([p.int2vec(i) for i in range(p.maxint)]) # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+    >>> np.array([p.int2vec(i) for i in range(p.maxint)])
     array([[0, 0, 0], [0, 0, 1], [0, 1, 0]...[3, 1, 1], [3, 2, 0], [3, 2, 1]])
     >>> b = Placevalue([2] * 8) # eight binary digits
     >>> b.int2vec(15)     # most significant digit first!
@@ -155,7 +155,7 @@ class Placevalue(object):
         >>> pr = Placevalue(np.rec.fromrecords([[3, 4]], dtype=dtype))
         >>> pr.vec2int(pr.int2vec(11))
         array([11], dtype=object)
-        >>> pr.vec2int(np.concatenate(list(pr)))
+        >>> pr.vec2int(np.concatenate(pr))
         array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], dtype=object)
         """
         v = unstruct(v)
@@ -178,14 +178,14 @@ class Placevalue(object):
         
         This function is vectorized:
         
-        >>> p.int2vec(range(p.maxint)) # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+        >>> p.int2vec(range(p.maxint))
         array([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [0, 2, 0], [0, 2, 1],
         ...    [3, 0, 0], [3, 0, 1], [3, 1, 0], [3, 1, 1], [3, 2, 0], [3, 2, 1]])
         
         Compare with "least significant first" place values:
         
         >>> p = Placevalue([4, 3, 2], msd_first=False)
-        >>> p.int2vec(range(p.maxint)) # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+        >>> p.int2vec(range(p.maxint))
         array([[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0], 
                [0, 1, 0], [1, 1, 0], [2, 1, 0], [3, 1, 0],
         ...    [0, 1, 1], [1, 1, 1], [2, 1, 1], [3, 1, 1],
@@ -197,7 +197,7 @@ class Placevalue(object):
         >>> pr = Placevalue(np.rec.fromrecords([[3, 4]], dtype=dtype))
         >>> pr.int2vec(11)
         array([(2, 3)], dtype=[('a', '|i1'), ('b', '|i1')])
-        >>> np.concatenate(list(pr)) # doctest: +ELLIPSIS
+        >>> np.concatenate(pr)
         array([(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), ..., (2, 3)],
             dtype=[('a', '|i1'), ('b', '|i1')])
         """
@@ -285,7 +285,7 @@ class Placevalue(object):
         Iterating over a Placevalue object returns successive vectors.
         
         >>> p = Placevalue([4, 3, 2])
-        >>> np.array([i for i in p]) # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+        >>> np.array([i for i in p])
         array([[0, 0, 0], [0, 0, 1], [0, 1, 0]...[3, 1, 1], [3, 2, 0], [3, 2, 1]])
         """
         return (self.int2vec(i) for i in range(self.maxint))
@@ -307,4 +307,4 @@ def binarray(i, ndigits=0, dtype=int):
 
 if __name__ == "__main__":
     import doctest
-    doctest.testmod(optionflags=doctest.NORMALIZE_WHITESPACE)
+    doctest.testmod(optionflags=doctest.ELLIPSIS | doctest.NORMALIZE_WHITESPACE)

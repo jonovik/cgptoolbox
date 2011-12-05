@@ -74,7 +74,7 @@ class Genotype(Placevalue):
         
         >>> gt.int2vec(0) == np.array([(1, 1)], dtype=[('a', int), ('b', int)])
         array([ True], dtype=bool)        
-        >>> np.concatenate(list(gt))
+        >>> np.concatenate(gt)
         array([(1, 1), (1, 0), (1, 2), 
                (0, 1), (0, 0), (0, 2), 
                (2, 1), (2, 0), (2, 2)], dtype=[('a', '<i...'), ('b', '<i...')])
@@ -91,7 +91,7 @@ class Genotype(Placevalue):
         >>> gt = Genotype(np.rec.fromrecords([[3, 3]], names=["a", "b"]))
         >>> gt.vec2int([1, 1])
         0
-        >>> v = np.concatenate(list(gt))
+        >>> v = np.concatenate(gt)
         >>> gt.vec2int(v)
         array([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype=object)
         """
