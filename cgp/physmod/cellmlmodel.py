@@ -558,6 +558,31 @@ class Cellmlmodel(Namedcvodeint):
                 if k in self.dtype.y.names:
                     setattr(self.yr, k, getattr(clamped.yr, k))
     
+    def save_legend(self, *args, **kwargs):
+        """
+        Save :data:`legend` for CellML model as CSV.
+        
+        Arguments are passed to :func:`matplotlib.mlab.rec2csv`.
+        
+        >>> from cStringIO import StringIO
+        >>> from cgp.physmod.cellmlmodel import Cellmlmodel
+        >>> vdp = Cellmlmodel()
+        >>> sio = StringIO()
+        >>> vdp.save_legend(sio)
+        >>> sio.getvalue().split()
+        ['role,name,component,unit',
+         'y,x,Main,dimensionless',
+         'y,y,Main,dimensionless',
+         'p,epsilon,Main,dimensionless']
+        """
+        import matplotlib.mlab  # deferred import to minimize dependencies
+        
+        L = [(k, n, c, u) for k, v in self.legend.items() if v 
+             for n, c, u in zip(*v)]
+        flat_legend = np.rec.fromrecords(L, 
+            names="role name component unit".split())
+        matplotlib.mlab.rec2csv(flat_legend, *args, **kwargs)
+    
     def rates_and_algebraic(self, t, y, par=None):
         """
         Compute rates and algebraic variables for a given state trajectory.
