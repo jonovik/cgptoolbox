@@ -87,6 +87,7 @@ class Paceable(object):
         :param bool ignore_flags: disable sanity checking of the shape of the 
            action potential
         
+        >>> from cgp.virtexp.elphys import Bond
         >>> cell = Bond()
         >>> t, y, stats = cell.ap()
         >>> from pprint import pprint # platform-independent order of dict items
@@ -268,7 +269,7 @@ class Paceable(object):
         
         Usage examples; not yet quality-controlled doctests.
         
-        >>> cell = Bond()
+        >>> cell = Tentusscher()
         >>> rp = cell.restitution_portrait(BCL0=150, tburnin=500, nbetween=5)
         >>> rp
         <generator object restitution_portrait at 0x...>
@@ -277,8 +278,8 @@ class Paceable(object):
         >>> last_step
         Step(step='VI', name='RCB-S', bcl=[50, 50, 50, 50, 50], 
         description='Recovery toward steady state', 
-        R=rec.array([(39.84..., 10.58...), (39.41..., 10.53...), 
-                     (39.46..., 10.52...), (39.47..., 10.54...)], 
+        R=rec.array([(28.00..., 23.70...), (26.29..., 24.72...),
+                     (25.27..., 24.95...), (25.04..., 26.79...)], 
         dtype=[('di', '<f8'), ('apd', '<f8')]))
         >>> [[len(i.R) for i in j] for j in L]
         [[3, 5, 1, 5, 1, 4], [10, 5, 1, 5, 1, 4]]
