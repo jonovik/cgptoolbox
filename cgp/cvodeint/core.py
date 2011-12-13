@@ -601,7 +601,7 @@ class Cvodeint(object):
         else:
             raise CvodeException(flag, result)
     
-    def _ReInit_if_required(self, t, y):
+    def _ReInit_if_required(self, t=None, y=None):
         """
         Interpret/set time, state; call SetStopTime(), ReInit() if needed.
         
