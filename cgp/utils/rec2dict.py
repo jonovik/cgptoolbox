@@ -107,12 +107,12 @@ def dict2rec(d):
     array([(0, 0.0, 10), (1, 0.0, 11), (2, 0.0, 12)],
           dtype=[('a', '<i...'), ('c', '<f8'), ('b', '<i...')])
         
-    @todo: Make this work if numeric fields have more than one column.
-    
-    >>> d = {"a": np.arange(0, 3), "b": np.arange(10, 13), "c": np.zeros((3, 2))}
-    >>> d # DOES NOT WORK YET
-    {'names': ('a', 'b', 'c'), 'formats': [dtype('int64'), dtype('int64'), dtype('float64')]}
-    >>> dict2rec(d) # DOES NOT WORK YET
+    >>> dict2rec([("a", [0, 1, 2]), 
+    ...           ("b", [10, 11, 12]), 
+    ...           ("c", [(0, 1), (2, 3), (4, 5)]),
+    ...          ])
+    array([(0, 10, [0, 1]), (1, 11, [2, 3]), (2, 12, [4, 5])], 
+          dtype=[('a', '<i4'), ('b', '<i4'), ('c', '<i4', (2,))])
     """
     d = OrderedDict(d)
     for k, v in d.items():
