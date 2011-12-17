@@ -4,9 +4,10 @@ Convert recarray to ordered dictionary.
 This module was motivated by the need to export recarrays to R via rnumpy.
 Using an OrderedDict preserves the order of lists.
 """
-from operator import itemgetter
-import numpy as np
+
 from ordereddict import OrderedDict
+
+import numpy as np
 
 def rec2dict(x):
     """
@@ -14,11 +15,14 @@ def rec2dict(x):
     
     See below for passing (nested) record arrays to R.
     
+    The doctests below use ellipses, "...", to allow for minor 
+    differences in output formatting.
+    
     Basic usage:
     
     >>> import numpy as np
     >>> A = np.rec.fromrecords([(10, 1.5), (20, 2.5)], names='id, x')
-    >>> A                             # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+    >>> A
     rec.array([(10, 1.5), (20, 2.5)], dtype=[('id', '<i...'), ('x', '<f8')])
     >>> rec2dict(A)
     OrderedDict([('id', array([10, 20])), ('x', array([ 1.5,  2.5]))])
@@ -28,19 +32,12 @@ def rec2dict(x):
     >>> nested_dtype = [('id', '<i8'), ('x', '<f8'),
     ...     ('rec', [('a', '<i8'), ('b', '<f8')])]
     >>> B = np.rec.fromrecords([(10, 1.5, (1, 2)), (20, 2.5, (3, 4))],
-    ...     dtype=nested_dtype)
-    
-    (Using +ELLIPSIS because 10 prints as 10L on some versions.) 
-    
-    >>> B                             # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+    ...     dtype=nested_dtype)    
+    >>> B
     rec.array([(10..., 1.5, (1..., 2.0)), (20..., 2.5, (3..., 4.0))],
           dtype=[('id', '<i8'), ('x', '<f8'), 
                  ('rec', [('a', '<i8'), ('b', '<f8')])])
-    
-    (Using +ELLIPSIS because some versions include ", dtype=int64" for the 
-    integer arrays.)
-    
-    >>> rec2dict(B)                   # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+    >>> rec2dict(B)
     OrderedDict([('id', array([10, 20]...)), 
                  ('x', array([ 1.5,  2.5])), 
                  ('rec', OrderedDict([('a', array([1, 3]...)), 
@@ -83,30 +80,31 @@ def rec2dict(x):
     else:
         return x
 
-def dict2rec(d):
+def dict2rec(*args, **kwargs):
     """
     Convert dict of arrays to nested recarray.
     
-    The input can be anything accepted by OrderedDict(), see ?dict.
+    The input can be anything accepted by :meth:`OrderedDict`, 
+    see :class:`dict`. All items must be the same length, which becomes the 
+    length of the resulting recarray.
     
     >>> dict2rec(zip(("a", "b", "c"), 
     ...     (np.arange(0, 3), np.arange(10, 13), np.zeros(3))))
-    ... # doctest: +ELLIPSIS
     array([(0, 10, 0.0), (1, 11, 0.0), (2, 12, 0.0)], 
           dtype=[('a', '<i...'), ('b', '<i...'), ('c', '<f8')])
     
     >>> dict2rec(OrderedDict(zip(("a", "b", "c"), 
     ...     (np.arange(0, 3), np.arange(10, 13), np.zeros(3)))))
-    ... # doctest: +ELLIPSIS
     array([(0, 10, 0.0), (1, 11, 0.0), (2, 12, 0.0)], 
           dtype=[('a', '<i...'), ('b', '<i...'), ('c', '<f8')])
     
     >>> dict2rec({
     ...     "a": np.arange(0, 3), "b": np.arange(10, 13), "c": np.zeros((3,))})
-    ... # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
     array([(0, 0.0, 10), (1, 0.0, 11), (2, 0.0, 12)],
           dtype=[('a', '<i...'), ('c', '<f8'), ('b', '<i...')])
-        
+    
+    Vector-valued fields.
+    
     >>> dict2rec([("a", [0, 1, 2]), 
     ...           ("b", [10, 11, 12]), 
     ...           ("c", [(0, 1), (2, 3), (4, 5)]),
@@ -114,7 +112,7 @@ def dict2rec(d):
     array([(0, 10, [0, 1]), (1, 11, [2, 3]), (2, 12, [4, 5])], 
           dtype=[('a', '<i4'), ('b', '<i4'), ('c', '<i4', (2,))])
     """
-    d = OrderedDict(d)
+    d = OrderedDict(*args, **kwargs)
     for k, v in d.items():
         d[k] = np.atleast_1d(v)
     dtype = [(k, v.dtype, v.shape[1:]) for k, v in d.items()]
@@ -126,4 +124,5 @@ def dict2rec(d):
 
 if __name__ == "__main__":
     import doctest
-    doctest.testmod()
+    doctest.testmod(optionflags=
+                    doctest.ELLIPSIS | doctest.NORMALIZE_WHITESPACE)
