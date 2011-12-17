@@ -117,7 +117,7 @@ def dict2rec(d):
     d = OrderedDict(d)
     for k, v in d.items():
         d[k] = np.atleast_1d(v)
-    dtype = [(k, v.dtype) for k, v in d.items()]
+    dtype = [(k, v.dtype, v.shape[1:]) for k, v in d.items()]
     shape = len(v)
     x = np.zeros(shape=shape, dtype=dtype)
     for k, v in d.items():
