@@ -129,7 +129,7 @@ class Bond(Cellmlmodel, Paceable, Clampable):
         :include-source:
         :width: 300
         
-        from cgp.virtexp.elphys import Bond
+        from cgp.virtexp.elphys.examples import Bond
         bond = Bond()
         t, y, stats = bond.ap()
         plt.plot(t, y.V)
@@ -184,7 +184,7 @@ class Bond(Cellmlmodel, Paceable, Clampable):
         
         ..  plot::
         
-            from cgp.virtexp.elphys.example import Bond
+            from cgp.virtexp.elphys.examples import Bond
             bond = Bond()
             for k in "apex", "septum":
                 with bond.scenario(k):

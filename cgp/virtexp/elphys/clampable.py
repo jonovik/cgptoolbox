@@ -75,8 +75,9 @@ def roptions(**kwargs):
         ...
         options(opt)
     
-    One hack is that *deparse_max_lines*=0 will suppress R tracebacks altogether, 
-    whereas in R this setting is ignored if it is not a positive integer.
+    One hack is that *deparse_max_lines* = 0 will suppress R tracebacks 
+    altogether,     whereas in R this setting is ignored if it is not a 
+    positive integer.
     """
     opt = r.options(**kwargs)
     old_max_lines = RRuntimeError.max_lines
@@ -201,10 +202,10 @@ def catrec(*args, **kwargs):
     
     This is a quick hack, use at your own risk.
     
-    :param ``*args``: sequence of tuples whose items are arrays.
-    :param ``**kwargs``: optional keyword *globalize_time*=True means 
-        to assume that the first item of each tuple is "local time", 
-        and convert it to "global time" in the output.
+    Positional arguments: tuples whose items are arrays.
+    Optional keyword *globalize_time*=True means to assume that the first 
+    item of each tuple is "local time", and convert it to "global time" 
+    in the output.
     
     >>> t = np.arange(3)
     >>> a = np.rec.fromarrays([range(6)], names="i")
@@ -471,6 +472,7 @@ class Clampable(object):
             :include-source:
             :nofigs:
             
+            >>> from cgp.virtexp.elphys.clampable import catrec
             >>> L = list(b.pace(protocol))
             >>> t, y, dy, a, stats = catrec(*L)
             >>> "%5.2f" % y.V.max()
@@ -934,7 +936,7 @@ def mmfits(L, i=2, k=None, abs_=True):
     :return: *ymax, xhalf* : Michaelis-Menten parameters for peak y[k] 
         or a[k] in pulse [i+1] vs. duration of interpulse interval [i].
     
-    Example: Michaelis-Menten fit of peak i_CaL current vs gap duration.
+    Example: Michaelis-Menten fit of peak i_CaL current vs gap duration::
     
         from cgp.virtexp.elphys.examples import Bond
         b = Bond()

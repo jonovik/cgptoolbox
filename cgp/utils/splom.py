@@ -102,19 +102,24 @@ def thinp(h, k, n):
     if len(hk) > 0:
         setp(h, k, thin(hk, n))
 
-def splom(a=None, fun=plot, ntick=3, trim=(0, 0), hkw={}, skw={}, 
+# pylint: disable=W0401
+def splom(a=None, fun=plot, ntick=3, trim=(0, 0), hkw={}, skw={},
     *args, **kwargs):
     """
-    a: structured array with named fields (default: ``iris`` dataset from R)
-    fun: plot function called as fun(a[i], a[j]) for each i, j
-    ntick: number of tick marks on axes
-    trim: number or proportion of low and high values to trim (for outliers)
-    hkw : dict of keyword arguments passed to hist()
-    skw : dict of keyword arguments passed to subplots_adjust()    
-    *args, **kwargs: passed on to fun
+    Scatterplot matrix.
+    
+    :param recarray a: structured array with named fields 
+        (default: ``iris`` dataset from R)
+    :param func fun: plot function called as fun(a[i], a[j]) for each i, j
+    :param int ntick: number of tick marks on axes
+    :param float trim: number or proportion of low and high values to trim 
+        (for outliers)
+    :param dict hkw: keyword arguments passed to hist()
+    :param dict skw: keyword arguments passed to subplots_adjust()    
+    
+    Further positional or keyword arguments are passed on to ``fun``.
     
     >>> splom(iris, marker="o", color="r", skw=dict(wspace=0.1, hspace=0.1), markersize=6)
-    ... # doctest: +ELLIPSIS
     array([[Axes(...),...]], dtype=object)
     """
     if a is None:
@@ -128,8 +133,6 @@ def splom(a=None, fun=plot, ntick=3, trim=(0, 0), hkw={}, skw={},
     my_skw.update(skw)
     
     n = len(a.dtype.names)
-    dx = 1.0 / n
-    x = np.linspace(0, 1, n, endpoint=False)
     setp(gcf(), "facecolor", "w")
     # fig = figure(facecolor="w")
     # ax[i,j] = row i, col j
@@ -139,7 +142,7 @@ def splom(a=None, fun=plot, ntick=3, trim=(0, 0), hkw={}, skw={},
         for j, kj in enumerate(a.dtype.names):
             # Finite values only, optionally trimming possible outliers
             aki, akj = trimpair(np.c_[a[ki], a[kj]], *trim).T
-            axes(ax[i,j])
+            axes(ax[i, j])
             if i > j:
                 pts = fun(akj, aki, *args, **my_kwargs)
                 setp(pts, antialiased=False)
@@ -157,10 +160,11 @@ def splom(a=None, fun=plot, ntick=3, trim=(0, 0), hkw={}, skw={},
     # don't show any ticks
     setp([i.xaxis for i in ax.flatten()], "ticks_position", "none")
     setp([i.yaxis for i in ax.flatten()], "ticks_position", "none")
-    setp(ax[0,0], "yticks", []) # upper left is histogram, doesn't need yticks
-    setp(ax[:,1:], "yticks", []) # only col 0 should keep its y tick labels
-    setp(ax[:-1,:], "xticks", []) # only row -1 should keep its x tick labels
-    lab = filter(None, [i.get_xticklabels() for i in ax[-1,:]])
+    setp(ax[0, 0], "yticks", []) # upper left is histogram, doesn't need yticks
+    setp(ax[:, 1:], "yticks", []) # only col 0 should keep its y tick labels
+    setp(ax[:-1, :], "xticks", []) # only row -1 should keep its x tick labels
+    # pylint: disable=W0141
+    lab = filter(None, [i.get_xticklabels() for i in ax[-1, :]])
     setp(lab, "rotation", "vertical")
     if ntick is not None:
         for i in range(n):
@@ -182,10 +186,11 @@ def insax(ax, i, j, h, w, **kwargs):
     Bbox(array([[ 0.32717391,  0.30869565],
            [ 0.69782609,  0.69130435]]))
     """
-    (left, _), (_, top) = getp(ax[i,j], "position").get_points()
-    (_, bottom), (right, _) = getp(ax[i+h-1,j+w-1], "position").get_points()
+    (left, _), (_, top) = getp(ax[i, j], "position").get_points()
+    (_, bottom), (right, _) = getp(ax[i+h-1, j+w-1], "position").get_points()
     # (left, _), (_, top) = getp(spij(m, n, i, j), "position").get_points()
-    # (_, bottom), (right, _) = getp(spij(m, n, i+h, j+w), "position").get_points()
+    # (_, bottom), (right, _) = getp(
+    #     spij(m, n, i+h, j+w), "position").get_points()
     width = right - left
     height = top - bottom
     ax = gcf().add_axes([left, bottom, width, height], **kwargs)
@@ -206,28 +211,28 @@ def cmap_discretize(cmap, N):
     from http://www.scipy.org/Cookbook/Matplotlib/ColormapTransformations
     """
     from scipy import interpolate
-    cdict = cmap._segmentdata.copy()
+    cdict = cmap._segmentdata.copy()  # pylint: disable=W0212
     # N colors
-    colors_i = linspace(0,1.,N)
+    colors_i = np.linspace(0, 1., N)
     # N+1 indices
-    indices = linspace(0,1.,N+1)
-    for key in ('red','green','blue'):
+    indices = np.linspace(0, 1., N+1)
+    for key in ('red', 'green', 'blue'):
         # Find the N colors
-        D = array(cdict[key])
-        I = interpolate.interp1d(D[:,0], D[:,1])
+        D = np.array(cdict[key])
+        I = interpolate.interp1d(D[:, 0], D[:, 1])
         colors = I(colors_i)
         # Place these colors at the correct indices.
-        A = zeros((N+1,3), float)
-        A[:,0] = indices
-        A[1:,1] = colors
-        A[:-1,2] = colors
+        A = np.zeros((N + 1, 3), float)
+        A[:, 0] = indices
+        A[1:, 1] = colors
+        A[:-1, 2] = colors
         # Create a tuple for the dictionary.
         L = []
         for l in A:
             L.append(tuple(l))
         cdict[key] = tuple(L)
     # Return colormap object.
-    return matplotlib.colors.LinearSegmentedColormap('colormap',cdict,1024)
+    return matplotlib.colors.LinearSegmentedColormap('colormap', cdict, 1024)
 
 
 if __name__ == "__main__":
