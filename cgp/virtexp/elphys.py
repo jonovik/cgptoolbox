@@ -28,7 +28,7 @@ delay is set to zero.
 The implementation of voltage clamp experiments assumes that the model object 
 has a 
 :meth:`~cgp.cvodeint.namedcvodeint.Namedcvodeint.clamp` method.
-"""
+"""  # pylint: disable=C0301
 
 from __future__ import division # 7 / 4 = 1.75 rather than 1
 from contextlib import contextmanager
@@ -91,8 +91,6 @@ class Paceable(object):
         
         >>> from cgp.virtexp.elphys import Bond
         >>> cell = Bond()
-        
-        # TODO: WHY DOES THIS GIVE DIFFERENT RESULTS THAN RUNNING FROM SCRATCH?
         >>> t, y, stats = cell.ap()
         
         Stimulation starts at time 0.0, overriding any default in the CellML:
@@ -161,9 +159,6 @@ class Paceable(object):
          't_repol': array([  2.550...,   3.648...,   7.047...,  11.497...]),
          'ttp': 1.327...}
         """
-        cvode.CVodeSetStopTime(self.cvode_mem, self.tstop)
-        cvode.CVodeReInit(self.cvode_mem, self.my_f_ode, self.t0, self.y, 
-            self.itol, self.reltol, self.abstol)
         if rootfinding:
             return self._ap_with_rootfinding(p_repol, ignore_flags)
         else:
@@ -347,6 +342,7 @@ class Paceable(object):
         (0, [-7.420199...])
         """
         def result(t, y, gout, g_data):
+            """Set gout[0] to difference between V and target value."""
             gout[0] = self.yr.V - ctypes.cast(g_data, 
                 ctypes.POINTER(ctypes.c_float)).contents.value
             return 0
