@@ -732,6 +732,7 @@ class Tentusscher(Cellmlmodel, Paceable):
     .. plot::
        :width: 300
        
+       from cgp.virtexp.elphys import Tentusscher
        tt = Tentusscher()
        t, y, stats = tt.ap()
        fig = plt.figure()
