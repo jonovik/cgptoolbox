@@ -89,6 +89,7 @@ class Paceable(object):
         
         >>> from cgp.virtexp.elphys import Bond
         >>> cell = Bond()
+        
         # TODO: WHY DOES THIS GIVE DIFFERENT RESULTS THAN RUNNING FROM SCRATCH?
         >>> t, y, stats = cell.ap()
         
@@ -124,38 +125,6 @@ class Paceable(object):
          't_repol': array([  3.31012...,   5.125...,  14.282...,  22.78...]),
          'ttp': 1.844189...}
         
-        To temporarily modify initial state or parameters, use 
-        :meth:`~cvodeint.namedcvodeint.Namedcvodeint.autorestore`.
-        
-        >>> with cell.autorestore(V=-60, stim_period=50):
-        ...     t, y, stats = cell.ap()
-        >>> t[-1]
-        50.0
-        >>> pprint(stats)
-        {'amp': 87.75...,
-         'base': -60.0,
-         'caistats': {'amp': 0.208...},
-         'decayrate': array([ 0.195...
-         'peak': 27.75...,
-         't_repol': array([  2.562...,   3.667...,   7.152...,  11.882...]),
-         'ttp': 1.342...}
-        """
-        cvode.CVodeSetStopTime(self.cvode_mem, self.tstop)
-        cvode.CVodeReInit(self.cvode_mem, self.my_f_ode, self.t0, self.y, 
-            self.itol, self.reltol, self.abstol)
-        if rootfinding:
-            return self._ap_with_rootfinding(p_repol, ignore_flags)
-        else:
-            return self._ap_without_rootfinding(p_repol, ignore_flags)
-    
-    def _ap_with_rootfinding(self, p_repol=(0.25, 0.5, 0.75, 0.9), 
-        ignore_flags=False):
-        r"""        
-        Simulate action potentials using CVODE's rootfinding facilities.
-        
-        Arguments are as for :meth:`ap`.
-        
-        
         Module-level variables are shared between instances!
         
         >>> b0 = Bond(); b1 = Bond()
@@ -174,6 +143,37 @@ class Paceable(object):
         >>> b0.y0r.V = original_y00
         >>> assert b0.y0r.V == b1.model.y0[0] == original_y00
 
+        To temporarily modify initial state or parameters, use 
+        :meth:`~cvodeint.namedcvodeint.Namedcvodeint.autorestore`.
+        
+        >>> with cell.autorestore(V=-60, stim_period=50):
+        ...     t, y, stats = cell.ap()
+        >>> t[-1]
+        50.0
+        >>> pprint(stats)
+        {'amp': 87.74...,
+         'base': -60.0,
+         'caistats': {'amp': 0.182...},
+         'decayrate': array([ 0.205...
+         'peak': 27.74...,
+         't_repol': array([  2.550...,   3.648...,   7.047...,  11.497...]),
+         'ttp': 1.327...}
+        """
+        cvode.CVodeSetStopTime(self.cvode_mem, self.tstop)
+        cvode.CVodeReInit(self.cvode_mem, self.my_f_ode, self.t0, self.y, 
+            self.itol, self.reltol, self.abstol)
+        if rootfinding:
+            return self._ap_with_rootfinding(p_repol, ignore_flags)
+        else:
+            return self._ap_without_rootfinding(p_repol, ignore_flags)
+    
+    def _ap_with_rootfinding(self, p_repol=(0.25, 0.5, 0.75, 0.9), 
+        ignore_flags=False):
+        r"""        
+        Simulate action potentials using CVODE's rootfinding facilities.
+        
+        Arguments are as for :meth:`ap`.
+        
         Effect of tolerances:
         
         .. plot::
@@ -193,16 +193,17 @@ class Paceable(object):
         due to an insufficient stimulus, an exception explains that the 
         integrator returned an unexpected flag.
         
+        >>> from cgp.virtexp.elphys import Bond
         >>> bond = Bond()
         >>> with bond.autorestore(stim_amplitude=0):
-        ...     t, y, stats = bond.ap()
+        ...     t, y, stats = bond.ap(rootfinding=True)
         Traceback (most recent call last):
         CvodeException: CVode returned CV_TSTOP_RETURN
         
         Note that we can suppress the exception and still have reasonable output.
         
         >>> with bond.autorestore(stim_amplitude=0):
-        ...     t, y, stats = bond.ap(ignore_flags=True)
+        ...     t, y, stats = bond.ap(rootfinding=True, ignore_flags=True)
         """
         
         result = [] # list to keep results from integration subintervals
@@ -280,7 +281,7 @@ class Paceable(object):
             stats["p_repol"] = []
         try:
             stats["decayrate"] = ap_stats.apd_decayrate(stats)
-        except ValueError:
+        except (ValueError, IndexError):
             stats["decayrate"] = np.nan
         stats["amp"] = stats["peak"] - stats["base"]
         
@@ -297,6 +298,57 @@ class Paceable(object):
         except AttributeError: # model may not have a state variable called Cai
             pass
         return t, Y, stats
+    
+    def vdot(self):
+        """
+        Return voltage rate-of-change as a function of (t, y, gout, g_data).
+        
+        For use with CVode's `rootfinding
+        <https://computation.llnl.gov/casc/sundials/documentation/cv_guide/node3.html#SECTION00340000000000000000>`_
+        functions.
+        
+        >>> bond = Bond()
+        >>> gout = cvode.NVector([0.0])
+        >>> f = bond.vdot()
+        >>> f(0, bond.model.y0, gout, None)   # returns 0, as required by CVODE
+        0
+        >>> gout    # the actual result is written to the output parameter gout
+        [80.000016441101...]
+        """
+        def result(t, y, gout, g_data):
+            """
+            Voltage rate-of-change.
+            
+            Use with pysundials.cvode.CVodeRootInit to find voltage peak.
+            """
+            self.model.ode(t, y, self.model.ydot, None)
+            gout[0] = self.model.ydot[0]
+            return 0
+        return result
+    
+    def repol(self):
+        """
+        Difference between current V and repolarization threshold.
+        
+        .. seealso:: :func:`pysundials.cvode.CVodeRootInit`
+        
+        *g_data* is a void pointer in C but an integer in Python, so must be 
+        typecast before use.
+        
+        >>> bond = Bond()
+        >>> gout = cvode.NVector([0.0])
+        >>> g_data = ctypes.c_float(0.0)
+        >>> bond.repol()(0, bond.model.y0, gout, ctypes.byref(g_data)), gout
+        (0, [-82.420...])
+        >>> g_data.value = -75
+        >>> bond.repol()(0, bond.model.y0, gout, ctypes.byref(g_data)), gout
+        (0, [-7.420199...])
+        """
+        def result(t, y, gout, g_data):
+            gout[0] = self.yr.V - ctypes.cast(g_data, 
+                ctypes.POINTER(ctypes.c_float)).contents.value
+            return 0
+        return result
     
     def _ap_without_rootfinding(self, p_repol=(0.25, 0.5, 0.75, 0.9), 
         ignore_flags=False):
@@ -429,7 +481,7 @@ class Paceable(object):
             n = len(pr)
         
         for p in pr:
-            with self.autorestore(y0, p):
+            with self.autorestore(_p=p, _y=y0):
                 t, y, stats = self.ap(*args, **kwargs)
             t = t + t0
             yield t, y, stats
