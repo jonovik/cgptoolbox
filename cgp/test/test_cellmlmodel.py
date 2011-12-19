@@ -30,9 +30,9 @@ def test_parse_legend():
 
 def test_compiled_behaviour():
     assert str(vdp_uncompiled.model).startswith(
-        "<module 'cgp.physmod.cellml2py.vanderpol_vandermark_19285756af26cf")
+        "<module 'cgp.physmod._cellml2py.vanderpol_vandermark_19285756af26cf")
     assert str(vdp_compiled.model).startswith(
-        "<module 'cgp.physmod.cellml2py.cython.vanderpol")
+        "<module 'cgp.physmod._cellml2py.cython.vanderpol")
     # This module holds the ode() function passed to CVode.
     assert str(vdp_uncompiled.model.ode).startswith("<function ode at")
     # If compiled, it appears as a built-in function.
@@ -42,7 +42,7 @@ def test_source():
     """Alert if code generation changes format."""
     import hashlib
     assert_equal(hashlib.sha1(vdp.py_code).hexdigest(), 
-        '6236832ecb45498c4cab07ea7c214371cd5fa1fe')
+        '971383955d7d1582b3145459fcdb3a22afb0035b')
 
 def test_Sundials_convention():    
     """
