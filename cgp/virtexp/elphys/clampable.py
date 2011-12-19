@@ -311,81 +311,6 @@ class Clampable(object):
     time-dependence is handled inside the protocol function.
     """
     
-    @classmethod
-    def mixin(cls, otherclass, *args, **kwargs):
-        """
-        Factory to combine class :class:`Clampable` with other objects.
-        
-        This saves having to write explicit class definitions, and is 
-        equivalent to the longer code below.
-        
-        >>> from cgp.physmod.cellmlmodel import Cellmlmodel
-        
-        >>> Clampable.mixin(Cellmlmodel, t=[0, 100], reltol=1e-4)
-        ClampableCellmlmodel(t=array([  0, 100]), y=[-2.0, 0.0])
-        
-        >>> class ClampableCellmlmodel(Cellmlmodel, Clampable):
-        ...     pass
-        >>> ClampableCellmlmodel(t=[0, 100], reltol=1e-4)
-        ClampableCellmlmodel(t=array([  0, 100]), y=[-2.0, 0.0])
-        """
-        
-        class Result(cls, otherclass):
-            pass
-        
-        Result.__name__ = "".join([c.__name__ for c in cls, otherclass])
-        return Result(*args, **kwargs)
-    
-    def test_bond_protocols(self, plot=True):
-        """
-        Run all Bondarenko protocols.
-        
-        >>> from cgp.virtexp.elphys.examples import Bond
-        >>> b = Bond(chunksize=10000)
-        >>> L = b.test_bond_protocols(plot=False)
-        """
-        
-        def plotprot(i, varnames, limits, L):
-            """Plot one protocol."""
-            from pylab import figure, subplot, plot, savefig, legend, axis
-            figure()
-            proto0, _ = L[0]
-            isclamped = len(proto0[0]) == 2
-            for j, (n, lim) in enumerate(zip(varnames, limits)):
-                subplot(len(varnames), 1, j + 1)
-                leg = set()
-                for k in n.split():
-                    if isclamped: # clamp protocol
-                        # For each protocol, traj is a list with a Trajectory
-                        # for each pulse.
-                        for _proto, traj in L:
-                            t, y, _dy, a = catrec(*traj[1:])
-                            plot(t, y[k] if k in y.dtype.names else a[k], 
-                                label=k if (k not in leg) else None)
-                            leg.add(k)
-                    else: # pacing protocol
-                        # For each protocol, paces is a list of Pace
-                        for _proto, paces in L:
-                            t, y, _dy, a, _stats = catrec(*paces)
-                            plot(t, y[k] if k in y.dtype.names else a[k], 
-                                label=k if (k not in leg) else None)
-                            leg.add(k)
-                    legend()
-                if lim:
-                    axis(lim)
-            savefig("fig%s%s.png" % (i, self.name))
-        
-        bp = self.bond_protocols()
-        for i, (varnames, protocol, limits, _url) in bp.items():
-            if len(protocol[0]) == 2: # (duration, voltage), so clamping
-                # List of (proto, traj), where traj is list of Trajectory
-                L = self.vecvclamp(protocol)
-            else: # (n, period, duration, amplitude), so pacing
-                # List of (proto, paces), where paces is list of Pace
-                L = self.vecpace(protocol)
-            if plot:
-                plotprot(i, varnames, limits, L)
-    
     def bond_protocols(self, thold=1000, nburnin=10, trest=30000, 
         url="http://ajpheart.physiology.org/content/287/3/H1378.full#F%s"):
         """
@@ -528,7 +453,7 @@ class Clampable(object):
             :nofigs:
             
             >>> from cgp.virtexp.elphys.examples import Bond
-            >>> b = Bond()
+            >>> b = Bond(reltol=1e-3)
             >>> protocol = [(2, 70, 0.5, -80), (3, 30, 0.5, -80)]
         
         .. plot::
@@ -561,8 +486,8 @@ class Clampable(object):
         The named tuples that :meth:`pace` yields can be unpacked as usual, 
         or you may refer to named fields.
         
-        >>> ["%5.3f" % stats["caistats"]["peak"] for t, y, dy, a, stats in L]
-        ['0.641', '0.545', '0.534', '0.491', '0.377']
+        >>> ["%4.2f" % stats["caistats"]["peak"] for t, y, dy, a, stats in L]
+        ['0.64', '0.54', '0.53', '0.49', '0.38']
         >>> [(i.t[0], i.t[-1]) for i in L]
         [(0.0, 70.0), (0.0, 70.0), (0.0, 30.0), (0.0, 30.0), (0.0, 30.0)]
         
@@ -802,65 +727,8 @@ class Clampable(object):
         * All p2 trajectories are returned because they depend on previous 
           history.
         
-        .. plot::
-            :context:
-            :include-source:
-            :nofigs:
-            
-            >>> from cgp.virtexp.elphys.examples import Bond
-            >>> b = Bond()
-            >>> protocol = [(100, -80), (50, 0), 
-            ...     (np.arange(2, 78, 15), (-90, -80, -70)), (100, 0)]
-            >>> p1, gap, p2 = b.vargap(protocol)  # 4 s
-            >>> [len(i) for i in p1, gap, p2]
-            [1, 3, 18]
-        
-        Compare to the redundant way.
-        
-        .. plot::
-            :context:
-            :include-source:
-            :nofigs:
-            
-            >>> L = b.vecvclamp(protocol)  # 9 s
-            >>> [len(i) for i in zip(*[traj for proto, traj in L])]
-            [18, 18, 18, 18]
-        
-        State and parameters are autorestored after the protocol is finished.
-        
-        >>> all(b.y == b.model.y0)
-        True
-        
-        Verify that the results are equal.
-        
         .. todo:: `vargap` gives blatantly wrong result, will fix later. 
            Workaround: Stick with vecvclamp.
-        
-        .. plot::
-            :context:
-        
-            from matplotlib.pyplot import figure, subplot, title, plot, axis
-            plt.close("all")
-            figure(figsize=(8,10))
-            keys = "V C1 i_CaL C_Na1 i_Na".split()
-            for i, k in enumerate(keys):
-                subplot(len(keys), 2, 1 + 2 * i)
-                title(k + ", vargap()")
-                for j in p1, gap, p2:
-                    for m in j:
-                        plot(m.t, m.a[k] if k in m.a.dtype.names else m.y[k])
-                axis("tight")
-            for i, k in enumerate(keys):
-                subplot(len(keys), 2, 2 + 2 * i)
-                title(k + ", vecvclamp()")
-                for proto, traj in L:
-                    t0 = 0
-                    for (duration, voltage), (t, y, dy, a) in zip(proto, traj)[1:]:
-                        plot(t + t0, a[k] if k in a.dtype.names else y[k])
-                        t0 = t0 + duration
-                axis("tight")
-            plt.subplots_adjust(hspace=0.4)
-            plt.show()
         """
         with self.autorestore():
             # Run holding interval, then P1 pulse, 
@@ -917,7 +785,7 @@ class Clampable(object):
             each call to :meth:`~Clampable.vclamp`, one for each unique protocol.
         
         >>> from cgp.virtexp.elphys.examples import Bond
-        >>> b = Bond()
+        >>> b = Bond(reltol=1e-3)
         >>> protocol = (1000, -140), (500, np.linspace(-80, 40, 4)), (180, -20)
         >>> L = b.vecvclamp(protocol)
         
@@ -932,8 +800,8 @@ class Clampable(object):
         ...     t1, v1 = proto[1]
         ...     print "%3d: %8.3f" % (v1, traj[1].a.i_Na.min())
         -80:   -0.004
-        -40: -175.59...
-          0: -300.763
+        -40: -175.84...
+          0: -300.46...
          40:    0.000
         
         State and parameters are autorestored after the protocol is finished.
@@ -1068,22 +936,17 @@ def mmfits(L, i=2, k=None, abs_=True):
     
     Example: Michaelis-Menten fit of peak i_CaL current vs gap duration.
     
-    >>> from cgp.virtexp.elphys.examples import Bond
-    >>> b = Bond()
-    >>> protocol = (1000, -80), (250, 0), (np.linspace(2, 202, 5), -80), (100, 0)
-    >>> with b.autorestore():
-    ...     L = b.vecvclamp(protocol)
-    >>> mmfits(L, k="i_CaL")
-    (6.44..., 18.14...)
+        from cgp.virtexp.elphys.examples import Bond
+        b = Bond()
+        protocol = (1000, -80), (250, 0), (np.linspace(2, 202, 5), -80), (100, 0)
+        with b.autorestore():
+            L = b.vecvclamp(protocol)
+        mmfits(L, k="i_CaL")
+        
+        (6.44..., 18.14...)
     
     (This uses a reduced version of the variable-gap protocol of Bondarenko's 
     figure 7. The full version is available as b.bond_protocols()[7].protocol.)
-    
-    Verify improvement of error message in case k is a list rather than a string.
-    
-    >>> mmfits(L, 2, ["i_Na"])
-    Traceback (most recent call last):
-    AssertionError: k must be a single field name of y or a, not <type 'list'>
     """
     # Without this assertion, we'd get 
     # AttributeError: 'NotImplementedType' object has no attribute 'max'

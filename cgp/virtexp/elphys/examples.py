@@ -36,7 +36,6 @@ import numpy as np
 
 from ...physmod.cellmlmodel import Cellmlmodel
 from . import Paceable, Clampable
-from . import globaltime, localtime, ap_stats_array  #@UnusedImport
 from ...utils.ordereddict import OrderedDict
 
 
@@ -51,26 +50,12 @@ class Hodgkin(Cellmlmodel, Paceable, Clampable):
     periodic. I have hacked this in the CellML source for now.
     I've also fixed a 0/0 bug in alpha_m for V == -50.
     
-    >>> hh = Hodgkin()
-    >>> t, y, stats = hh.ap()
-    >>> ap_stats_array(stats)
-    rec.array([ (107.3..., -75.0, 32.3..., 
-    2.20..., 1.281..., 3.241..., 
-    4.013..., 4.843..., 5.269...)],
-    dtype=[('apamp', '<f8'), ('apbase', '<f8'), ('appeak', '<f8'), 
-    ('apttp', '<f8'), ('apdecayrate', '<f8'), ('apd25', '<f8'), 
-    ('apd50', '<f8'), ('apd75', '<f8'), ('apd90', '<f8')])
-    >>> [stats["peak"] for t, y, stats in hh.aps(n=2)]
-    [32.5688..., 32.5687...]
+    ..  plot::
     
-    Verify fix for 0/0 bug.
-    
-    >>> with hh.autorestore(V=-50):
-    ...     t, y, stats = hh.ap()
-    
-    Before the fix, this produced:
-    Traceback (most recent call last):
-    CvodeException: CVode returned CV_CONV_FAILURE
+        from cgp.virtexp.elphys.examples import Hodgkin
+        hh = Hodgkin()
+        t, y, stats = hh.ap()
+        plt.plot(t, y.V)
     """
     def __init__(self, exposure_workspace="/hodgkin_huxley_1952", **kwargs):
         super(Hodgkin, self).__init__(exposure_workspace, **kwargs)
@@ -84,10 +69,9 @@ class Tentusscher(Cellmlmodel, Paceable, Clampable):
     .. plot::
        :width: 300
        
-       from cgp.virtexp.elphys import Tentusscher
+       from cgp.virtexp.elphys.examples import Tentusscher
        tt = Tentusscher()
        t, y, stats = tt.ap()
-       fig = plt.figure()
        plt.plot(t, y.V, '.-')
        i = stats["i"]
        plt.plot(t[i], y.V[i], 'ro')
@@ -189,7 +173,8 @@ class Bond(Cellmlmodel, Paceable, Clampable):
         :meth:`~cvodeint.namedcvodeint.Namedcvodeint.autorestore`, 
         and defaults to a plain :meth:`autorestore` if *name*=None. 
         A Bond object has scenarios representing "apex" and "septum" cells, 
-        with apex as the default.
+        with apex as the default. The two scenarios are available as separate 
+        models at cellml.org.
         Subclasses may define additional scenarios. Note that scenarios will 
         need adaptation to work with subclasses that have different parameter 
         names.
@@ -197,32 +182,15 @@ class Bond(Cellmlmodel, Paceable, Clampable):
         ``**kwargs`` are passed to 
         :meth:`~cvodeint.namedcvodeint.Namedcvodeint.autorestore`.
         
-        Typical usage.       
+        ..  plot::
         
-        >>> bond = Bond()
-        >>> with bond.scenario("septum"):
-        ...     t0, y0, stats0 = bond.ap()
-        
-        The two scenarios are available as separate models at cellml.org.
-        Verify that switching scenarios is equivalent to using the other version.
-        
-        >>> import inspect
-        >>> exposure_workspace = inspect.getargspec(Bond.__init__).defaults[0]
-        >>> septum = Bond(exposure_workspace.replace("apical", "septal"))
-        >>> with septum.autorestore():
-        ...     t1, y1, stats1 = septum.ap()
-        
-        Compare string representations to allow for machine imprecision.
-        
-        >>> str(ap_stats_array(stats0)) == str(ap_stats_array(stats1))
-        True
-        
-        >>> with septum.scenario("apex"):
-        ...     t2, y2, stats2 = septum.ap()
-        >>> with bond.autorestore():
-        ...     t3, y3, stats3 = bond.ap()
-        >>> str(ap_stats_array(stats2)) == str(ap_stats_array(stats3))
-        True
+            from cgp.virtexp.elphys.example import Bond
+            bond = Bond()
+            for k in "apex", "septum":
+                with bond.scenario(k):
+                    t, y, stats = bond.ap()
+                plt.plot(t, y.V, label=k)
+                plt.legend()
         """
         return self.autorestore(_y=self.scenarios[name].get("y"), 
                                 _p=self.scenarios[name].get("p"), **kwargs)
@@ -320,11 +288,6 @@ class Fitz(Bond):
     periodic stimuli elicit action potentials. To hack this, we impose a 
     negative stimulus most of the time, removing it briefly to elicit the 
     action potential.
-    
-    >>> with fitz.scenario("paced"):
-    ...     L = list(fitz.aps(n=5))
-    >>> [stats["ttp"] for t, y, stats in L[-2:]] # last two action potentials
-    [1.0535..., 1.0535...]
     """
         
     def __init__(self, exposure_workspace="/fitzhugh_1961",  # pylint: disable=W0102
@@ -366,16 +329,6 @@ class Li(Cellmlmodel, Paceable, Clampable):
         Other keyword arguments are passed through to 
         :mod:`cellmlmodels.cellmlmodel.Cellmlmodel`.
         
-        >>> li = Li()
-        >>> t, y, stats = li.ap(rootfinding=True)
-        >>> from pprint import pprint
-        >>> pprint(stats)
-        {'amp': array([ 115.42...,
-         'base': array([-78.9452...
-         'peak': array([ 36.48...,
-         't_repol': array([  4.285...,   5.699...,  10.216...,  17.28...]),
-         'ttp': 3.14...}
-        
         This constructor sets *stim_offset* = 0.0, overriding the default. 
         This is because the stepwise integration assumes that the stimulus is 
         at the start of the action potential.
@@ -416,22 +369,6 @@ class Bond_uhc(Bond):
     
     >>> list(np.setxor1d(b.dtype.a.names, bu.dtype.a.names))
     ['i_NCX', 'i_NaCa']
-    
-    Verify that action potential and calcium transient statistics are equal 
-    for the original and unhardcoded model, to within roundoff error.
-    
-    >>> t, y, stats = b.ap()
-    >>> tu, yu, statsu = bu.ap()
-    >>> a, au = [ap_stats_array(i) for i in stats, statsu]
-    
-    >>> for k in a.dtype.names:
-    ...     try:
-    ...         np.testing.assert_almost_equal(a[k], au[k], decimal=4)
-    ...     except AssertionError:
-    ...         print k, a[k], au[k]
-    apttp [ 1.85097198] [ 1.8501085]
-    ctttp [ 15.66564231] [ 15.69735364]
-    ctd50 [ 56.51756825] [ 56.51725567]
     """
     def __init__(self, exposure_workspace="/bond_uhc", *args, **kwargs):
         super(Bond_uhc, self).__init__(exposure_workspace, *args, **kwargs)
@@ -451,12 +388,6 @@ class Li_uhc(Li):
     ['iKss']
     >>> li.dtype.a == liu.dtype.a
     True
-    >>> t, y, stats = li.ap(rootfinding=True)
-    >>> tu, yu, statsu = liu.ap(rootfinding=True)
-    >>> a, au = [ap_stats_array(i) for i in stats, statsu]
-    >>> for k in a.dtype.names:
-    ...     if abs(1 - a[k] / au[k]) > 1e-3:
-    ...         print k, a[k], au[k]
     """
     def __init__(self, exposure_workspace="/li_uhc", *args, **kwargs):
         super(Li_uhc, self).__init__(exposure_workspace, *args, **kwargs)
