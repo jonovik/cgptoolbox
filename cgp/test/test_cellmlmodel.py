@@ -83,5 +83,5 @@ def test_dynclamp():
     stim_amplitude = float(bond.pr.stim_amplitude)
     assert stim_amplitude != 0
     with bond.dynclamp(-140):
-        pass
+        assert bond.pr.stim_amplitude == 0
     np.testing.assert_equal(bond.pr.stim_amplitude, stim_amplitude)

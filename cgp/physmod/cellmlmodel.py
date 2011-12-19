@@ -36,7 +36,8 @@ except ImportError:
     # deferred import to minimize dependencies
     from ..utils.write_if_not_exists import write_if_not_exists
     dirname, _ = os.path.split(__file__)
-    with write_if_not_exists(os.path.join(dirname, "_cellml2py", "__init__.py")):
+    with write_if_not_exists(
+        os.path.join(dirname, "_cellml2py", "__init__.py")):
         pass # just create an empty __init__.py file
 
 Legend = namedtuple("Legend", "name component unit")
@@ -479,30 +480,34 @@ class Cellmlmodel(Namedcvodeint):
             scale = Acap * Cm / (Vmyo * F)
             dKi/dt = -(i_K1 + ... + I_app) * scale
                 
-        Example with voltage clamping of Bondarenko model.
+        Example with voltage clamping of Bondarenko model. Any pre-existing 
+        stimulus amplitude is temporarily set to zero. The parameter array is 
+        shared between the original and clamped models, and restored on 
+        exiting the 'with' block.
         
         >>> bond = Cellmlmodel("11df840d0150d34c9716cd4cbdd164c8/"
         ...     "bondarenko_szigeti_bett_kim_rasmusson_2004_apical")
         >>> with bond.dynclamp(-140) as clamped:
         ...     t, y, flag = clamped.integrate(t=[0, 10])
-        ... # doctest: +SKIP
+        ...     bond.pr.stim_amplitude
+        array([ 0.])
+        >>> clamped.pr is bond.pr
+        True
+        >>> bond.pr.stim_amplitude
+        array([-80.])
         
-        FIXME: The example above interferes with later use of .autorestore for 
-        new instances of the same model.
-        """
-        """
         The clamped model has its own instance of the CVODE integrator and 
         state NVector.
         
-        >>> clamped.cvode_mem is bond.cvode_mem
-        False
+        >>> (clamped.cvode_mem is bond.cvode_mem, clamped.y is bond.y)
+        (False, False)
         
         However, changes in state are copied to the original on exiting the 
         'with' block.
         
         >>> "%7.2f" % bond.yr.V
         '-139.68'
-        
+                
         Unlike .clamp(), .dynclamp() does not allow you to change the setpoint 
         inside the "with" block. Instead, just start a new "with" block.
         (Changes to state variables remain on exit from the with block.)
@@ -550,7 +555,8 @@ class Cellmlmodel(Namedcvodeint):
         oldkwargs = dict((k, getattr(self, k)) 
             for k in "chunksize maxsteps reltol abstol".split())
         
-        clamped = Namedcvodeint(dynclamped, self.t, y, self.pr.copy(), **oldkwargs)
+        pr_old = self.pr.copy()
+        clamped = Namedcvodeint(dynclamped, self.t, y, self.pr, **oldkwargs)
         
         # Disable any hard-coded stimulus protocol
         if "stim_amplitude" in clamped.dtype.p.names:
@@ -559,6 +565,7 @@ class Cellmlmodel(Namedcvodeint):
         try:
             yield clamped # enter "with" block
         finally:
+            self.pr[:] = pr_old
             for k in clamped.dtype.y.names:
                 if k in self.dtype.y.names:
                     setattr(self.yr, k, getattr(clamped.yr, k))
