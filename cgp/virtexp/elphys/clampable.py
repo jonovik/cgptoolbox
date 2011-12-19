@@ -1,25 +1,6 @@
-"""
-:wiki:`Mixin` class for in silico experimental protocols for Bondarenko-like models.
+"""Virtual voltage clamping."""
+# pylint: disable=C0111,C0302
 
-Each protocol returns a list of ``(t, y, dy, a)``, concatenated if ``concatenate=True``.
-
-Models are assumed to have parameters *stim_duration* and *stim_amplitude*, and 
-context managers :meth:`~cvodeint.namedcvodeint.Namedcvodeint.clamp` and 
-:meth:`~cellmlmodels.cellmlmodel.Cellmlmodel.dynclamp`.
-
-The 
-:cellml:`Bondarenko 
-<11df840d0150d34c9716cd4cbdd164c8/bondarenko_szigeti_bett_kim_rasmusson_2004_apical>`,
-:doi:`LNCS <10.1152/ajpheart.00219.2010>` and 
-:cellml:`Ten Tusscher 
-<e946a72663bdf17ef6752980a0232351/tentusscher_noble_noble_panfilov_2004_a>` 
-models have a regular stimulus protocol built in, governed by parameters for 
-period, duration and amplitude. Method :meth:`~ap_cvode.Bond.ap` uses this 
-protocol, computing action potential and calcium transient durations, possibly 
-with rootfinding. The current hack is to set ``stim_duration=inf`` when 
-*stim_amplitude* does not depend on time or its time-dependence is handled 
-inside the protocol function.
-"""
 # Integer division may give zero axis range, causing LinAlgError on display
 from __future__ import division
 
@@ -36,22 +17,18 @@ except ImportError:
     import warnings
     warnings.warn("rnumpy not installed, some functions will not work.")
     
-    from nose.plugins.skip import Skip, SkipTest
+    from nose.plugins.skip import SkipTest
     
-    class R(object):
+    class DummyR(object):
+        """Dummy R object to skip nosetests if R is unavailable."""
         
         def __getattr__(self, name):
             raise SkipTest("rnumpy not installed")
     
-    r = R()
-
-try:
-    import ipy_rnumpy
-except Exception:
-    pass
+    r = DummyR()
 
 from ...cvodeint.namedcvodeint import Namedcvodeint
-from . import Paceable as ap_cvode
+from . import paceable
 from .ap_stats import apd
 from ...utils.ordereddict import OrderedDict
 from ...utils.thinrange import thin
@@ -63,8 +40,8 @@ Bond_protocol = namedtuple("Bond_protocol", "varnames protocol limits url")
 
 # Initialize logging. Keys refer to the dict made available by the logger.
 keys = "asctime levelname name lineno process message"
-format = "%(" + ")s\t%(".join(keys.split()) + ")s"
-logging.basicConfig(level=logging.INFO, format=format)
+format_ = "%(" + ")s\t%(".join(keys.split()) + ")s"
+logging.basicConfig(level=logging.INFO, format=format_)
 logger = logging.getLogger("protocols")
 
 @contextmanager
@@ -249,11 +226,11 @@ def catrec(*args, **kwargs):
     for i, v in enumerate(zip(*args)):
         try:
             if (i == 0) and globalize_time:
-                c = np.concatenate(ap_cvode.globaltime(v))
+                c = np.concatenate(paceable.globaltime(v))
             else:
                 c = np.concatenate([np.atleast_1d(i) for i in v], axis=0)
             C.append(c.view(v[0].dtype, type(v[0])))
-        except Exception, exc:
+        except Exception, _exc:  # pylint: disable=W0703,W0612
             C.append(v)
     return C
 
@@ -301,33 +278,56 @@ def vclamp2arr(L, nthin=100):
     dtype = [(k, float, shape) 
         for k in chain(["t"], first.y.dtype.names, first.a.dtype.names)]
     result = np.zeros((), dtype=dtype).view(np.recarray)
-    for i, (t, y, dy, a) in enumerate(L):
-        result["t"][i,:] = np.squeeze(thin(t, nthin))
+    for i, (t, y, _dy, a) in enumerate(L):
+        result["t"][i, :] = np.squeeze(thin(t, nthin))
         for k in y.dtype.names:
-            result[k][i,:] = np.squeeze(thin(y[k], nthin))
+            result[k][i, :] = np.squeeze(thin(y[k], nthin))
         for k in a.dtype.names:
-            result[k][i,:] = np.squeeze(thin(a[k], nthin))
+            result[k][i, :] = np.squeeze(thin(a[k], nthin))
     return result.reshape(1)
 
 
 class Clampable(object):
+    """
+    :wiki:`Mixin` class for in silico experimental protocols for Bondarenko-like models.
+    
+    Each protocol returns a list of ``(t, y, dy, a)``, concatenated if ``concatenate=True``.
+    
+    Models are assumed to have parameters *stim_duration* and *stim_amplitude*, and 
+    context managers :meth:`~cvodeint.namedcvodeint.Namedcvodeint.clamp` and 
+    :meth:`~cellmlmodels.cellmlmodel.Cellmlmodel.dynclamp`.
+    
+    The 
+    :cellml:`Bondarenko 
+    <11df840d0150d34c9716cd4cbdd164c8/bondarenko_szigeti_bett_kim_rasmusson_2004_apical>`,
+    :doi:`LNCS <10.1152/ajpheart.00219.2010>` and 
+    :cellml:`Ten Tusscher 
+    <e946a72663bdf17ef6752980a0232351/tentusscher_noble_noble_panfilov_2004_a>` 
+    models have a regular stimulus protocol built in, governed by parameters for 
+    period, duration and amplitude. Method :meth:`~cgp.virtexp.elphys.paceable.ap` 
+    uses this protocol, computing action potential and calcium transient 
+    durations, possibly with rootfinding. The current hack is to set 
+    ``stim_duration=inf`` when *stim_amplitude* does not depend on time or its 
+    time-dependence is handled inside the protocol function.
+    """
     
     @classmethod
     def mixin(cls, otherclass, *args, **kwargs):
         """
         Factory to combine class :class:`Clampable` with other objects.
         
-        This saves having to write explicit class definitions.
+        This saves having to write explicit class definitions, and is 
+        equivalent to the longer code below.
         
-        This is equivalent to the longer code below.
+        >>> from cgp.physmod.cellmlmodel import Cellmlmodel
         
-        >>> Clampable.mixin(ap_cvode.Bond, t=[0, 100], reltol=1e-4)
-        ClampableBond()
+        >>> Clampable.mixin(Cellmlmodel, t=[0, 100], reltol=1e-4)
+        ClampableCellmlmodel(t=array([  0, 100]), y=[-2.0, 0.0])
         
-        >>> class ClampableBond(ap_cvode.Bond, Clampable):
+        >>> class ClampableCellmlmodel(Cellmlmodel, Clampable):
         ...     pass
-        >>> ClampableBond(t=[0, 100], reltol=1e-4)
-        ClampableBond()
+        >>> ClampableCellmlmodel(t=[0, 100], reltol=1e-4)
+        ClampableCellmlmodel(t=array([  0, 100]), y=[-2.0, 0.0])
         """
         
         class Result(cls, otherclass):
@@ -346,6 +346,7 @@ class Clampable(object):
         """
         
         def plotprot(i, varnames, limits, L):
+            """Plot one protocol."""
             from pylab import figure, subplot, plot, savefig, legend, axis
             figure()
             proto0, _ = L[0]
@@ -357,15 +358,15 @@ class Clampable(object):
                     if isclamped: # clamp protocol
                         # For each protocol, traj is a list with a Trajectory
                         # for each pulse.
-                        for proto, traj in L:
-                            t, y, dy, a = catrec(*traj[1:])
+                        for _proto, traj in L:
+                            t, y, _dy, a = catrec(*traj[1:])
                             plot(t, y[k] if k in y.dtype.names else a[k], 
                                 label=k if (k not in leg) else None)
                             leg.add(k)
                     else: # pacing protocol
                         # For each protocol, paces is a list of Pace
-                        for proto, paces in L:
-                            t, y, dy, a, stats = catrec(*paces)
+                        for _proto, paces in L:
+                            t, y, _dy, a, _stats = catrec(*paces)
                             plot(t, y[k] if k in y.dtype.names else a[k], 
                                 label=k if (k not in leg) else None)
                             leg.add(k)
@@ -375,7 +376,7 @@ class Clampable(object):
             savefig("fig%s%s.png" % (i, self.name))
         
         bp = self.bond_protocols()
-        for i, (varnames, protocol, limits, url) in self.bond_protocols().items():
+        for i, (varnames, protocol, limits, _url) in bp.items():
             if len(protocol[0]) == 2: # (duration, voltage), so clamping
                 # List of (proto, traj), where traj is list of Trajectory
                 L = self.vecvclamp(protocol)
@@ -420,29 +421,50 @@ class Clampable(object):
         limits=[[0, 2000, 0, 1]], url='http://...')
         """
         d, a = self.pr.stim_duration, self.pr.stim_amplitude
-        return OrderedDict((fignumber, Bond_protocol(varnames, protocol, limits, url % fignumber)) 
+        return OrderedDict((fignumber, 
+            Bond_protocol(varnames, protocol, limits, url % fignumber)) 
             for fignumber, varnames, protocol, limits in [
-        (3, ["i_Na"], [(thold, -140), (500, np.arange(-130, 51, 10)), (180, -20)], [[0, 30, -400, 0]]),
-        (5, ["i_CaL"], [(thold, -80), (250, np.arange(-70, 41, 10)), (2, -80), (250, 10)], [[0, 500, -8, 0]]), 
-        (6, ["Cai Cass", "i_CaL Cai"], [(thold, -80), (200, np.arange(-60, 51, 10))], [[0, 200, 0, 40], None]), 
-        (7, ["i_CaL"], [(thold, -80), (250, 0), (np.arange(2, 503, 25), (-90, -80, -70)), (100, 0)], [[0, 800, -8, 0]]), 
-        (8, ["i_Kto_f i_Kto_s i_Kr i_Kur i_Kss i_Ks i_K1"], 
-            [(thold, -80), (5000, np.arange(-70, 51, 10))], [[0, 5000, 0, 70]]), 
-        (9, ["i_Kto_f"], [(thold, -80), (500, np.arange(-100, 51, 10)), (500, 50)], [[0, 1000, 0, 60]]), 
-        (10, ["i_Kto_s"], [(thold, -100), (5000, np.arange(-90, 51, 10))], [[0, 2000, 0, 10]]), 
-        (11, ["i_Kr"], [(thold, -80), (1000, np.arange(-70, 61, 10)), (1000, -40)], [[0, 2000, 0, 1]]), 
-        (12, ["i_Kur", "i_Kss"], [(thold, -100), (5000, np.arange(-90, 51, 10))], [[0, 5000, 0, 15], [0, 5000, 0, 5]]),
-        (13, ["i_Kur i_Kss"], [(thold, -100), (5000, np.arange(-60, 61, 10))], [None]),
-        (14, ["i_Ks"], [(thold, -80), (5000, np.arange(-70, 51, 10))], [[0, 5000, 0, 0.6]]),
-        (15, ["i_K1"], [(thold, -80), (5000, np.arange(-150, -39, 10))], [None]),
-        (16, ["V", "i_Kto_f i_Kur i_Kss i_CaL i_Na", "i_NaCa i_NaK i_K1 i_Cab i_Nab"], 
-            [(nburnin, 1000, d, a)], [[0, 50, -90, 40], [0, 50, -15, 30], [0, 50, -0.5, 1]]),
-        (17, ["V", "Cai"], [(nburnin, (150, 250, 500, 1000, 2000), d, a)], [[0, 50, -90, 40], [0, 140, 0, 0.6]]),
-        (18, ["Cai"], [(nburnin, 1000 / np.arange(500, 7001, 500), d, a)], [None]),
-        (19, ["Cai"], [(1, trest, d, a), (12, 1300, d, a)], [[0, 15000, 0.1, 0.7]]),
+        (3, ["i_Na"], [(thold, -140), (500, np.arange(-130, 51, 10)), 
+            (180, -20)], [[0, 30, -400, 0]]),
+        (5, ["i_CaL"], [(thold, -80), (250, np.arange(-70, 41, 10)), 
+            (2, -80), (250, 10)], [[0, 500, -8, 0]]), 
+        (6, ["Cai Cass", "i_CaL Cai"], [(thold, -80), 
+            (200, np.arange(-60, 51, 10))], [[0, 200, 0, 40], None]), 
+        (7, ["i_CaL"], [(thold, -80), (250, 0), 
+            (np.arange(2, 503, 25), (-90, -80, -70)), 
+            (100, 0)], [[0, 800, -8, 0]]), 
+        (8, ["i_Kto_f i_Kto_s i_Kr i_Kur i_Kss i_Ks i_K1"], [(thold, -80), 
+            (5000, np.arange(-70, 51, 10))], [[0, 5000, 0, 70]]), 
+        (9, ["i_Kto_f"], [(thold, -80), (500, np.arange(-100, 51, 10)), 
+            (500, 50)], [[0, 1000, 0, 60]]), 
+        (10, ["i_Kto_s"], [(thold, -100), (5000, np.arange(-90, 51, 10))], 
+            [[0, 2000, 0, 10]]), 
+        (11, ["i_Kr"], 
+            [(thold, -80), (1000, np.arange(-70, 61, 10)), (1000, -40)], 
+            [[0, 2000, 0, 1]]), 
+        (12, ["i_Kur", "i_Kss"], 
+            [(thold, -100), (5000, np.arange(-90, 51, 10))], 
+            [[0, 5000, 0, 15], [0, 5000, 0, 5]]),
+        (13, ["i_Kur i_Kss"], 
+            [(thold, -100), (5000, np.arange(-60, 61, 10))], [None]),
+        (14, ["i_Ks"], [(thold, -80), (5000, np.arange(-70, 51, 10))], 
+            [[0, 5000, 0, 0.6]]),
+        (15, ["i_K1"], [(thold, -80), (5000, np.arange(-150, -39, 10))], 
+            [None]),
+        (16, ["V", "i_Kto_f i_Kur i_Kss i_CaL i_Na", 
+            "i_NaCa i_NaK i_K1 i_Cab i_Nab"], 
+            [(nburnin, 1000, d, a)], [[0, 50, -90, 40], 
+            [0, 50, -15, 30], [0, 50, -0.5, 1]]),
+        (17, ["V", "Cai"], [(nburnin, (150, 250, 500, 1000, 2000), d, a)], 
+            [[0, 50, -90, 40], [0, 140, 0, 0.6]]),
+        (18, ["Cai"], [(nburnin, 1000 / np.arange(500, 7001, 500), d, a)], 
+            [None]),
+        (19, ["Cai"], [(1, trest, d, a), (12, 1300, d, a)], 
+            [[0, 15000, 0.1, 0.7]]),
         # Note: J_CaL (uM/ms) is not available, so use i_CaL (pA/pF = V/s)
         # Same for J_NaCa
-        (20, ["J_rel i_CaL i_NaCa J_up J_leak"], [(11, 1000, d, a)], [[0, 60, -0.4, 0.4], [0, 1000, -40, 40]]),
+        (20, ["J_rel i_CaL i_NaCa J_up J_leak"], [(11, 1000, d, a)], 
+            [[0, 60, -0.4, 0.4], [0, 1000, -40, 40]]),
         ])
     
     def zhou_protocols(self, thold=1000, nburnin=10, trest=30000, 
@@ -478,10 +500,11 @@ class Clampable(object):
         (100, array([-40, -30, ...,  50])), (100, -20)], limits=[None], 
         url='http://...')
         """
-        d, a = self.pr.stim_duration, self.pr.stim_amplitude
-        return OrderedDict((fignumber, Bond_protocol(varnames, protocol, limits, url % fignumber)) 
-            for fignumber, varnames, protocol, limits in [
-        (2, ["i_Kto_s"], [(thold, -50), (200, 40), (5, -50), (100, np.arange(-40, 51, 10)), (100, -20)], [None]),
+        return OrderedDict((fignumber, 
+            Bond_protocol(varnames, protocol, limits, url % fignumber)) 
+            for fignumber, varnames, protocol, limits in 
+            [(2, ["i_Kto_s"], [(thold, -50), (200, 40), (5, -50), 
+            (100, np.arange(-40, 51, 10)), (100, -20)], [None]),
         ])
 
     def pace(self, protocol, nthin=None):
@@ -492,7 +515,8 @@ class Clampable(object):
         :param nthin: number of time-points for each pace (default: no thinning)
         :return: Yields successive named tuples of class Pace with fields 
             ``(t, y, dy, a, stats)``, where *t* is local time, 
-            cf. :func:`ap_cvode.globaltime` and :func:`ap_cvode.localtime`.
+            cf. :func:`~cgp.virtexp.elphys.paceable.globaltime` 
+            and :func:`~cgp.virtexp.elphys.paceable.localtime`.
         
         Here is an example pacing twice at 70-ms intervals, then three times 
         at 30-ms intervals. Here we store the output of the :meth:`pace`
@@ -503,7 +527,6 @@ class Clampable(object):
             :context:
             :nofigs:
             
-            >>> from protocols import *
             >>> from cgp.virtexp.elphys.examples import Bond
             >>> b = Bond()
             >>> protocol = [(2, 70, 0.5, -80), (3, 30, 0.5, -80)]
@@ -552,13 +575,12 @@ class Clampable(object):
         for n, period, duration, amplitude in protocol:
             with self.autorestore(_y=y0, stim_period=period, 
                 stim_duration=duration, stim_amplitude=amplitude):
-                for i in range(n):
+                for _i in range(n):
                     t, y, stats = self.ap()
-                    # TODO: (or rather "not to do")
                     # I could add an option to skip rates_and_algebraic, 
                     # but this takes only 8% of the time for ap anyway.
                     # We could save 30% time by predefining e.g. 100 
-                    # time-points instead of letting ap_cvode return ~1500 
+                    # time-points instead of letting cvode return ~1500 
                     # points, but the preset temporal resolution might not suit 
                     # the dynamics from another initial state or parameter set.
                     dy, a = self.rates_and_algebraic(t, y)
@@ -720,7 +742,8 @@ class Clampable(object):
         :param protocol: Sequence of (duration, voltage) for each pulse
         :param nthin: number of time-points for each pulse (default: no thinning)
         :return: Yields successive named tuples of (t, y, dy, a) 
-            where t is local time, cf. ap_cvode.globaltime.
+            where t is local time, cf. 
+            :func:`~cgp.virtexp.elphys.paceable.globaltime`.
         
         Here is an example of the P1-P2 protocol used in Figure 3 of 
         Bondarenko et al. 2004.
@@ -751,7 +774,7 @@ class Clampable(object):
         with self.autorestore():
             for duration, voltage in protocol:
                 with self.clamp(V=voltage) as clamped:
-                    t, y, flag = clamped.integrate(t=[0, duration])
+                    t, y, _flag = clamped.integrate(t=[0, duration])
                     dy, a = self.rates_and_algebraic(t, y)
                 if nthin:
                     t, y, dy, a = [thin(arr, nthin) for arr in t, y, dy, a]
@@ -784,7 +807,6 @@ class Clampable(object):
             :include-source:
             :nofigs:
             
-            >>> from protocols import *
             >>> from cgp.virtexp.elphys.examples import Bond
             >>> b = Bond()
             >>> protocol = [(100, -80), (50, 0), 
@@ -845,11 +867,11 @@ class Clampable(object):
             # leaving the P1 trajectory in (t, y).
             for duration, voltage in protocol[:2]:
                 with self.clamp(V=voltage) as clamped:
-                    t, y, flag = clamped.integrate(t=[0, duration])
+                    t, y, _flag = clamped.integrate(t=[0, duration])
             dy, a = self.rates_and_algebraic(t, y)
             p1 = [Trajectory(t, y, dy, a)]
             # Run gap, spawning P2 pulses at the prescribed times
-            p1_duration, p1_voltage = protocol[1]
+            p1_duration, _p1_voltage = protocol[1]
             gap_durations, gap_voltages = protocol[2]
             p2_duration, p2_voltage = protocol[3]
             gap = []
@@ -860,16 +882,20 @@ class Clampable(object):
                     with self.clamp(V=gap_voltage) as clamped:
                         tspan = np.ones(2) * p1_duration
                         for gap_duration in gap_durations:
-                            tspan = np.array([tspan[-1], p1_duration + gap_duration])
+                            tspan = np.array([tspan[-1], 
+                                              p1_duration + gap_duration])
                             gap_trajectory.append(clamped.integrate(t=tspan))
                             with clamped.autorestore(): # Restore after each p2
                                 with clamped.clamp(V=p2_voltage) as p2_clamped:
-                                    p2tspan = tspan[-1] + np.array([0, p2_duration])
-                                    t, y, flag = p2_clamped.integrate(t=p2tspan)
+                                    p2tspan = (tspan[-1] + 
+                                               np.array([0, p2_duration]))
+                                    t, y, _flag = p2_clamped.integrate(
+                                        t=p2tspan)
                             dy, a = self.rates_and_algebraic(t, y)
                             p2.append(Trajectory(t, y, dy, a))
                         # Concatenate and store gap dynamics
-                        t, y, flag = catrec(*gap_trajectory, globalize_time=False)
+                        t, y, _flag = catrec(*gap_trajectory, 
+                                             globalize_time=False)
                         dy, a = self.rates_and_algebraic(t, y)
                         gap.append(Trajectory(t, y, dy, a))
         if nthin:
@@ -919,7 +945,7 @@ class Clampable(object):
         for p in pairbcast(*protocol):
             try:
                 L.append((p, self.vclamp(p, nthin)))
-            except Exception, exc:
+            except Exception, _exc:  # pylint: disable=W0703,W0612
                 logger.exception("Error in vclamp(%s)", p)
         return L
     
@@ -930,7 +956,7 @@ class Clampable(object):
         P1-P2 protocol from Fig. 3 of Bondarenko et al.
         """
         L = self.vecvclamp([(thold, vhold), (t1, v1), (t2, v2)])
-        peak1, peak2 = [np.array([traj[i].a.i_Na.min() for proto, traj in L])
+        peak1, peak2 = [np.array([traj[i].a.i_Na.min() for _proto, traj in L])
             for i in 1, 2]
         peak1 = - peak1 / peak1.min()
         peak2 = peak2 / peak2.min()
@@ -939,7 +965,7 @@ class Clampable(object):
             from pylab import figure, subplot, plot, axis
             figure()
             subplot(221)
-            h = [plot(tr[1].t, tr[1].a.i_Na, label=pr[1][1]) for pr, tr in L]
+            _h = [plot(tr[1].t, tr[1].a.i_Na, label=pr[1][1]) for pr, tr in L]
             axis(xmax=30)
             subplot(222)
             plot(v1, peak1, '.-')
@@ -948,11 +974,12 @@ class Clampable(object):
         
         return L
     
-    def bondfig5(self, thold=1000, vhold=-80, t1=250, v1=np.arange(-70, 41, 10), 
-        t2=2, v2=-80, t3=250, v3=10, plot=True):
+    def bondfig5(self, thold=1000, vhold=-80, t1=250, 
+                 v1=np.arange(-70, 41, 10), 
+                 t2=2, v2=-80, t3=250, v3=10, plot=True):
         """Fig. 5 of Bondarenko et al."""
         L = self.vecvclamp([(thold, vhold), (t1, v1), (t2, v2), (t3, v3)])
-        peak1, peak3 = [np.array([traj[i].a.i_CaL.min() for proto, traj in L])
+        peak1, peak3 = [np.array([traj[i].a.i_CaL.min() for _proto, traj in L])
             for i in 1, 3]
         peak1 = - peak1 / peak1.min()
         peak3 = peak3 / peak3.min()
@@ -961,8 +988,8 @@ class Clampable(object):
             from pylab import figure, subplot, plot, axis
             figure()
             subplot(221)
-            for v1i, (proto, traj) in zip(v1, L):
-                t, y, dy, a = catrec(*traj[1:])
+            for v1i, (_proto, traj) in zip(v1, L):
+                t, _y, _dy, a = catrec(*traj[1:])
                 plot(t - t[0], a.i_CaL, label=v1i)
             axis(ymin=-8, xmax=500)
             subplot(222)
@@ -974,12 +1001,12 @@ class Clampable(object):
         
         return L
 
-    def bondfig6(self, thold=1000, vhold=-80, t1=200, v1=np.arange(-60, 51, 10), 
-        plot=True):
+    def bondfig6(self, thold=1000, vhold=-80, t1=200, 
+                 v1=np.arange(-60, 51, 10), plot=True):
         """Fig. 6 of Bondarenko et al."""
         L = self.vecvclamp([(thold, vhold), (t1, v1)])
-        peakCai = np.array([traj[1].y.Cai.max() for proto, traj in L])
-        peaki_CaL = np.array([traj[1].a.i_CaL.max() for proto, traj in L])
+        peakCai = np.array([traj[1].y.Cai.max() for _proto, traj in L])
+        peaki_CaL = np.array([traj[1].a.i_CaL.max() for _proto, traj in L])
         peakCai = peakCai / peakCai.max()
         peaki_CaL = peaki_CaL / peaki_CaL.max()
         
@@ -987,7 +1014,7 @@ class Clampable(object):
             from pylab import figure, subplot, plot, axis
             figure()
             subplot(211)
-            for proto, (_, (t, y, dy, a)) in L:
+            for _proto, (_, (t, y, _dy, _a)) in L:
                 plot(t, y.Cai, t, y.Cass)
             axis(xmax=500)
             subplot(212)
@@ -1000,11 +1027,11 @@ class Clampable(object):
         plot=True):
         L = self.vecvclamp(protocol)
         if plot:
-            from pylab import figure, subplot, plot, axis
+            from pylab import figure, subplot, plot
             figure()
             subplot(211)
-            for proto, traj in L:
-                t, y, dy, a = catrec(*traj[1:])
+            for _proto, traj in L:
+                t, _y, _dy, a = catrec(*traj[1:])
                 plot(t - t[0], a.i_CaL)
             # axis(xmax=500)
             # subplot(212)
@@ -1013,10 +1040,11 @@ class Clampable(object):
         return L
 
     def nelsonCa(self, protocol=((1000, -75), (4000, 0)), plot=True):
-        (proto, (traj0, traj1)), = self.vecvclamp(protocol) # "," unpacks 1tuple
+        # "," unpacks 1tuple
+        (_proto, (_traj0, traj1)), = self.vecvclamp(protocol)
         
         if plot:
-            from pylab import figure, subplot, semilogy, plot, axis
+            from pylab import figure, plot, axis
             figure()
             # semilogy(traj1.t, -traj1.a.i_CaL)
             plot(traj1.t, traj1.a.i_CaL)
@@ -1024,7 +1052,7 @@ class Clampable(object):
         
         return traj1
 
-def mmfits(L, i=2, k=None, abs=True):
+def mmfits(L, i=2, k=None, abs_=True):
     """
     Convenience wrapper for applying mmfit() to list returned by vecvclamp().
     
@@ -1034,7 +1062,7 @@ def mmfits(L, i=2, k=None, abs=True):
         The first "pulse" is usually at a holding potential.
     :param i: index of "interpulse gap" pulse.
     :param str k: name of field in y or a.
-    :param bool abs: use absolute value of y[k] or a[k]?
+    :param bool abs_: use absolute value of y[k] or a[k]?
     :return: *ymax, xhalf* : Michaelis-Menten parameters for peak y[k] 
         or a[k] in pulse [i+1] vs. duration of interpulse interval [i].
     
@@ -1064,10 +1092,10 @@ def mmfits(L, i=2, k=None, abs=True):
     tgap = []
     peak = []
     for proto, traj in L:
-        duration, voltage = proto[i]
-        t, y, dy, a = traj[i+1]
+        duration, _voltage = proto[i]
+        _t, y, _dy, a = traj[i+1]
         curr = y[k] if k in y.dtype.names else a[k]
-        if abs:
+        if abs_:
             curr = np.abs(curr)
         tgap.append(duration)
         peak.append(curr.max())
@@ -1138,7 +1166,7 @@ def mmfit(x, y, rse=False):
                 ymax = xhalf = rse_ymax = rse_xhalf = np.nan
         return (ymax, xhalf, rse_ymax, rse_xhalf) if rse else (ymax, xhalf)
 
-def decayfits(L, i, k, abs=True):
+def decayfits(L, i, k, abs_=True):
     """
     Convenience wrapper for applying decayfit() to list returned by vecvclamp().
     
@@ -1148,7 +1176,7 @@ def decayfits(L, i, k, abs=True):
         The first "pulse" is usually at a holding potential.
     :param i: index of the pulse to fit decay for.
     :param str k: name of field in y or a to fit decay of.
-    :param bool abs: use absolute value of y[k] or a[k]?
+    :param bool abs_: use absolute value of y[k] or a[k]?
     :return vi: voltage...
     :return tau: ...and corresponding tau for pulse [i] for each 
         protocol and trajectory in L.
@@ -1171,16 +1199,16 @@ def decayfits(L, i, k, abs=True):
     vi = []
     tau = []
     for proto, traj in L:
-        duration, voltage = proto[i]
-        t, y, dy, a = traj[i]
+        _duration, voltage = proto[i]
+        t, y, _dy, a = traj[i]
         curr = y[k] if k in y.dtype.names else a[k]
-        if abs:
+        if abs_:
             curr = np.abs(curr)
         vi.append(voltage)
         tau.append(decayfit(t, curr))
     return vi, tau
 
-def decayfit(t, y, p=[0.05, 0.9], prepend_zero=False, rse=False, lm=False):
+def decayfit(t, y, p=(0.05, 0.9), prepend_zero=False, rse=False, lm=False):
     """
     Fit exponential decay, y(t) = w exp(-t/tau), to latter part of trajectory.
     
@@ -1218,7 +1246,7 @@ def decayfit(t, y, p=[0.05, 0.9], prepend_zero=False, rse=False, lm=False):
         t = np.r_[0, t]
         y = np.r_[0, y]
     stats = apd(t, y, p)
-    ip, i0, i1 = stats["i"]
+    _ip, i0, i1 = stats["i"]
     # Avoid "Warning message: In is.na(rows) : 
     #        is.na() applied to non-(list or vector) of type 'NULL'"
     if i1 <= i0:
@@ -1227,10 +1255,12 @@ def decayfit(t, y, p=[0.05, 0.9], prepend_zero=False, rse=False, lm=False):
     else:
         with roptions(show_error_messages=False, deparse_max_lines=0):
             try:
-                rlm = r.lm("log(y)~t", data=dict(t=t[i0:i1], y=y[i0:i1].squeeze()))
+                rlm = r.lm("log(y)~t", data=dict(t=t[i0:i1], 
+                                                 y=y[i0:i1].squeeze()))
                 coef = r2rec(r.as_data_frame(r.coef(r.summary(rlm))))
-                intercept, slope = coef.Estimate
-                rse_intercept, rse_slope = coef["Std. Error"] / abs(coef.Estimate)
+                _intercept, slope = coef.Estimate
+                _rse_intercept, rse_slope = (coef["Std. Error"] / 
+                                             abs(coef.Estimate))
                 tau = - 1.0 / slope
             except RRuntimeError:
                 tau = rse_slope = np.nan
@@ -1264,40 +1294,36 @@ def markovplot(t, y, a=None, names=None, model=None, comp=None, col="bgrcmyk",
     
     .. ggplot::
        
-       >>> from protocols import markovplot
-       >>> import cgp.virtexp.elphys as ap_cvode
-       >>> bond = ap_cvode.Bond()
+       >>> from cgp.virtexp.elphys.examples import Bond
+       >>> bond = Bond()
        >>> t, y, stats = bond.ap()
        >>> p = markovplot(t, y, model=bond, comp="fast_sodium")
     """
     t, i = np.unique(t, return_index=True)
     y = y[i]
     if a is None:
-        dy, a = model.rates_and_algebraic(t, y)
+        _dy, a = model.rates_and_algebraic(t, y)
     else:
         a = a[i]
     if names is None:
         # Often a closed state is defined algebraically as 1 minus the others.
         # This puts it apart from other closed states in the list of names 
         # that we generate below. To remedy this, we sort it.
-        names = sorted([n for i in "y", "a" for n, c, u in zip(*model.legend[i]) 
-            if comp in c and u == "dimensionless"])
-        if len(names) < 2: # Distribution only makes sense for at least two states
+        names = sorted([n for i in "y", "a" 
+                        for n, c, u in zip(*model.legend[i]) 
+                        if comp in c and u == "dimensionless"])
+        # Distribution only makes sense for at least two states
+        if len(names) < 2:
             return None
         # Now put any open state(s) first.
         o = [i for i in names if i.startswith("O")]
         no = [i for i in names if not i.startswith("O")]
         names = o + no
-    x = np.rec.fromarrays([y[k] if k in y.dtype.names else a[k] for k in names], 
-        names=names)
+    x = np.rec.fromarrays(
+        [y[k] if k in y.dtype.names else a[k] for k in names], names=names)
     xc = x.view(float).cumsum(axis=1).view(x.dtype).squeeze()
     if plotr:
-        from rnumpy import r
-        try:
-            import ipy_rnumpy
-        except Exception:
-            pass
-        from utils.rec2dict import rec2dict
+        from ...utils.rec2dict import rec2dict
         r["df"] = r.cbind({"t": t}, r.as_data_frame(rec2dict(x)))
         # r["df"] = r.data_frame(t=t, **rec2dict(xc))
         # r["df"] = r("df[c('" + "','".join(["t"] + names) + "')]")
@@ -1317,7 +1343,8 @@ def markovplot(t, y, a=None, names=None, model=None, comp=None, col="bgrcmyk",
         prev = 0
         col = [col[i % len(col)] for i in range(len(names))]
         # Workaround for fill_between not being compatible with legend():
-        # http://matplotlib.sourceforge.net/users/legend_guide.html#plotting-guide-legend
+        # http://matplotlib.sourceforge.net/users/legend_guide.html
+        # #plotting-guide-legend
         symbols = []
         labels = []
         for i, k in enumerate(x.dtype.names):
@@ -1333,7 +1360,8 @@ def markovplots(t, y, a=None, model=None):
     """
     Markov plots for all components.
     
-    >>> bond = ap_cvode.Bond()
+    >>> from cgp.virtexp.elphys.examples import Bond
+    >>> bond = Bond()
     >>> t, y, stats = bond.ap()
     >>> from cgp.utils.thinrange import thin
     >>> i = thin(len(t), 100)
@@ -1342,8 +1370,8 @@ def markovplots(t, y, a=None, model=None):
     >>> r.windows(record=True) # doctest: +SKIP
     >>> print L # doctest: +SKIP    
     """
-    comps = np.unique([c for v in model.legend.values() for n, c, u in zip(*v) 
-        if c])
+    comps = np.unique([c for v in model.legend.values() 
+                       for _n, c, _u in zip(*v) if c])
     plots = [markovplot(t, y, model=model, comp=comp) for comp in comps]
     return [(c, p) for c, p in zip(comps, plots) if p]
 

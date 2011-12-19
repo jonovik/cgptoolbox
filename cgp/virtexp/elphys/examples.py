@@ -28,18 +28,14 @@ delay is set to zero.
 The implementation of voltage clamp experiments assumes that the model object 
 has a 
 :meth:`~cgp.cvodeint.namedcvodeint.Namedcvodeint.clamp` method.
-"""  # pylint: disable=C0301
+"""  # pylint: disable=C0301, E1002
 
 from __future__ import division # 7 / 4 = 1.75 rather than 1
-from contextlib import contextmanager
-from collections import namedtuple, deque
-import ctypes
 
 import numpy as np
-from pysundials import cvode
 
 from ...physmod.cellmlmodel import Cellmlmodel
-from . import Paceable, Clampable, ap_stats
+from . import Paceable, Clampable
 
 
 class Bond(Cellmlmodel, Paceable, Clampable):
