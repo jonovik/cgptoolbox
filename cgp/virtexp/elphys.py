@@ -31,10 +31,12 @@ has a
 """
 
 from __future__ import division # 7 / 4 = 1.75 rather than 1
+from contextlib import contextmanager
 
 import numpy as np
 from pysundials import cvode
 
+from ..cvodeint.namedcvodeint import Namedcvodeint
 from ..physmod.cellmlmodel import Cellmlmodel
 from . import ap_stats
 #
@@ -675,16 +677,138 @@ class Paceable(object):
             if BCL0 <= self.pr.stim_duration:
                 break # while
 
+class Clampable(object):
+    
+    @contextmanager
+    def dynclamp(self, setpoint, R=0.02, V="V", ion="Ki", scale=None):
+        """
+        Derived model with state value dynamically clamped to a set point.
+        
+        Input arguments:
+        
+        * setpoint : target value for state variable
+        * R=0.02 : resistance of clamping current
+        * V="V" : name of clamped variable
+        * ion="Ki" : name of state variable carrying the clamping current
+        * scale=None : "ion" per "V", 
+          default :math:`Acap * Cm / (Vmyo * F)`, see below
+        
+        Clamping is implemented as a dynamically applied current that is 
+        proportional to the deviation from the set point::
+        
+            dV/dt = -(i_K1 + ... + I_app)
+            I_app = (V - setpoint) / R
+        
+        Thus, if V > setpoint, then I_app > 0 and serves to decrease dV/dt.
+        To account for the charge added to the system, a current proportional 
+        to I_app is added to a specified ion concentration, by default Ki. This 
+        needs to be scaled according to conductance and other constants.
+        The default is as for the Bondarenko model::
+         
+            scale = Acap * Cm / (Vmyo * F)
+            dKi/dt = -(i_K1 + ... + I_app) * scale
+                
+        Example with voltage clamping of Bondarenko model. Any pre-existing 
+        stimulus amplitude is temporarily set to zero. The parameter array is 
+        shared between the original and clamped models, and restored on 
+        exiting the 'with' block.
+        
+        >>> bond = Bond()
+        >>> with bond.dynclamp(-140) as clamped:
+        ...     t, y, flag = clamped.integrate(t=[0, 10])
+        ...     bond.pr.stim_amplitude
+        array([ 0.])
+        >>> clamped.pr is bond.pr
+        True
+        >>> bond.pr.stim_amplitude
+        array([-80.])
+        
+        The clamped model has its own instance of the CVODE integrator and 
+        state NVector.
+        
+        >>> (clamped.cvode_mem is bond.cvode_mem, clamped.y is bond.y)
+        (False, False)
+        
+        However, changes in state are copied to the original on exiting the 
+        'with' block.
+        
+        >>> "%7.2f" % bond.yr.V
+        '-139.68'
+                
+        Unlike .clamp(), .dynclamp() does not allow you to change the setpoint 
+        inside the "with" block. Instead, just start a new "with" block.
+        (Changes to state variables remain on exit from the with block.)
+        
+        >>> with bond.dynclamp(-30) as clamped:
+        ...     t0, y0, flag0 = clamped.integrate(t=[0, 10])
+        >>> with bond.dynclamp(-10) as clamped:
+        ...     t1, y1, flag1 = clamped.integrate(t=[10, 20])
+        >>> np.concatenate([y0[0], y0[-1], y1[0], y1[-1]])["V"].round(2)
+        array([-139.68,  -29.96,  -29.96,  -10.34])
+        
+        Naive clamping with dV/dt = 0 and unspecified clamping current, 
+        like .clamp() does, equals the limit as R -> 0 and scale = 0.
+        
+        >>> with bond.autorestore(V=0):
+        ...     with bond.dynclamp(-140, 1e-10, scale=0) as clamped:
+        ...         t, y, flag = clamped.integrate(t=[0, 0.1])
+        
+        Although V starts at 0, it gets clamped to the setpoint very quickly.
+        
+        >>> y.V[0]
+        array([   0.])
+        >>> t[y.V.squeeze() < -139][0]
+        4.94...e-10
+        """
+        if scale is None:
+            p = self.pr
+            scale = p.Acap * p.Cm / (p.Vmyo * p.F)
+        
+        # Indices to state variables whose rate-of-change will be modified.
+        iV = self.dtype.y.names.index(V)
+        iion = self.dtype.y.names.index(ion)
+        
+        def dynclamped(t, y, ydot, f_data):
+            """New RHS that prevents some elements from changing."""
+            self.f_ode(t, y, ydot, f_data)
+            I_app = (y[iV] - setpoint) / R
+            ydot[iV] -= I_app
+            ydot[iion] -= I_app * scale
+            return 0
+        
+        y = np.array(self.y).view(self.dtype.y)
+        
+        # Use original options when rerunning the Cvodeint initialization.
+        oldkwargs = dict((k, getattr(self, k)) 
+            for k in "chunksize maxsteps reltol abstol".split())
+        
+        pr_old = self.pr.copy()
+        clamped = Namedcvodeint(dynclamped, self.t, y, self.pr, **oldkwargs)
+        
+        # Disable any hard-coded stimulus protocol
+        if "stim_amplitude" in clamped.dtype.p.names:
+            clamped.pr.stim_amplitude = 0
+        
+        try:
+            yield clamped # enter "with" block
+        finally:
+            self.pr[:] = pr_old
+            for k in clamped.dtype.y.names:
+                if k in self.dtype.y.names:
+                    setattr(self.yr, k, getattr(clamped.yr, k))
+    
 
-class Bond(Cellmlmodel, Paceable):
+
+
+class Bond(Cellmlmodel, Paceable, Clampable):
     """
-    Example for class :class:`Paceable` using the Bondarenko et al. 2004 model.
+    :mod:`cgp.virtexp.elphys` example: Bondarenko et al. 2004 model.
     
     Please **see the source code** for how this class uses the 
-    :class:`Paceable` mixin to add an experimental protocol to a 
-    :class:`~cgp.physmod.cgp.physmod.Cellmlmodel`.
+    :class:`Paceable` and :class:`Clampable` mixins to add an experimental 
+    protocols to a :class:`~cgp.physmod.cgp.physmod.Cellmlmodel`.
     
-    ..  inheritance-diagram: cgp.physmod.cellmlmodel.Cellmlmodel Paceable Bond
+    ..  inheritance-diagram: cgp.physmod.cellmlmodel.Cellmlmodel Paceable Clampable Bond
         parts: 1
     
     .. todo:: Add voltage clamping.

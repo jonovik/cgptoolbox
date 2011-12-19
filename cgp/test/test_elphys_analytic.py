@@ -4,10 +4,10 @@
 import numpy as np
 
 from ..cvodeint.namedcvodeint import Namedcvodeint
-from ..virtexp.elphys import Paceable
+from ..virtexp.elphys import Paceable, Clampable
 from ..utils.rec2dict import dict2rec
 
-class Test_cell(Namedcvodeint, Paceable):
+class Test_cell(Namedcvodeint, Paceable, Clampable):
     
     pr = dict2rec(m=np.log(20), stim_duration=1.0, stim_amplitude=10.0, 
                   stim_period=2.0).view(np.recarray)
@@ -90,9 +90,9 @@ class Test_cell(Namedcvodeint, Paceable):
          'peak': 20.000...,
          't_repol': array([ 1.044..., 1.096...,   1.156..., 1.199...]),
          'ttp': 1.0}
-    """
-    pass
-
+        """
+        pass
+    
     def test_aps(self, n=5, y=None, pr=None, *args, **kwargs):
         """
         Test ported from :mod:`cgp.virtexp.elphys`.
@@ -146,3 +146,10 @@ class Test_cell(Namedcvodeint, Paceable):
         array([[ 0.55000...], [ 0.55003...], [ 0.52750...], [ 0.52750...]])
         """
         pass
+    
+    def test_dynclamp(self):
+        stim_amplitude = float(self.pr.stim_amplitude)
+        assert stim_amplitude != 0
+        with self.dynclamp(-140):
+            assert self.pr.stim_amplitude == 0
+        np.testing.assert_equal(self.pr.stim_amplitude, stim_amplitude)
