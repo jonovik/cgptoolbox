@@ -50,11 +50,12 @@ try:
 except Exception:
     pass
 
-from . import elphys as ap_cvode
+from ...cvodeint.namedcvodeint import Namedcvodeint
+from . import Paceable as ap_cvode
 from .ap_stats import apd
-from ..utils.ordereddict import OrderedDict
-from ..utils.thinrange import thin
-from ..utils.splom import r2rec
+from ...utils.ordereddict import OrderedDict
+from ...utils.thinrange import thin
+from ...utils.splom import r2rec
 
 Pace = namedtuple("Pace", "t y dy a stats")
 Trajectory = namedtuple("Trajectory", "t y dy a")
@@ -118,7 +119,8 @@ def listify(sequence):
     
     This is useful for modifying pacing protocols.
     
-    >>> b = Clampable.mixin(ap_cvode.Bond, chunksize=10000)
+    >>> from cgp.virtexp.elphys.examples import Bond
+    >>> b = Bond()
     >>> listify(b.bond_protocols(thold=5000)[11])
     [['i_Kr'], [[5000, -80], [1000, [-70, -60, ..., 60]], [1000, -40]], 
     [[0, 2000, 0, 1]], 'http://...']
@@ -271,7 +273,8 @@ def vclamp2arr(L, nthin=100):
     Example, thinning to 3 time-points and rounding results to nearest 1/4 
     for briefer printing:
     
-    >>> b = Clampable.mixin(ap_cvode.Fitz)
+    >>> from cgp.virtexp.elphys.examples import Fitz
+    >>> b = Fitz()
     >>> protocol = (1000, -140), (500, np.linspace(-80, 40, 4)), (180, -20)
     >>> L = zip(*[traj for proto, traj in b.vecvclamp(protocol)])
     >>> holding, p1, p2 = [vclamp2arr(i, 3) for i in L]
@@ -337,7 +340,8 @@ class Clampable(object):
         """
         Run all Bondarenko protocols.
         
-        >>> b = Clampable.mixin(ap_cvode.Bond, chunksize=10000)
+        >>> from cgp.virtexp.elphys.examples import Bond
+        >>> b = Bond(chunksize=10000)
         >>> L = b.test_bond_protocols(plot=False)
         """
         
@@ -408,7 +412,8 @@ class Clampable(object):
             Default taken from Bondarenko's ref. 39, Huser et al. 1998, 
             start of Results.
         
-        >>> b = Clampable.mixin(ap_cvode.Bond)
+        >>> from cgp.virtexp.elphys.examples import Bond
+        >>> b = Bond()
         >>> b.bond_protocols(thold=5000)[11]
         Bond_protocol(varnames=['i_Kr'], 
         protocol=[(5000, -80), (1000, array([-70, -60, ...,  60])), (1000, -40)], 
@@ -465,7 +470,8 @@ class Clampable(object):
         :param nburnin: number of stimuli for pacing protocol
         :param trest: duration of rest before Ca staircase (figure 19).
         
-        >>> b = Clampable.mixin(ap_cvode.Bond)
+        >>> from cgp.virtexp.elphys.examples import Bond
+        >>> b = Bond()
         >>> b.zhou_protocols(thold=5000)[2]
         Bond_protocol(varnames=['i_Kto_s'], 
         protocol=[(5000, -50), (200, 40), (5, -50), 
@@ -498,7 +504,8 @@ class Clampable(object):
             :nofigs:
             
             >>> from protocols import *
-            >>> b = Clampable.mixin(ap_cvode.Bond)
+            >>> from cgp.virtexp.elphys.examples import Bond
+            >>> b = Bond()
             >>> protocol = [(2, 70, 0.5, -80), (3, 30, 0.5, -80)]
         
         .. plot::
@@ -571,7 +578,8 @@ class Clampable(object):
         :return list: Input and output (protocol_i, [list of Pace]) for each 
             call to :meth:`~Clampable.pace`, one for each unique protocol.
         
-        >>> b = Clampable.mixin(ap_cvode.Bond)
+        >>> from cgp.virtexp.elphys.examples import Bond
+        >>> b = Bond()
         >>> protocol = [(3, (150, 250), 0.25, -80)]
         >>> L = b.vecpace(protocol)
         
@@ -585,7 +593,126 @@ class Clampable(object):
         [(3, 250, 0.25, -80)]   31.584 -63.252 -62.847
         """
         return [(p, list(self.pace(p, nthin))) for p in ndbcast(*protocol)]
-    
+
+    @contextmanager
+    def dynclamp(self, setpoint, R=0.02, V="V", ion="Ki", scale=None):
+        """
+        Derived model with state value dynamically clamped to a set point.
+        
+        Input arguments:
+        
+        * setpoint : target value for state variable
+        * R=0.02 : resistance of clamping current
+        * V="V" : name of clamped variable
+        * ion="Ki" : name of state variable carrying the clamping current
+        * scale=None : "ion" per "V", 
+          default :math:`Acap * Cm / (Vmyo * F)`, see below
+        
+        Clamping is implemented as a dynamically applied current that is 
+        proportional to the deviation from the set point::
+        
+            dV/dt = -(i_K1 + ... + I_app)
+            I_app = (V - setpoint) / R
+        
+        Thus, if V > setpoint, then I_app > 0 and serves to decrease dV/dt.
+        To account for the charge added to the system, a current proportional 
+        to I_app is added to a specified ion concentration, by default Ki. This 
+        needs to be scaled according to conductance and other constants.
+        The default is as for the Bondarenko model::
+         
+            scale = Acap * Cm / (Vmyo * F)
+            dKi/dt = -(i_K1 + ... + I_app) * scale
+                
+        Example with voltage clamping of Bondarenko model. Any pre-existing 
+        stimulus amplitude is temporarily set to zero. The parameter array is 
+        shared between the original and clamped models, and restored on 
+        exiting the 'with' block.
+        
+        >>> from cgp.virtexp.elphys.examples import Bond
+        >>> bond = Bond()
+        >>> with bond.dynclamp(-140) as clamped:
+        ...     t, y, flag = clamped.integrate(t=[0, 10])
+        ...     bond.pr.stim_amplitude
+        array([ 0.])
+        >>> clamped.pr is bond.pr
+        True
+        >>> bond.pr.stim_amplitude
+        array([-80.])
+        
+        The clamped model has its own instance of the CVODE integrator and 
+        state NVector.
+        
+        >>> (clamped.cvode_mem is bond.cvode_mem, clamped.y is bond.y)
+        (False, False)
+        
+        However, changes in state are copied to the original on exiting the 
+        'with' block.
+        
+        >>> "%7.2f" % bond.yr.V
+        '-139.68'
+                
+        Unlike .clamp(), .dynclamp() does not allow you to change the setpoint 
+        inside the "with" block. Instead, just start a new "with" block.
+        (Changes to state variables remain on exit from the with block.)
+        
+        >>> with bond.dynclamp(-30) as clamped:
+        ...     t0, y0, flag0 = clamped.integrate(t=[0, 10])
+        >>> with bond.dynclamp(-10) as clamped:
+        ...     t1, y1, flag1 = clamped.integrate(t=[10, 20])
+        >>> np.concatenate([y0[0], y0[-1], y1[0], y1[-1]])["V"].round(2)
+        array([-139.68,  -29.96,  -29.96,  -10.34])
+        
+        Naive clamping with dV/dt = 0 and unspecified clamping current, 
+        like .clamp() does, equals the limit as R -> 0 and scale = 0.
+        
+        >>> with bond.autorestore(V=0):
+        ...     with bond.dynclamp(-140, 1e-10, scale=0) as clamped:
+        ...         t, y, flag = clamped.integrate(t=[0, 0.1])
+        
+        Although V starts at 0, it gets clamped to the setpoint very quickly.
+        
+        >>> y.V[0]
+        array([   0.])
+        >>> t[y.V.squeeze() < -139][0]
+        4.94...e-10
+        """
+        if scale is None:
+            p = self.pr
+            scale = p.Acap * p.Cm / (p.Vmyo * p.F)
+        
+        # Indices to state variables whose rate-of-change will be modified.
+        iV = self.dtype.y.names.index(V)
+        iion = self.dtype.y.names.index(ion)
+        
+        def dynclamped(t, y, ydot, f_data):
+            """New RHS that prevents some elements from changing."""
+            self.f_ode(t, y, ydot, f_data)
+            I_app = (y[iV] - setpoint) / R
+            ydot[iV] -= I_app
+            ydot[iion] -= I_app * scale
+            return 0
+        
+        y = np.array(self.y).view(self.dtype.y)
+        
+        # Use original options when rerunning the Cvodeint initialization.
+        oldkwargs = dict((k, getattr(self, k)) 
+            for k in "chunksize maxsteps reltol abstol".split())
+        
+        pr_old = self.pr.copy()
+        clamped = Namedcvodeint(dynclamped, self.t, y, self.pr, **oldkwargs)
+        
+        # Disable any hard-coded stimulus protocol
+        if "stim_amplitude" in clamped.dtype.p.names:
+            clamped.pr.stim_amplitude = 0
+        
+        try:
+            yield clamped # enter "with" block
+        finally:
+            self.pr[:] = pr_old
+            for k in clamped.dtype.y.names:
+                if k in self.dtype.y.names:
+                    setattr(self.yr, k, getattr(clamped.yr, k))
+
     def vclamp(self, protocol, nthin=None):
         """
         Iterator to yield t, y, dy, a, stats from a voltage clamp experiment.
@@ -598,7 +725,8 @@ class Clampable(object):
         Here is an example of the P1-P2 protocol used in Figure 3 of 
         Bondarenko et al. 2004.
         
-        >>> b = Clampable.mixin(ap_cvode.Bond)
+        >>> from cgp.virtexp.elphys.examples import Bond
+        >>> b = Bond()
         
         Simulate three intervals: holding potential, P1 pulse, P2 pulse.
         
@@ -657,7 +785,8 @@ class Clampable(object):
             :nofigs:
             
             >>> from protocols import *
-            >>> b = Clampable.mixin(ap_cvode.Bond)
+            >>> from cgp.virtexp.elphys.examples import Bond
+            >>> b = Bond()
             >>> protocol = [(100, -80), (50, 0), 
             ...     (np.arange(2, 78, 15), (-90, -80, -70)), (100, 0)]
             >>> p1, gap, p2 = b.vargap(protocol)  # 4 s
@@ -761,7 +890,8 @@ class Clampable(object):
         :return: List with input and output (protocol_i, trajectories_i) for 
             each call to :meth:`~Clampable.vclamp`, one for each unique protocol.
         
-        >>> b = Clampable.mixin(ap_cvode.Bond)
+        >>> from cgp.virtexp.elphys.examples import Bond
+        >>> b = Bond()
         >>> protocol = (1000, -140), (500, np.linspace(-80, 40, 4)), (180, -20)
         >>> L = b.vecvclamp(protocol)
         
@@ -910,7 +1040,8 @@ def mmfits(L, i=2, k=None, abs=True):
     
     Example: Michaelis-Menten fit of peak i_CaL current vs gap duration.
     
-    >>> b = Clampable.mixin(ap_cvode.Bond)
+    >>> from cgp.virtexp.elphys.examples import Bond
+    >>> b = Bond()
     >>> protocol = (1000, -80), (250, 0), (np.linspace(2, 202, 5), -80), (100, 0)
     >>> with b.autorestore():
     ...     L = b.vecvclamp(protocol)
@@ -1024,7 +1155,8 @@ def decayfits(L, i, k, abs=True):
     
     Example:
     
-    >>> b = Clampable.mixin(ap_cvode.Bond)
+    >>> from cgp.virtexp.elphys.examples import Bond
+    >>> b = Bond()
     >>> L = b.vecvclamp(protocol=[(1000, -140), (500, (-80, -50, 10))])
     >>> decayfits(L, 1, "i_Na")
     ([-80, -50, 10], [nan, 58.5..., 0.4829...])
