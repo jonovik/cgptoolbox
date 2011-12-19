@@ -213,8 +213,11 @@ class Namedcvodeint(Cvodeint):
         if _y is not None:
             try:
                 self.y[:] = _y
-            except ValueError:
-                # "can only convert an array of size 1 to a Python scalar"
+                # Assignment to NVector won't check number of elements, so:
+                np.testing.assert_allclose(self.y, _y)
+            except ValueError, exc:
+                msg = "can only convert an array of size 1 to a Python scalar"
+                assert msg in str(exc)
                 self.y[:] = _y.squeeze()
             except TypeError: # float expected instead of numpy.void instance
                 self.y[:] = _y.item()
