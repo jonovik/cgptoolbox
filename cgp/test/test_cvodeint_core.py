@@ -89,6 +89,25 @@ def test_integrate_adaptive_steps():
     _t, _y, flag = c.integrate(t=1)
     np.testing.assert_equal(flag, cvode.CV_TSTOP_RETURN)
 
+def test_integrate():
+    c = Cvodeint(example_ode.logistic_growth, t=[0, 2], y=[0.1])
+    t, y, _flag = c.integrate()
+    ys = example_ode.logistic_growth_sol(t, [0.1])
+    np.testing.assert_allclose(y.squeeze(), ys, rtol=1e-6)
+
+def test_integrate_end():
+    """Verify integration to tstop if ode changes at tstop."""
+    c = Cvodeint(example_ode.nonsmooth_growth, t=[0, 1], y=[1], reltol=1e-10)
+    t, y, _flag = c.integrate()
+    ys = np.exp(t)
+    np.testing.assert_allclose(y.squeeze(), ys)
+
+def test_integrate_nonsmooth():
+    c = Cvodeint(example_ode.nonsmooth_growth, t=[0, 2], y=[1], reltol=1e-10)
+    t, y, _flag = c.integrate()
+    ys = example_ode.nonsmooth_growth_sol(t, y[0])
+    np.testing.assert_allclose(y.squeeze(), ys, rtol=1e-6)
+
 @raises(CvodeException)
 def test_maxsteps():
     """

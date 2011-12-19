@@ -89,6 +89,22 @@ def exp_growth_sol(t, y0, r=1):
     from numpy import exp
     return y0 * exp(r * t)
 
+def nonsmooth_growth(t, y, ydot, f_data):
+    """Exponential growth until t=1, then decay."""
+    if t < 1:
+        ydot[:] = y
+    else:
+        ydot[:] = - y
+
+def nonsmooth_growth_sol(t, y0):
+    """Solution to nonsmooth growth example."""
+    import numpy as np
+    t1 = t[t < 1]
+    t2 = t[t >= 1]
+    y1 = y0 * np.exp(t1)
+    y2 = y0 * np.exp(1) / np.exp(t2 - 1)
+    return np.r_[y1, y2]
+
 def logistic_growth(t, y, ydot, f_data, r=1, K=1):
     """
     Logistic growth equation.
