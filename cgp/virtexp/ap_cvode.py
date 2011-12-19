@@ -1196,7 +1196,7 @@ class Fitz(Bond):
     ...                         in extrema(y.V, min=False, withend=False)[-2:]]
     >>> s = "Period: %5.1f, First peak: %4.2f, Ratio of peaks: %5.3f"
     >>> print s % (t1-t0, v1, v1/v0)
-    Period: 208.1, First peak: 0.97, Ratio of peaks: 1.000
+    Period: 208.2, First peak: 0.97, Ratio of peaks: 1.000
     
     The constructor defines a "paced" :meth:`~Bond.scenario` where small 
     periodic stimuli elicit action potentials. To hack this, we impose a 
@@ -1206,7 +1206,7 @@ class Fitz(Bond):
     >>> with fitz.scenario("paced"):
     ...     L = list(fitz.aps(n=5))
     >>> [stats["ttp"] for t, y, stats in L[-2:]] # last two action potentials
-    [1.00037..., 1.00073...]
+    [1.0535..., 1.0535...]
     """
         
     def __init__(self, exposure_workspace="/fitzhugh_1961", 
