@@ -76,3 +76,12 @@ def test_properties():
     finally:
         vdp.y0r.x = -2.0  # undo change
     
+def test_dynclamp():
+    exposure_workspace = ("b0b1820b1376263e16c6086ca64d513e/"
+                          "bondarenko_szigeti_bett_kim_rasmusson_2004_apical")
+    bond = Cellmlmodel(exposure_workspace)
+    stim_amplitude = float(bond.pr.stim_amplitude)
+    assert stim_amplitude != 0
+    with bond.dynclamp(-140):
+        pass
+    np.testing.assert_equal(bond.pr.stim_amplitude, stim_amplitude)

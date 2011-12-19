@@ -550,7 +550,7 @@ class Cellmlmodel(Namedcvodeint):
         oldkwargs = dict((k, getattr(self, k)) 
             for k in "chunksize maxsteps reltol abstol".split())
         
-        clamped = Namedcvodeint(dynclamped, self.t, y, self.pr, **oldkwargs)
+        clamped = Namedcvodeint(dynclamped, self.t, y, self.pr.copy(), **oldkwargs)
         
         # Disable any hard-coded stimulus protocol
         if "stim_amplitude" in clamped.dtype.p.names:
