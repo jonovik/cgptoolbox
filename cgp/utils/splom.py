@@ -1,6 +1,5 @@
 """Scatterplot matrix helper functions."""
 
-from copy import deepcopy
 import numpy as np
 import matplotlib
 matplotlib.use("agg")
@@ -16,9 +15,8 @@ try:
     from collections import OrderedDict
 except ImportError:
     from utils.ordereddict import OrderedDict
-from utils.ndgrid import ndgrid
-from utils.thinrange import thin
-from utils.trim import trimpair # we use "trim" as argument name below
+from .thinrange import thin
+from .trim import trimpair # we use "trim" as argument name below
 
 def rlist2pydict(x):
     """

@@ -14,8 +14,7 @@ The
 :cellml:`Ten Tusscher 
 <e946a72663bdf17ef6752980a0232351/tentusscher_noble_noble_panfilov_2004_a>` 
 models have a regular stimulus protocol built in, governed by parameters for 
-period, duration and amplitude. Methods 
-:meth:`~ap_cvode.Bond.ap` and :meth:`~ap_cvode.Bond.ap_plain` use this 
+period, duration and amplitude. Method :meth:`~ap_cvode.Bond.ap` uses this 
 protocol, computing action potential and calcium transient durations, possibly 
 with rootfinding. The current hack is to set ``stim_duration=inf`` when 
 *stim_amplitude* does not depend on time or its time-dependence is handled 
@@ -36,17 +35,26 @@ try:
 except ImportError:
     import warnings
     warnings.warn("rnumpy not installed, some functions will not work.")
+    
+    from nose.plugins.skip import Skip, SkipTest
+    
+    class R(object):
+        
+        def __getattr__(self, name):
+            raise SkipTest("rnumpy not installed")
+    
+    r = R()
 
 try:
     import ipy_rnumpy
 except Exception:
     pass
 
-import ap_cvode
-from utils.ap_stats import apd
-from utils.ordereddict import OrderedDict
-from utils.thinrange import thin
-from splom import r2rec
+from . import elphys as ap_cvode
+from .ap_stats import apd
+from ..utils.ordereddict import OrderedDict
+from ..utils.thinrange import thin
+from ..utils.splom import r2rec
 
 Pace = namedtuple("Pace", "t y dy a stats")
 Trajectory = namedtuple("Trajectory", "t y dy a")
@@ -225,7 +233,7 @@ def catrec(*args, **kwargs):
     >>> tc
     array([0, 1, 2, 2, 3, 4])
     >>> (ac == a).all()
-    True
+    rec.array(True, dtype=bool)
     
     Without globalizing time.
     
@@ -538,10 +546,10 @@ class Clampable(object):
             with self.autorestore(_y=y0, stim_period=period, 
                 stim_duration=duration, stim_amplitude=amplitude):
                 for i in range(n):
-                    t, y, stats = self.ap_plain()
+                    t, y, stats = self.ap()
                     # TODO: (or rather "not to do")
                     # I could add an option to skip rates_and_algebraic, 
-                    # but this takes only 8% of the time for ap_plain anyway.
+                    # but this takes only 8% of the time for ap anyway.
                     # We could save 30% time by predefining e.g. 100 
                     # time-points instead of letting ap_cvode return ~1500 
                     # points, but the preset temporal resolution might not suit 
@@ -1125,7 +1133,7 @@ def markovplot(t, y, a=None, names=None, model=None, comp=None, col="bgrcmyk",
     .. ggplot::
        
        >>> from protocols import markovplot
-       >>> import ap_cvode
+       >>> import cgp.virtexp.elphys as ap_cvode
        >>> bond = ap_cvode.Bond()
        >>> t, y, stats = bond.ap()
        >>> p = markovplot(t, y, model=bond, comp="fast_sodium")
@@ -1195,7 +1203,7 @@ def markovplots(t, y, a=None, model=None):
     
     >>> bond = ap_cvode.Bond()
     >>> t, y, stats = bond.ap()
-    >>> from utils.thinrange import thin
+    >>> from cgp.utils.thinrange import thin
     >>> i = thin(len(t), 100)
     >>> L = markovplots(t[i], y[i], model=bond)
     >>> from rnumpy import r
