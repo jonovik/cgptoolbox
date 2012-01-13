@@ -12,6 +12,7 @@ def flatten(nestedList):
     http://wiki.python.org/moin/ProblemSets/99%20Prolog%20Problems%20Solutions#Problem7.3AFlattenanestedliststructure
     """
     def aux(listOrItem):
+        """Generator to recursively yield items."""
         if isinstance(listOrItem, list):
             for elem in listOrItem:
                 for item in aux(elem):
@@ -21,7 +22,7 @@ def flatten(nestedList):
     
     return list(aux(nestedList))
 
-def monogenicpar(genotype, hetpar, relvar=0.5, nloci=[], absvar=None):
+def monogenicpar(genotype, hetpar, relvar=0.5, nloci=None, absvar=None):
     """
     Genotype-to-parameter map that assumes one biallelic locus per parameter
     
@@ -138,23 +139,27 @@ def geno2par_additive(genotype, hetpar, relvar=0.5, nloci=0, absvar=None):
         allelecount = np.array(genotype).sum(axis=1)
     else:
         allelecount = genotype
-    allelecount.shape=(1,N) 
+    allelecount.shape = (1, N) 
 
     ## Check input type of relvar and convert to (N,M) np.array
     # TODO (kapsle, kapsle): Raise errors instead of prints
     if type(relvar).__name__=='ndarray':
-        if relvar.shape!=(N, M):
+        if relvar.shape != (N, M):
             print 'relvar.shape must be (nloci,M)'
-    elif type(relvar).__name__=='float': #Test for N==M and create diagonal array
-        if N==M:
+    elif type(relvar).__name__=='float':
+        # Test for N==M and create diagonal array
+        if N == M:
             relvar = np.eye(N) * relvar
         else:
             print 'nloci!=M so scalar relvar is not accepted' 
-    elif type(relvar).__name__=='list': #Test length, create NxM array
+    elif type(relvar).__name__=='list':
+        # Test length, create NxM array
         if len(relvar)==N:
-            rvar = np.zeros((N,M)).view(hetpar.dtype, np.recarray)  #initialize with zeros
-            for i in range(N): #fill in non-zeros row by row
-                [ setattr(rvar[i],key,value) for key,value in relvar[i].items() ]
+            rvar = np.zeros((N, M)).view(hetpar.dtype, np.recarray)
+            for i in range(N):
+                # fill in non-zeros row by row
+                for key, value in relvar[i].items():
+                    setattr(rvar[i], key, value)
             relvar = rvar.view(float)
         else:
             print 'relvar list must contain nloci dictionaries'
@@ -170,7 +175,7 @@ def geno2par_additive(genotype, hetpar, relvar=0.5, nloci=0, absvar=None):
     basis += np.reshape(np.dot(allelecount-1, absvar),(M,))
     return basis.view(hetpar.dtype, np.recarray)
  
-def prepare_geno2par_additive(genes, parnames, origpar, relchange, nloci=[]):
+def prepare_geno2par_additive(genes, parnames, origpar, relchange, nloci=None):
     '''
     Prepare input for geno2par_additive, works for 1:1 and 1:many
     
@@ -207,7 +212,7 @@ def prepare_geno2par_additive(genes, parnames, origpar, relchange, nloci=[]):
     
     '''
     
-    if nloci==[]:
+    if nloci is None:
         nloci = len(genes)
 
     #sample polymorphic loci
@@ -220,18 +225,22 @@ def prepare_geno2par_additive(genes, parnames, origpar, relchange, nloci=[]):
     origpar = np.concatenate(tuple([origpar[i] for i in loci]))
 
     #format names and change to recarrays hetpar and relvar
-    dtype = [(par,float) for par in flatten(parnames)]
+    dtype = [(par, float) for par in flatten(parnames)]
     
-    hetrel = np.concatenate(tuple([np.mean(ch,axis=1) for ch in flatten(relchange)]))
+    hetrel = np.concatenate(tuple([np.mean(ch, axis=1) 
+                                   for ch in flatten(relchange)]))
     hetpar = origpar * hetrel
-    hetpar = hetpar.view(dtype,np.recarray)
-    relvar = np.zeros((len(genes),len(flatten(parnames))))
+    hetpar = hetpar.view(dtype, np.recarray)
+    relvar = np.zeros((len(genes), len(flatten(parnames))))
     par = 0
     for i in range(len(genes)):
-        for j in range(len(parnames[i])):               
-            relvar[i,par] = 1
+        # pylint: disable=W0612
+        for j in range(len(parnames[i])):  # @UnusedVariable
+            relvar[i, par] = 1
             par += 1 
-    relvar = relvar * np.concatenate(tuple([(np.mean(ch,axis=1)-np.min(ch,axis=1))/np.mean(ch,axis=1) for ch in flatten(relchange)]))
+    tup = tuple([(np.mean(ch, axis=1)-np.min(ch, axis=1))/np.mean(ch, axis=1) 
+                 for ch in flatten(relchange)])
+    relvar = relvar * np.concatenate(tup)
 
     return genes, hetpar, relvar
 
@@ -294,16 +303,16 @@ def geno2par_diploid(genotype, hetpar, relvar):
         allelecount = np.array(genotype).sum(axis=1)
     else:
         allelecount = genotype
-    allelecount.shape=(N,) 
+    allelecount.shape = (N,) 
 
     genopar = copy(hetpar)    #copy parameter structure
     #modify parameter values for each single locus genotype
     for i in range(N):
         for j in range(M):
-            if relvar[i,j]==1:
-                if allelecount[i]==0:
+            if relvar[i, j] == 1:
+                if allelecount[i] == 0:
                     genopar[0][j][1] = hetpar[0][j][0]
-                if allelecount[i]==2:
+                if allelecount[i] == 2:
                     genopar[0][j][0] = hetpar[0][j][1]
                 
     return genopar
