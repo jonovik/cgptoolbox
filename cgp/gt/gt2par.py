@@ -3,7 +3,23 @@ Genotype-to-parameter maps
 
 """
 import numpy as np
-from utils.flatten import flatten
+
+def flatten(nestedList):
+    """
+    Flatten a nested list structure.
+    
+    Source:
+    http://wiki.python.org/moin/ProblemSets/99%20Prolog%20Problems%20Solutions#Problem7.3AFlattenanestedliststructure
+    """
+    def aux(listOrItem):
+        if isinstance(listOrItem, list):
+            for elem in listOrItem:
+                for item in aux(elem):
+                    yield item
+        else:
+            yield listOrItem
+    
+    return list(aux(nestedList))
 
 def monogenicpar(genotype, hetpar, relvar=0.5, nloci=[], absvar=None):
     """
@@ -219,7 +235,7 @@ def prepare_geno2par_additive(genes, parnames, origpar, relchange, nloci=[]):
 
     return genes, hetpar, relvar
 
-def geno2par_diploid(genotype, hetpar, relvar, nloci):
+def geno2par_diploid(genotype, hetpar, relvar):
     """
     General (many:many) diploid genotype-to-parameter map for N biallelic (alleles 0/1) 
     loci affecting M parameters. With a diploid parameter genotype-to-parameter map we mean
@@ -240,7 +256,6 @@ def geno2par_diploid(genotype, hetpar, relvar, nloci):
             (NxM array)- element i,j gives the proportional change in parameter j associated with genotype change at locus i.
             (list with N dictionaries) - sparse version of the NxM array, dictionary i contains non-zero parameternammes as 
                 keys and proportional changes as values.
-        nloci:   (int) number of polymorphic loci
     
 
     Gene/parameter names are taken from the fieldnames of hetpar.
