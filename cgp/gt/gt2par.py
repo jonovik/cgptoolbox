@@ -1,7 +1,7 @@
-"""
-Genotype-to-parameter maps
+"""Simple genotype-to-parameter maps."""
 
-"""
+from copy import copy
+
 import numpy as np
 
 def flatten(nestedList):
@@ -11,6 +11,7 @@ def flatten(nestedList):
     Source:
     http://wiki.python.org/moin/ProblemSets/99%20Prolog%20Problems%20Solutions#Problem7.3AFlattenanestedliststructure
     """
+    
     def aux(listOrItem):
         """Generator to recursively yield items."""
         if isinstance(listOrItem, list):
@@ -24,18 +25,21 @@ def flatten(nestedList):
 
 def monogenicpar(genotype, hetpar, relvar=0.5, nloci=None, absvar=None):
     """
-    Genotype-to-parameter map that assumes one biallelic locus per parameter
+    Genotype-to-parameter map that assumes one biallelic locus per parameter.
     
-    Returns a record array of parameter values for the given genotype.
-    Input:
-        nloci: geno2par argument not used here
-        genotype : sequence where each item is 0, 1, or 2, 
-            denoting the "low" homozygote, the "baseline" heterozygote, and 
-            the "high" homozygote, respectively. Alternatively, each item can 
-            be a 2-tuple where each item is 0 or 1.
-        hetpar : record array of "fully heterozygous" parameter values
-        relvar : proportion change (scalar)
-        absvar : absolute change (array-like), overrides relvar if present
+    :return recarray: parameter values for the given genotype.
+    :param int nloci: :func:`geno2par` argument not used here.
+    :param sequence genotype: each item is 0, 1, or 2, denoting the "low" 
+        homozygote, the "baseline" heterozygote, and the "high" homozygote, 
+        respectively. Alternatively, each item can be a 2-tuple where each 
+        item is 0 or 1.
+    
+    :param recarray hetpar: record array of "fully heterozygous" parameter 
+        values
+    
+    :param float relvar : proportion change (scalar)
+    :param array_like absvar : absolute change, overrides relvar if present.
+    
     Gene/parameter names are taken from the fieldnames of hetpar.
     Thus, the result has the same dtype (Numpy data type) as the genotype array.
     
@@ -76,25 +80,33 @@ def monogenicpar(genotype, hetpar, relvar=0.5, nloci=None, absvar=None):
 
 def geno2par_additive(genotype, hetpar, relvar=0.5, nloci=0, absvar=None):
     """
-    General (many:many) additive genotype-to-parameter map for N biallelic (alleles 0/1) 
-    loci affecting M parameters. The gp-map is intra- and inter-locus additive and for all loci
-    genotype (0,0) (coded 0)  has the lowest parameter value.
+    General (many:many) additive genotype-to-parameter map for N biallelic 
+    (alleles 0/1) loci affecting M parameters. The gp-map is intra- and 
+    inter-locus additive and for all loci. Genotype (0,0) (coded 0)  has the 
+    lowest parameter value.
     
-    Returns a record array of parameter values for the given genotype.
-    Input:
-        genotype : a single, multilocus genotype represented by a sequence where each item is 0, 1, or 2, 
-            denoting the "low" homozygote, the "baseline" heterozygote, and 
-            the "high" homozygote, respectively. Alternatively, each item can 
-            be a 2-tuple where each item is 0 or 1.
-        hetpar : record array of  M parameter values for the full heterozygot genotype [[0,1],[0,1],..,[0,1],[0,1]]
-        nloci:	 (int) number of polymorphic loci
-        relvar : proportional change in parameter values associated with changing the genotype at a locus from
-            heterozygot to either of the homozygots
-            (scalar float) - 1 locus: 1 parameter , same proportion for all loci
-            (NxM array)- element i,j gives the proportional change in parameter j associated with genotype change at locus i.
-            (list with N dictionaries) - sparse version of the NxM array, dictionary i contains non-zero parameternammes as 
-                keys and proportional changes as values.
-        absvar : absolute change (array-like), overrides relvar if present
+    :return recarray: parameter values for the given genotype.
+    :param sequence genotype: a single, multilocus genotype represented by a 
+        sequence where each item is 0, 1, or 2, denoting the "low" homozygote, 
+        the "baseline" heterozygote, and the "high" homozygote, respectively. 
+        Alternatively, each item can be a 2-tuple where each item is 0 or 1.
+    
+    :param recarray hetpar: record array of  M parameter values for the fully 
+        heterozygous genotype [[0,1],[0,1],..,[0,1],[0,1]]
+    
+    :param int nloci: number of polymorphic loci
+    :param relvar: proportional change in parameter values associated 
+        with changing the genotype at a locus from heterozygous to either of 
+        the homozygotes.
+        
+        * scalar float: 1 locus: 1 parameter , same proportion for all loci
+        * NxM array: element i,j gives the proportional change in parameter j 
+          associated with genotype change at locus i.
+        * list of N dicts of (parameter name, proportional change): sparse 
+          version of the NxM array.
+    
+    :param array_like absvar: absolute change (array-like), overrides relvar 
+        if present.
 
     Gene/parameter names are taken from the fieldnames of hetpar.
     Thus, the result has the same dtype (Numpy data type) as the genotype array.
@@ -179,17 +191,20 @@ def prepare_geno2par_additive(genes, parnames, origpar, relchange, nloci=None):
     '''
     Prepare input for geno2par_additive, works for 1:1 and 1:many
     
-    Input:
-        genes       list of gene names in cGP model
-        parnames    nested list of heritable parameters associated with each gene in genes
-        origpar     list of numpy arrays with original parameter values for all parameters in parnames
-        relchange   nested list of numpy array with relative change (from origpar) for 00 homozygote and 11 homozygote respectively
-        nloci       number of polymorloci (defaults to len(genes))
+    :return tuple:
+        
+        * loci: list of polymorphic genes
+        * hetpar      recarray with parameter values for complete heterozygote
+        * relvar      see input to geno2par_additive
     
-    Output:
-        loci        list of polymorphic genes
-        hetpar      recarray with parameter values for complete heterozygot
-        relvar      see input to geno2par_additive
+    :param list genes: list of gene names in cGP model
+    :param list parnames: nested list of heritable parameters associated with 
+        each gene in genes
+    :param list origpar: list of numpy arrays with original parameter values 
+        for all parameters in parnames
+    :param list relchange: nested list of numpy array with relative change 
+        (from origpar) for 00 homozygote and 11 homozygote respectively
+    :param int nloci: number of polymorphic loci (defaults to len(genes))
     
     TODO: Implement many:many 
     
@@ -251,22 +266,27 @@ def geno2par_diploid(genotype, hetpar, relvar):
     that each allele of a genotype is mapped to one of two parameters in a tuple. These parameter-pairs 
     are homologous in the sence that they describe functional aspects of two homologous DNA sequences.
     
-    Returns a record array of tuples with shape (2,) containing parameter values for the given genotype.
-
-    Input:
-        genotype : a single, multilocus genotype represented by a sequence where each item is 0, 1, or 2, 
-            denoting the "low" homozygote, the "baseline" heterozygote, and 
-            the "high" homozygote, respectively. Alternatively, each item can 
-            be a 2-tuple where each item is 0 or 1.
-        hetpar : record array of  M (2,) tuples of parameter values for the full heterozygot genotype [[0,1],[0,1],..,[0,1],[0,1]]
-        relvar : proportional change in parameter values associated with changing the genotype at a locus from
-            heterozygot to either of the homozygots
-            (scalar float) - 1 locus: 1 parameter , same proportion for all loci
-            (NxM array)- element i,j gives the proportional change in parameter j associated with genotype change at locus i.
-            (list with N dictionaries) - sparse version of the NxM array, dictionary i contains non-zero parameternammes as 
-                keys and proportional changes as values.
+    :return recarray: tuples with shape (2,) containing parameter values for 
+        the given genotype.
     
-
+    :param sequence genotype: a single, multilocus genotype represented by a 
+        sequence where each item is 0, 1, or 2, denoting the "low" homozygote, 
+        the "baseline" heterozygote, and the "high" homozygote, respectively. 
+        Alternatively, each item can be a 2-tuple where each item is 0 or 1.
+    
+    :param recarray hetpar: record array of  M (2,) tuples of parameter values 
+        for the fully heterozygous genotype [[0,1],[0,1],..,[0,1],[0,1]]
+    
+    :param float relvar: proportional change in parameter values associated 
+        with changing the genotype at a locus from heterozygous to either of 
+        the homozygotes.
+        
+        * scalar float: 1 locus: 1 parameter , same proportion for all loci
+        * NxM array: element i, j gives the proportional change in parameter j 
+          associated with genotype change at locus i.
+        * list of N dicts of (parameter name, proportional change): sparse 
+          version of the NxM array.
+    
     Gene/parameter names are taken from the fieldnames of hetpar.
     Thus, the result has the same dtype (Numpy data type) as the genotype array.
     
@@ -289,11 +309,7 @@ def geno2par_diploid(genotype, hetpar, relvar):
     >>> geno2par_diploid(genotype, hetpar, relvar)      #doctest: +NORMALIZE_WHITESPACE
     rec.array([([0.25, 0.25], [0.5, 0.5], [1.25, 1.25])],
           dtype=[('a', '<f8', (2,)), ('b', '<f8', (2,)), ('c', '<f8', (2,))])
- 
-
     """
-    from copy import copy
-
     N = relvar.shape[0] #number of genes
     M = relvar.shape[1] #number of heritable parameters
 
