@@ -4,6 +4,7 @@
 import numpy as np
 from nose.tools import assert_equal
 
+from ..physmod import cellmlmodel
 from ..physmod.cellmlmodel import Cellmlmodel, Legend, parse_legend
 
 vdp = Cellmlmodel()
@@ -75,3 +76,7 @@ def test_properties():
         np.testing.assert_equal([3.14, 0], vdp.model.y0)
     finally:
         vdp.y0r.x = -2.0  # undo change
+
+def test_get_all_workspaces():
+    w = cellmlmodel.get_all_workspaces()
+    assert "A Primer on Modular Mass Action Modelling with CellML" in w.title

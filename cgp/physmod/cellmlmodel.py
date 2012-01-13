@@ -14,6 +14,8 @@ from __future__ import with_statement # allows garbage collection of files
 from urllib import urlopen # to download from CellML Code Generation Service
 from collections import namedtuple
 import os # to remove old compiled version of model modules
+import json
+from contextlib import closing
 
 from ..cvodeint.namedcvodeint import Namedcvodeint
 from ..utils.commands import getstatusoutput
@@ -610,7 +612,28 @@ if ext in [".so", ".pyd"]:
 print cap
 """
         return template % self.model.__name__
+
+
+def get_all_workspaces(
+    url="http://models.cellml.org/workspace/rest/contents.json"):
+    """
+    List all available CellML models.
     
+    Returns a record array with fields "title", "uri".
+    
+    If you wanted to check out every workspace at cellml.org, 
+    you could run the following in IPython::
+    
+        from cgp.physmod.cellmlmodels import get_all_workspaces
+        w = get_all_workspaces()
+        for title, uri in w:
+            !hg clone $uri
+    """
+    with closing(urlopen(url)) as f:
+        d = json.load(f)
+    names = [i.lower() for i in d["keys"]]
+    return np.rec.fromrecords(d["values"], names=names)
+
 if __name__ == "__main__":
     import doctest
     failure_count, test_count = doctest.testmod(optionflags=
