@@ -6,6 +6,9 @@ from nose.plugins.attrib import attr
 
 from cgp.virtexp.elphys.clampable import catrec, mmfits
 
+# FIXME: --attr='!slow' --with-doctests will prevent normal tests from running
+# For the time being, I rename this file to _test... so it won't run.
+
 @attr(slow=True)
 def test_vargap():
     """Test fast vs slow variable-gap protocol."""
