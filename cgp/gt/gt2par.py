@@ -143,23 +143,23 @@ def geno2par_additive(genotype, hetpar, relvar=0.5, nloci=0, absvar=None):
     ## Check input type of relvar and convert to (N,M) np.array
     # TODO (kapsle, kapsle): Raise errors instead of prints
     if type(relvar).__name__=='ndarray':
-	if relvar.shape!=(N, M):
-	    print 'relvar.shape must be (nloci,M)'
+        if relvar.shape!=(N, M):
+            print 'relvar.shape must be (nloci,M)'
     elif type(relvar).__name__=='float': #Test for N==M and create diagonal array
-	if N==M:
-	    relvar = np.eye(N) * relvar
-	else:
-	    print 'nloci!=M so scalar relvar is not accepted' 
+        if N==M:
+            relvar = np.eye(N) * relvar
+        else:
+            print 'nloci!=M so scalar relvar is not accepted' 
     elif type(relvar).__name__=='list': #Test length, create NxM array
-	if len(relvar)==N:
-	    rvar = np.zeros((N,M)).view(hetpar.dtype, np.recarray)  #initialize with zeros
-	    for i in range(N): #fill in non-zeros row by row
-		[ setattr(rvar[i],key,value) for key,value in relvar[i].items() ]
-	    relvar = rvar.view(float)
-	else:
-	    print 'relvar list must contain nloci dictionaries'
+        if len(relvar)==N:
+            rvar = np.zeros((N,M)).view(hetpar.dtype, np.recarray)  #initialize with zeros
+            for i in range(N): #fill in non-zeros row by row
+                [ setattr(rvar[i],key,value) for key,value in relvar[i].items() ]
+            relvar = rvar.view(float)
+        else:
+            print 'relvar list must contain nloci dictionaries'
     else:
-	print 'Relvar must be float, numpy array or list' 
+        print 'Relvar must be float, numpy array or list' 
    
     ## calculate parameter values for genotype
     basis = hetpar.copy().view(float)
