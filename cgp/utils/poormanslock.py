@@ -46,22 +46,6 @@ IOError: Timed out waiting to acquire lock
 ...     with Lock():
 ...         pass
 >>> # no error
-
-@Todo: Allow reuse of a lock, rather than having to construct it anew each time.
-
->>> lock = Lock()
->>> os.path.exists(lock.lockname)
-False
->>> with lock:
-...     os.path.exists(lock.lockname)
-True
->>> os.path.exists(lock.lockname)
-False
->>> with lock:
-...     os.path.exists(lock.lockname)
-True
->>> os.path.exists(lock.lockname)
-False
 """
 import os # os.remove - delete lockfile
 import time # time.sleep - wait between attempts to create lockfile

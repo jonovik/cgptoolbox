@@ -54,7 +54,8 @@ Calling hdfcache.cache again will cache multiple functions in the same HDF file.
 >>> @hdfcache.cache
 ... def g(y):
 ...     "This is the docstring for the function g"
-...     result = np.zeros(1, dtype=[("a", np.int32), ("b", float), ("c", complex)])
+...     result = np.zeros(1, 
+...         dtype=[("a", np.int32), ("b", float), ("c", complex)])
 ...     result["a"] = int(y["y"])
 ...     result["b"] = 1 / y["y"]
 ...     result["c"] = complex(0, y["y"])
@@ -63,7 +64,8 @@ Calling hdfcache.cache again will cache multiple functions in the same HDF file.
 
 The function is evaluated normally the first time an input is encountered.
 
->>> x = np.rec.fromarrays([[1, 2], [1.25, 3.5]], dtype=[("i", np.int32), ("f", float)])
+>>> x = np.rec.fromarrays([[1, 2], [1.25, 3.5]], 
+...     dtype=[("i", np.int32), ("f", float)])
 >>> np.concatenate([g(f(xi, 5)) for xi in x])
 Evaluating f: [(1, 1.25)] 5 10 => [(53.25,)]
 Evaluating g: [(53.25,)] => [(53, 0.0187793..., 53.25j)]
@@ -197,12 +199,12 @@ import itertools
 from contextlib import nested
 from glob import glob
 import os
-from poormanslock import Lock
+from ..utils.poormanslock import Lock
 import shutil
 # for handling numpy record arrays and HDF tables
 import tables as pt
 import numpy as np
-from argrec import autoname
+from ..utils.argrec import autoname
 # for decorating
 import inspect
 from functools import wraps
@@ -219,7 +221,8 @@ import logging
 
 log = logging.getLogger("hdfcache")
 log.addHandler(logging.StreamHandler())
-# tab-delimited format string, see http://docs.python.org/library/logging.html#formatter-objects
+# tab-delimited format string, 
+# see http://docs.python.org/library/logging.html#formatter-objects
 fmtstr = "%(" + ")s\t%(".join(
     "asctime levelname name lineno process message".split()) + ")s"
 log.handlers[0].setFormatter(logging.Formatter(fmtstr))
