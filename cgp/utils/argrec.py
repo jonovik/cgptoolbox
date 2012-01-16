@@ -169,7 +169,9 @@ def argrec(func, *args, **kwargs):
 
 def autoname(x):
     """
-    Record array view of x, with automatic names if needed, and ndim >= 1.
+    Record array of x, with automatic names if needed, and ndim >= 1.
+    
+    A view is returned if possible, otherwise a copy is made.
     
     >>> autoname([1, 2]) == np.rec.array([(1, 2)], 
     ...     dtype=[('_0', int), ('_1', int)])
@@ -179,8 +181,23 @@ def autoname(x):
     True
     >>> autoname(0) == np.rec.array([(0,)], dtype=[('_0', int)])
     rec.array([ True], dtype=bool)
+    
+    Changes to the recarray will affect the original array only if the data is 
+    contiguous, otherwise a copy is made.
+    
+    >>> a = np.arange(4, dtype=np.byte).reshape(2, 2)
+    >>> b = autoname(a[0])
+    
+    Below, creating the "c" array requires a copy, so the subsequent 
+    assignment to c cannot update the original array.
+    
+    >>> c = autoname(a.T[0])
+    >>> b._0 = 10
+    >>> c._0 = 20
+    >>> a
+    array([[10,  1], [ 2,  3]], dtype=int8)
     """
-    x = np.asanyarray(x)
+    x = np.ascontiguousarray(x)
     if not x.shape:
         x.shape = (1,)
     if not x.dtype.names:
