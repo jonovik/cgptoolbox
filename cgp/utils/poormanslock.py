@@ -11,7 +11,6 @@ an IOError exception.
 
 Typical usage:
 
-from __future__ import with_statement
 from poormanslock import Lock
 
 with Lock():
@@ -29,11 +28,11 @@ To turn on debug-level logging:
 
 Doctests:
 
->>> from __future__ import with_statement
 >>> import signal
 >>> if hasattr(signal, "alarm"):
 ...     log.setLevel(logging.CRITICAL) # suppress error message for next test
-...     f = open("lock","w") # existing lockfile causes Lock to wait until timeout
+...     # Existing lockfile causes Lock to wait until timeout
+...     f = open("lock","w")
 ...     with Lock(max_wait=2):
 ...         pass
 ... else:
@@ -64,7 +63,6 @@ True
 >>> os.path.exists(lock.lockname)
 False
 """
-from __future__ import with_statement
 import os # os.remove - delete lockfile
 import time # time.sleep - wait between attempts to create lockfile
 import signal # signal.alarm - raise exception if things take too long
@@ -73,7 +71,8 @@ from random import random
 
 log = logging.getLogger("poormanslock")
 log.addHandler(logging.StreamHandler())
-# tab-delimited format string, see http://docs.python.org/library/logging.html#formatter-objects
+# tab-delimited format string, see 
+# http://docs.python.org/library/logging.html#formatter-objects
 fmtstr = "%(" + ")s\t%(".join(
     "asctime levelname name lineno process message".split()) + ")s"
 log.handlers[0].setFormatter(logging.Formatter(fmtstr))
@@ -93,20 +92,33 @@ def _timeout(signum, frame):
     raise IOError(message)
 
 class Lock(object):
+    """
+    Poor man's file locking: Create exclusively-locked dummy file, delete when done.
     
+    Statements inside a "with Lock():" block are executed while other tasks pause.
+    The constructor, Lock(lockname="lock", retry_delay=0.1, max_wait=30)
+    creates a dummy file (called "lock" by default), but only if it does not 
+    already exist. If the file already exists, the constructor will wait 
+    "retry_delay" seconds before retrying. Waiting too long ("max_wait") triggers 
+    an IOError exception.
+    """
+        
     def __init__(self, lockname="lock", retry_delay=0.1, max_wait=30):
-        """Create file "lockname" if not exists, retry until timeout if needed"""
+        """
+        Create file "lockname" if not exists, retry until timeout if needed.
+        """
         self.lockname = lockname # name of lockfile (needed by os.remove())
         self.retry_delay = retry_delay
         self.max_wait = max_wait
+        self.fd = None # file descriptor to lockfile (needed by os.close())
         if hasalarm:
-            signal.signal(signal.SIGALRM, _timeout) # set up handler
+            # Set up handler
+            signal.signal(signal.SIGALRM, _timeout)  # @UndefinedVariable
 
     def __enter__(self):
         """Enter context of with statement"""
         if hasalarm:
-            signal.alarm(self.max_wait)
-        self.fd = None # file descriptor to lockfile (needed by os.close())
+            signal.alarm(self.max_wait)  # @UndefinedVariable
         while self.fd is None:
             try:
                 # open file for exclusive access, raise exception if it exists
@@ -118,7 +130,8 @@ class Lock(object):
                 # wait before trying again
                 time.sleep((0.5 + 0.5 * random()) * self.retry_delay)
         if hasalarm:
-            signal.alarm(0) # defuse the timer
+            # Defuse the timer
+            signal.alarm(0)  # @UndefinedVariable
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -128,25 +141,6 @@ class Lock(object):
         log.debug("Released lock")
         return False
 
-def _test():
+if __name__ == "__main__":
     import doctest
     doctest.testmod()
-
-if __name__ == "__main__":
-    _test()
-
-"""
-Copyright 2008 Jon Olav Vik <jonovik@gmail.com>
-
-This program is free software: you can redistribute it and/or modify it under 
-the terms of the GNU General Public License as published by the Free Software 
-Foundation, either version 3 of the License, or (at your option) any later 
-version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT 
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
-FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with 
-this program. If not, see <http://www.gnu.org/licenses/>.
-"""
