@@ -16,11 +16,11 @@ You may explore the code in several ways:
 
 * Stepping through the example in IPython, using::
   
-  %run -d cgpdemo --demo
+  %run -d simple --demo
 
 * Interactive coding in IPython::
     
-    from cgpdemo import *
+    from cgp.examples.simple import *
     PH = cgpstudy()
 
 * ``%whos`` will list the functions defined.
@@ -106,7 +106,7 @@ def fitzhugh(Y, t=0.0, a=0.7, b=0.8, theta=0.08, I=0.0):
         :include-source:
         :nofigs:
         
-        >>> from cgpdemo import *
+        >>> from cgp.examples.simple import *
         >>> import scipy.integrate
         >>> t = np.arange(0, 50, 0.1)
         >>> Y = scipy.integrate.odeint(fitzhugh, [-0.6, -0.6], t)
@@ -153,23 +153,24 @@ def phaseplane():
 
     .. plot::
     
-       from cgpdemo import *
+       from cgp.examples.simple import *
        phaseplane()
     """
     import pylab
 
     X, Y, U, V = [], [], [], []
     for w in np.linspace(-1,1.5,50):
-        for v in np.linspace(-2.5,2,50):
+        for v in np.linspace(-2.5, 2, 50):
             X.append(v)
             Y.append(w)
-            u, v = fitzhugh([v,w])
+            u, v = fitzhugh([v, w])
             U.append(u)
             V.append(v)
-    pylab.quiver(X,Y,np.sign(U),np.sign(V),np.sign(U)+2*np.sign(V)) #plot phase-plane omitting magnitudes
+    # Plot phase plane, omitting magnitudes
+    pylab.quiver(X, Y, np.sign(U), np.sign(V), np.sign(U) + 2 * np.sign(V))
     pylab.hold(True)
 
-    for s in np.linspace(0.6,0.7,10):
+    for s in np.linspace(0.6, 0.7, 10):
         t, Y = ap(fitzhugh, [-1.2, -0.6],stim_curr=s)
         pylab.plot(*Y.T)
 
@@ -219,7 +220,7 @@ def ap(func, Y0, t0=0.0, stim_per=100.0, stim_curr=0.7, stim_dur=1.0,
     .. plot::
        :include-source:
        
-       from cgpdemo import *
+       from cgp.examples.simple import *
        t, Y = ap(fitzhugh, [-1.2, -0.6])
        plt.plot(t, Y)
        plt.show()
@@ -270,7 +271,7 @@ def aps(func, Y0, n=5, apfunc=ap, *args, **kwargs):
        :nofigs:
        :context:
        
-       >>> from cgpdemo import *
+       >>> from cgp.examples.simple import *
        >>> regular = aps(fitzhugh, [0, 0])
        >>> alternans = aps(fitzhugh, [0, 0], stim_per=7.0)
        >>> insufficient = aps(fitzhugh, [0, 0], stim_dur=0.1)
@@ -305,7 +306,7 @@ def aps(func, Y0, n=5, apfunc=ap, *args, **kwargs):
     return result
 
 # Summarizing phenotypes
-from utils import extrema
+from cgp.utils import extrema
 def recovery_time(v, t=None, p=0.90):
     """
     Time to ``p*100%`` recovery from first local extremum to initial value.
@@ -317,7 +318,7 @@ def recovery_time(v, t=None, p=0.90):
     Examples:
     
     >>> recovery_time([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 5, 0])
-    11.800...
+    11.8...
     >>> recovery_time([10, 0, 20], [100, 101, 102])
     101.45
     >>> recovery_time([10, 0, 20], p=0.5)
@@ -337,7 +338,7 @@ def recovery_time(v, t=None, p=0.90):
     return np.interp(vp, vi, ti) # interpolate t as function of v [sic]
 
 # Putting it all together: APD90 for all genotypes
-from utils.hdfcache import Hdfcache
+from cgp.utils.hdfcache import Hdfcache
 hdfcache = Hdfcache("cgpdemo.h5")
 def cgpstudy():
     """A simple causally cohesive genotype-phenotype model study"""
