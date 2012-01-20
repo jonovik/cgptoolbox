@@ -20,10 +20,8 @@ array([  0,   1,   2,  42,  42,  42,  42, 123,   8,   9])
 >>> import os
 >>> os.remove(filename)
 """
-import numpy
 import numpy as np
 _file = file  # Hack borrowed from Numpy 1.4.0 np.lib.io
-from numpy.lib import format
 from numpy.lib.format import magic, read_magic, dtype_to_descr
 from numpy.lib.format import read_array_header_1_0, write_array_header_1_0
 
@@ -143,7 +141,7 @@ def open_memmap(filename, mode='r+', dtype=None, shape=None,
             raise ValueError(msg % (version,))
         # Ensure that the given dtype is an authentic dtype object rather than
         # just something that can be interpreted as a dtype object.
-        dtype = numpy.dtype(dtype)
+        dtype = np.dtype(dtype)
         if dtype.hasobject:
             msg = "Array can't be memory-mapped: Python objects in dtype."
             raise ValueError(msg)
@@ -192,18 +190,18 @@ def open_memmap(filename, mode='r+', dtype=None, shape=None,
     if mode == 'w+':
         mode = 'r+'
 
-    marray = numpy.memmap(filename, dtype=dtype, shape=shape, order=order,
+    marray = np.memmap(filename, dtype=dtype, shape=shape, order=order,
         mode=mode, offset=offset)
 
     return marray
 
-def load(file, mmap_mode=None, offset=0, shape=None):
+def load(file_, mmap_mode=None, offset=0, shape=None):
     """
     Load a pickled, ``.npy``, or ``.npz`` binary file.
 
     Parameters
     ----------
-    file : file-like object or string
+    file_ : file-like object or string
         The file to read.  It must support ``seek()`` and ``read()`` methods.
         If the filename extension is ``.gz``, the file is first decompressed.
     mmap_mode: {None, 'r+', 'r', 'w+', 'c'}, optional
@@ -262,31 +260,31 @@ def load(file, mmap_mode=None, offset=0, shape=None):
 
     import gzip
 
-    if isinstance(file, basestring):
-        fid = _file(file, "rb")
-    elif isinstance(file, gzip.GzipFile):
-        fid = seek_gzip_factory(file)
+    if isinstance(file_, basestring):
+        fid = _file(file_, "rb")
+    elif isinstance(file_, gzip.GzipFile):
+        fid = np.lib.npyio.seek_gzip_factory(file_)
     else:
-        fid = file
+        fid = file_
 
     # Code to distinguish from NumPy binary files and pickles.
     _ZIP_PREFIX = 'PK\x03\x04'
-    N = len(format.MAGIC_PREFIX)
-    magic = fid.read(N)
+    N = len(np.lib.format.MAGIC_PREFIX)
+    magic_ = fid.read(N)
     fid.seek(-N, 1) # back-up
-    if magic.startswith(_ZIP_PREFIX):  # zip-file (assume .npz)
-        return NpzFile(fid)
-    elif magic == format.MAGIC_PREFIX: # .npy file
+    if magic_.startswith(_ZIP_PREFIX):  # zip-file (assume .npz)
+        return np.lib.npyio.NpzFile(fid)
+    elif magic_ == np.lib.format.MAGIC_PREFIX: # .npy file
         if mmap_mode:
-            return open_memmap(file, mode=mmap_mode, shape=shape, offset=offset)
+            return open_memmap(file_, mode=mmap_mode, shape=shape, offset=offset)
         else:
-            return format.read_array(fid)
+            return np.lib.format.read_array(fid)
     else:  # Try a pickle
         try:
-            return _cload(fid)
+            return np.lib.npyio._cload(fid)  # pylint: disable=W0212
         except:
             raise IOError, \
-                "Failed to interpret file %s as a pickle" % repr(file)
+                "Failed to interpret file %s as a pickle" % repr(file_)
 
 if __name__ == "__main__":
     import doctest
