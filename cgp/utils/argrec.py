@@ -1,3 +1,5 @@
+"""Make record array from argument list for function."""
+
 import inspect
 import numpy as np
 
@@ -131,7 +133,7 @@ def argrec(func, *args, **kwargs):
     #   unnamed optional arguments (names _i, where i is the index position)
     #   optional keyword arguments (names in arbitrary order of dict.keys())
     spec = inspect.getargspec(func) # args, varargs, keywords, defaults
-    defaults = spec.defaults if spec.defaults else () # need this to be iterables
+    defaults = spec.defaults if spec.defaults else () # need this to be iterable
     # It would be nice to use inspect.getargvalues(sys._getframe()), but that 
     # only works in the current or containing scopes. We can't get inside func 
     # to peek out.
