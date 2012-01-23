@@ -25,9 +25,9 @@ An example follows, using a temporary file by default. If you'd like to inspect
 the HDF output, you can specify a filename by passing a --filename option when 
 running the doctests.
 
->>> try: filename = options.filename
-... except NameError: filename = raw_input("Name of output file (default=''): ")
->>> if not filename:
+>>> try:
+...     filename = options.filename
+... except NameError:
 ...     import tempfile
 ...     filename = os.path.join(tempfile.mkdtemp(), 'cachetest.h5')
 
@@ -94,10 +94,10 @@ rec.array([(57.5,)], dtype=[('y', '<f8')])
 
 The source code of a cached function is stored as an attribute of its Group.
 
->>> print hdfcache.file.root.f._v_attrs.sourcecode
+>>> print hdfcache.file.root.f._v_attrs.sourcecode   # doctest: +SKIP
 @hdfcache.cache
 def f(x, a, b=10):...
->>> hdfcache.file.root.f._v_attrs
+>>> hdfcache.file.root.f._v_attrs  # doctest: +SKIP
 /f._v_attrs (AttributeSet),...
     sourcecode := '...',
     sourcefile := '<doctest __main__[3]>']
@@ -383,6 +383,9 @@ class DictHdfcache(object):
         return wrapper
 
 
+class HdfcacheException(Exception):
+    pass
+
 class Hdfcache(object):
     """HDF file wrapper with function caching decorator"""
     
@@ -436,24 +439,22 @@ class Hdfcache(object):
         Enter the context of a with statement, optionally creating flag file.
         
         This doctest tests the flag file functionality. The flag file is 
-        deleted on the first pass through the function, causing a 
-        KeyboardInterrupt. (KeyboardInterrupt is not caught by doctest, hence 
-        the explicit try..finally.)
+        deleted on the first pass through the function, causing an 
+        exception to be raised.
         
-        >>> import tempfile, os
-        >>> filename = os.path.join(tempfile.mkdtemp(), 'entertest.h5')
+        >>> import tempfile, shutil, os
+        >>> dtemp = tempfile.mkdtemp()
+        >>> filename = os.path.join(dtemp, 'entertest.h5')
         >>> cacher = Hdfcache(filename)
         >>> @cacher.cache
         ... def f(x):
         ...     os.remove(cacher.flagfilename)
         ...     return x
-        >>> try:
-        ...     with cacher:
-        ...         while True:
-        ...             y = f(0)
-        ... except KeyboardInterrupt:
-        ...     print "Flag file not found."
-        Flag file not found.
+        >>> with cacher:
+        ...     while True:
+        ...         y = f(0)
+        Traceback (most recent call last):
+        HdfcacheException: Flag file not found when calling <function f...
         """
         if self.withflagfile:
             self.incontext = True
@@ -502,8 +503,8 @@ class Hdfcache(object):
         def wrapper(input_, *args, **kwargs):  # pylint: disable=C0111
             if self.withflagfile and self.incontext:
                 if not os.path.exists(self.flagfilename):
-                    log.debug("Flag file not found when calling %s", func)
-                    raise KeyboardInterrupt # will flush cache on __exit__
+                    msg = "Flag file not found when calling %s"
+                    raise HdfcacheException(msg % func)
             input_ = autoname(input_)
             ihash = ahash(input_)
             group = self.group(funcname) # reopening file if required
