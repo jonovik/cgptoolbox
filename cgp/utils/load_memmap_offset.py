@@ -1,8 +1,13 @@
 """
 Implementing offset and shape for io.load and format.open_memmap in numpy.lib.
 
->>> filename = "temp.npy"
+Example using a Numpy array saved to a temporary directory.
+
+>>> import tempfile, os, shutil
+>>> dtemp = tempfile.mkdtemp()
+>>> filename = os.path.join(dtemp, "test.npy")
 >>> np.save(filename, np.arange(10))
+
 >>> load(filename)
 array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 >>> mmap = load(filename, mmap_mode="r+")
@@ -17,8 +22,7 @@ array([ 0,  1,  2, 42, 42, 42, 42,  7,  8,  9])
 >>> del mmap
 >>> np.load(filename)
 array([  0,   1,   2,  42,  42,  42,  42, 123,   8,   9])
->>> import os
->>> os.remove(filename)
+>>> shutil.rmtree(dtemp)
 """
 import numpy as np
 _file = file  # Hack borrowed from Numpy 1.4.0 np.lib.io
@@ -32,9 +36,11 @@ def memmap_chunk_ind(filename, indices, mode="r+", check_contiguous=True):
     See memmap_chunk() if you just want chunk a.ID out of a.get_NID(), 
     where a is module "arrayjob".
     
-    Assuming a Numpy array has already been saved to file.
+    Example using Numpy array saved to a temporary directory.
     
-    >>> filename = "test.npy"
+    >>> import tempfile, os, shutil
+    >>> dtemp = tempfile.mkdtemp()
+    >>> filename = os.path.join(dtemp, "test.npy")
     >>> np.save(filename, np.arange(5))
     
     Typical usage.
@@ -67,8 +73,8 @@ def memmap_chunk_ind(filename, indices, mode="r+", check_contiguous=True):
     
     Clean up after doctest.
     
-    >>> import os
-    >>> os.remove(filename)
+    >>> del x
+    >>> shutil.rmtree(dtemp)
     """
     indices = np.atleast_1d(indices)
     isort = sorted(indices)
