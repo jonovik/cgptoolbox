@@ -1,4 +1,5 @@
 """Convert HDF5 file with groups to/from directory tree of Numpy recarrays."""
+# pylint: disable=W0212
 
 import os
 import logging # diagnostics
@@ -6,12 +7,12 @@ import logging # diagnostics
 import numpy as np
 import tables as pt
 
-from utils.load_memmap_offset import load
+from cgp.utils.load_memmap_offset import load
 
 # Initialize logging. Keys refer to the dict made available by the logger.
 keys = "asctime levelname name lineno process message"
-format = "%(" + ")s\t%(".join(keys.split()) + ")s"
-logging.basicConfig(level=logging.INFO, format=format)
+fmt = "%(" + ")s\t%(".join(keys.split()) + ")s"
+logging.basicConfig(level=logging.INFO, format=fmt)
 hdflog = logging.getLogger('numpy_hdf')
 
 def hdf2numpy(src, dst, where="/", ext=".npy"):
@@ -27,7 +28,6 @@ def hdf2numpy(src, dst, where="/", ext=".npy"):
     ...         print ":", root.replace("\\\\", "/"), ":", files
     ...         for file in files:
     ...             print repr(np.load(os.path.join(root, file))[:])
-    ... # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
     : .../npy : []
     : .../parent : []
     : .../parent/group : ['a.npy']
@@ -43,9 +43,9 @@ def hdf2numpy(src, dst, where="/", ext=".npy"):
             relpath = os.path.relpath(table._v_pathname, "/")
             relpath = relpath.replace("\\", "/").replace("..", "")
             filename = dst + relpath + ext
-            dir, _ = os.path.split(filename)
-            if not os.path.exists(dir):
-                os.makedirs(dir)
+            dir_, _ = os.path.split(filename)
+            if not os.path.exists(dir_):
+                os.makedirs(dir_)
             np.save(filename, table[:])
 
 def numpy2hdf(src, dst, where="/", ext=".npy", recursive=True):
@@ -64,7 +64,6 @@ def numpy2hdf(src, dst, where="/", ext=".npy", recursive=True):
     ...         f
     ...         a = np.load(os.path.join(src, "a.npy"))
     ...         print "Arrays equal:", all(f.root.a[:] == a)
-    ... # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
     File(filename=...first.h5...)
     / (RootGroup) ''
     /a (Table(2,)) ''
@@ -72,7 +71,7 @@ def numpy2hdf(src, dst, where="/", ext=".npy", recursive=True):
       "i": Int8Col(shape=(), dflt=0, pos=0),
       "x": Float64Col(shape=(), dflt=0.0, pos=1)}
       byteorder := 'little'
-      chunkshape := (910,)
+      chunkshape := (...,)
     /sub (Group) ''
     /sub/b (Table(2,)) ''...
     Arrays equal: True
@@ -82,7 +81,6 @@ def numpy2hdf(src, dst, where="/", ext=".npy", recursive=True):
     ...     numpy2hdf(src, dst, where="/parent/group")
     ...     with pt.openFile(dst) as f:
     ...         f
-    ... # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
     File(filename=...second.h5...)...
     /parent/group/sub/b (Table(2,)) ''...
     
@@ -101,7 +99,6 @@ def numpy2hdf(src, dst, where="/", ext=".npy", recursive=True):
     ...         print ":", f
     ...     # Verify bugfix for case with default `where` argument
     ...     numpy2hdf(src, dst + ".nowhere")
-    ... # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
     : ...third.h5...
     /parent/group/dict (Group) ''
     /parent/group/dict/i0 (Array(1,)) ''
@@ -111,9 +108,9 @@ def numpy2hdf(src, dst, where="/", ext=".npy", recursive=True):
     /parent/group/list/k1 (Array(2,)) ''...
     """
     # HDF5 path: / for root, otherwise /slash/at/start/but/not/end
-    where = where.strip("/") # will add leading slash later
+    where = where.strip("/")  # will add leading slash later
     with pt.openFile(dst, "a") as f:
-        for root, dirs, files in os.walk(src):
+        for root, _dirs, files in os.walk(src):
             hdflog.debug("root: %s, files: %s", root, files)
             # FIXME: os.path.relpath problem with root directory
             # http://bugs.python.org/issue5117
@@ -121,10 +118,10 @@ def numpy2hdf(src, dst, where="/", ext=".npy", recursive=True):
             relpath = relpath.replace("\\", "/")
             group = where if relpath == "." else where + "/" + relpath
             group = "/" + group.strip("/")
-            for file in files:
-                name, extension = os.path.splitext(file)
+            for file_ in files:
+                name, extension = os.path.splitext(file_)
                 if extension == ext:
-                    filename = os.path.join(root, file)
+                    filename = os.path.join(root, file_)
                     dictgroup = "/" + (group + "/" + name).strip("/")
                     try:
                         a = load(filename, mmap_mode="r")
@@ -133,7 +130,8 @@ def numpy2hdf(src, dst, where="/", ext=".npy", recursive=True):
                     if (a.dtype == object) and a.shape==():
                         dict2hdf(a.item(), f, dictgroup)
                     elif a.dtype.names:
-                        f.createTable(group, name, np.atleast_1d(a), createparents=True)
+                        f.createTable(group, name, np.atleast_1d(a), 
+                                      createparents=True)
                     elif a.dtype == object:
                         # Hope that v is a list
                         d = dict(("k%s" % k, v) for k, v in enumerate(a))
@@ -154,7 +152,6 @@ def dict2hdf(d, f, where):
     ...     with pt.openFile("test.h5", "w") as f:
     ...         dict2hdf(d, f, "/walk")
     ...         print repr(f)
-    ... # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
     File(filename=test.h5, title='', mode='w', rootUEP='/', filters=...)
     / (RootGroup) ''
     /walk (Group) ''
@@ -196,7 +193,7 @@ class Example(object):
     """
     def __enter__(self):
         import tempfile
-        self.src = tempfile.mkdtemp()
+        self.src = tempfile.mkdtemp()  # pylint: disable=W0201
         dtype = [("i", np.int8), ("x", np.float64)]
         a = np.array([(1, 1.5), (2, 2.5)], dtype=dtype)
         filename = os.path.join(self.src, "a.npy")
@@ -212,4 +209,4 @@ class Example(object):
 
 if __name__ == "__main__":
     import doctest
-    doctest.testmod()
+    doctest.testmod(optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE)
