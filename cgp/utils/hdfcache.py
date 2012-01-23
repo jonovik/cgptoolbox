@@ -168,15 +168,25 @@ array([1]...)
 Details:
 
 >>> h1 = ahash(x[1:2])
->>> h1      # with joblib.hash: '4a14c07534c7a24053e58540b74de973'
-... # on Windows XP 32-bit: 1710834134
-6484299406236008918
+>>> want = dict([("joblib.hash", "4a14c07534c7a24053e58540b74de973"),
+...              ("Windows XP 32-bit", 1710834134),
+...              ("Windows 7 32-bit", 6484299406236008918)])
+>>> h1 in want.values()
+True
 >>> with hdfcache:
 ...     hash = hdfcache.file.root.f.hash # Table object
 ...     h = hash[:] # extract all records as structured ndarray
->>> h # with joblib.hash: array([('cadf9e2413df9d83e2303522bc1267a9',), ('4a14c07534c7a24053e58540b74de973',)], dtype=[('hash', '|S32')])
-... # on Windows XP 32-bit: array([(773416804,), (1710834134,)], dtype=[('hash', '<i4')])
-array([(-5981222333818771612,), (6484299406236008918,)], dtype=[('hash', '<i8')])
+>>> want = dict([
+...     ("joblib.hash", np.array([('cadf9e2413df9d83e2303522bc1267a9',), 
+...                               ('4a14c07534c7a24053e58540b74de973',)], 
+...                               dtype=[('hash', '|S32')])),
+...     ("Windows XP 32-bit",  np.array([(773416804,), (1710834134,)], 
+...                               dtype=[('hash', '<i4')])),
+...     ("Windows 7 32-bit", np.array([(-5981222333818771612,), 
+...                       (6484299406236008918,)], dtype=[('hash', '<i8')]))])
+>>> any([all([(i == j) for i, j in zip(h["hash"], v["hash"])]) 
+...     for v in want.values()])
+True
 >>> np.where(h1 == h["hash"])
 (array([1]),)
 
@@ -323,10 +333,9 @@ class DictHdfcache(object):
         
         Here's the dictionary with the two caches.
         
-        >>> dicthdfcache.d # with joblib.hash: {<function f at 0x...>: {'bd344c9d...': 9, '0be9508f...': 4}, <function g at 0x...>: {'bd344c9d...': 27}}
-        ... # on Windows XP 32-bit: {<function f at 0x015E1D30>: {921594546: 4, -765091819: 9}, <function g at 0x015E1EB0>: {-765091819: 27}}
-        {<function f at 0x...>: {9147803436690843753: 9, -6199293758012471906: 4}, 
-         <function g at 0x...>: {9147803436690843753: 27}}
+        >>> sorted(dicthdfcache.d.items(), key=lambda x: x[0].__name__)
+        [(<function f at 0x...>, {...: 4, ...: 9}), 
+         (<function g at 0x...>, {...: 27})]
         
         A function with both required, default, and variable-length unnamed and 
         keyword arguments.
@@ -338,13 +347,14 @@ class DictHdfcache(object):
         Here are the argument specifications, which could be used for deferred
         specification of an "args" table.
         
-        >>> dicthdfcache.argspec
-        {<function f at 0x...>: ArgSpec(args=['x'], 
-        varargs=None, keywords=None, defaults=None), 
-        <function g at 0x...>: ArgSpec(args=['y'], 
-        varargs=None, keywords=None, defaults=None), 
-        <function h at 0x...>: ArgSpec(args=['a', 'b'],
-        varargs='args', keywords='kwargs', defaults=(10,))}
+        >>> sorted(dicthdfcache.argspec.items(), key=lambda x: x[0].__name__)
+        [(<function f at 0x...>,
+          ArgSpec(args=['x'], varargs=None, keywords=None, defaults=None)),
+         (<function g at 0x...>,
+          ArgSpec(args=['y'], varargs=None, keywords=None, defaults=None)),
+         (<function h at 0x...>,
+          ArgSpec(args=['a', 'b'], varargs='args', keywords='kwargs', 
+          defaults=(10,)))]
         """
         print "cache: initializing resources for a decorated function"
         self.d[func] = {} # nested dictionary, like a cache Group in a File
@@ -526,27 +536,27 @@ class Hdfcache(object):
                     self.set_source_attr(hash_, ahash)
                 del hashdict["uninitialized"]
             if ihash in hashdict:
-                log.debug("Cache hit %s: %s %s", func, ihash, input)
+                log.debug("Cache hit %s: %s %s", func, ihash, input_)
                 # Prevent ugly "ValueError: 0-d arrays can't be concatenated" 
                 # http://projects.scipy.org/numpy/wiki/ZeroRankArray
                 return autoname(group.output[hashdict[ihash]])
             else:
-                log.debug("Cache miss %s: %s %s", func, ihash, input)
+                log.debug("Cache miss %s: %s %s", func, ihash, input_)
                 timing = np.rec.fromarrays([[0.0], [0.0], [0.0]], 
                                            names=["seconds", "start", "end"])
                 timing.start = time.clock()
-                output = autoname(func(input, *args, **kwargs))
+                output = autoname(func(input_, *args, **kwargs))
                 timing.end = time.clock()
                 timing.seconds = timing.end - timing.start
                 if hashdict: # tables exist, but no record yet for this input
                     hash_ = group.hash
                     log.debug("Appending to input, output, and timing tables")
-                    group.input.append(input)
+                    group.input.append(input_)
                     group.output.append(output)
                     group.timing.append(timing)
                 else: # make tables from recarray descriptor, store first record
                     log.debug("Creating input, output, and timing tables")
-                    self.file.createTable(group, "input", input)
+                    self.file.createTable(group, "input", input_)
                     self.file.createTable(group, "output", output)
                     self.file.createTable(group, "timing", timing)
                 hashdict[ihash] = hash_.nrows
@@ -643,7 +653,7 @@ def hdfcat(pathname="*.h5", outfilename="concatenated.h5"):
     /group1 (Group) ''
     /group1/data (Table(1,)) ''
     
-    Concatenate them together.
+    Concatenate them together. (Note: The output is not sorted.)
     
     >>> hdfcat(filename + ".*.h5", filename + ".concatenated")
     True
@@ -654,14 +664,9 @@ def hdfcat(pathname="*.h5", outfilename="concatenated.h5"):
     /a (Table(3,)) ''
     /group1 (Group) ''
     /group1/b (Table(3,)) ''
-    
-    Note that the output is not sorted.
-    
     >>> with pt.openFile(filename + ".concatenated") as f:
-    ...     print f.root.a[:], f.root.group1.b[:]
-    ... # on Windows XP 32-bit: [(1,) (0,) (2,)] [(10,) (11,) (12,)]
-    [(2,) (1,) (0,)] [(12,) (10,) (11,)]
-    
+    ...     np.testing.assert_equal(sorted(f.root.a.cols.a), (0, 1, 2))
+    ...     np.testing.assert_equal(sorted(f.root.group1.b.cols.b), (10, 11, 12))
 
     False is returned if the output file already exists.
     
@@ -725,5 +730,4 @@ if __name__ == "__main__":
     if options.debug:
         log.setLevel(logging.DEBUG)
     import doctest
-    optionflags = doctest.ELLIPSIS | doctest.NORMALIZE_WHITESPACE
-    doctest.testmod(optionflags=optionflags)
+    doctest.testmod(optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE)
