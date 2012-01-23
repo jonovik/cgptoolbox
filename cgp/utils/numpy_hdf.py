@@ -42,7 +42,7 @@ def hdf2numpy(src, dst, where="/", ext=".npy"):
         for table in f.walkNodes(where, classname="Table"):
             relpath = os.path.relpath(table._v_pathname, "/")
             relpath = relpath.replace("\\", "/").replace("..", "")
-            filename = dst + relpath + ext
+            filename = os.path.join(dst, relpath + ext)
             dir_, _ = os.path.split(filename)
             if not os.path.exists(dir_):
                 os.makedirs(dir_)
