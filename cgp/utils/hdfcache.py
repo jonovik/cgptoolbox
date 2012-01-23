@@ -1,10 +1,6 @@
 """
 Function decorator to log/cache input/output recarrays to HDF group of tables
 
-TODO: hdfmerge() WILL PROBABLY MESS UP THE ORDER OF RECORDS WITHIN EACH HDF 
-FILE, BECAUSE IT TRIES TO SORT ALL TABLES. WHAT WE REALLY WANT IS TO SPECIFY A
-KEY TO SORT BY. ARGH. MAYBE WE SHOULD JUST CONCATENATE.
-
 Given a function func(input) -> output whose input and output are numpy record 
 arrays, so that input.dtype.names and output.dtype.names are not None.
 
@@ -192,9 +188,9 @@ True
 For the painful details, see 
 http://thread.gmane.org/gmane.comp.python.pytables.user/1238/focus=1250
 """
+# pylint: disable=W0212, C0301
 
 # for merging iterators
-import heapq
 import itertools
 from contextlib import nested
 from glob import glob
@@ -355,15 +351,15 @@ class DictHdfcache(object):
         self.argspec[func] = inspect.getargspec(func)
         
         @wraps(func)
-        def wrapper(input):
+        def wrapper(input_):  # pylint: disable=C0111
             # ignoring the complications of hashing multiple arguments
-            key = ahash(input)
+            key = ahash(input_)
             if key in self.d[func]:
                 print "cache: returning cached value"
                 return self.d[func][key]
             else:
-                output = func(input)
-                print "cache: computed", func.__name__, input, "=>", output
+                output = func(input_)
+                print "cache: computed", func.__name__, input_, "=>", output
                 if not self.d[func]:
                     # If the func-specific nested dict is empty, we know that 
                     # this is the first time func is evaluated. Now we can 
@@ -405,8 +401,9 @@ class Hdfcache(object):
         if withflagfile:
             self.flagfilename = filename + ".delete_me_to_stop"
             self.incontext = False
+    
     @property
-    def file(self):
+    def file(self): #@ReservedAssignment
         """
         File object for an HDF cache, see Tables.File in PyTables.
         
@@ -453,7 +450,7 @@ class Hdfcache(object):
             open(self.flagfilename, "w").close() # create empty file
         return self
     
-    def __exit__(self, type, value, tb):
+    def __exit__(self, type_, value, tb):
         """
         Exit context of with statement, closing file and removing any flag file.
         """
@@ -492,18 +489,18 @@ class Hdfcache(object):
         hashdict = dict(uninitialized=True)
         
         @wraps(func)
-        def wrapper(input, *args, **kwargs):
+        def wrapper(input_, *args, **kwargs):  # pylint: disable=C0111
             if self.withflagfile and self.incontext:
                 if not os.path.exists(self.flagfilename):
                     log.debug("Flag file not found when calling %s", func)
                     raise KeyboardInterrupt # will flush cache on __exit__
-            input = autoname(input)
-            ihash = ahash(input)
+            input_ = autoname(input_)
+            ihash = ahash(input_)
             group = self.group(funcname) # reopening file if required
             if "uninitialized" in hashdict:
                 # Load the hash table, creating it if necessary
                 try:
-                    hash = group.hash
+                    hash_ = group.hash
                     log.debug("Reading existing hashes")
                     # Pitfall: Iterating over the hash Table may return 
                     # objects that are not strings and therefore will never 
@@ -520,13 +517,13 @@ class Hdfcache(object):
                     # hash[:] is a 1-d recarray of strings, which iterates to 
                     #   tuples, so  
                     # [h for (h,) in hash[:]] is the desired list of strings.
-                    hashdict.update((h, i) for i, (h,) in enumerate(hash[:]))
+                    hashdict.update((h, i) for i, (h,) in enumerate(hash_[:]))
                 except pt.NoSuchNodeError:
                     log.debug("Creating hash table for %s", func)
                     hashdescr = autoname(ihash)[:0]
                     hashdescr.dtype.names = ["hash"]
-                    hash = self.file.createTable(group, "hash", hashdescr)
-                    self.set_source_attr(hash, ahash)
+                    hash_ = self.file.createTable(group, "hash", hashdescr)
+                    self.set_source_attr(hash_, ahash)
                 del hashdict["uninitialized"]
             if ihash in hashdict:
                 log.debug("Cache hit %s: %s %s", func, ihash, input)
@@ -542,7 +539,7 @@ class Hdfcache(object):
                 timing.end = time.clock()
                 timing.seconds = timing.end - timing.start
                 if hashdict: # tables exist, but no record yet for this input
-                    hash = group.hash
+                    hash_ = group.hash
                     log.debug("Appending to input, output, and timing tables")
                     group.input.append(input)
                     group.output.append(output)
@@ -552,8 +549,8 @@ class Hdfcache(object):
                     self.file.createTable(group, "input", input)
                     self.file.createTable(group, "output", output)
                     self.file.createTable(group, "timing", timing)
-                hashdict[ihash] = hash.nrows
-                hash.append(autoname(ihash))
+                hashdict[ihash] = hash_.nrows
+                hash_.append(autoname(ihash))
                 return output
         
         # close the file so the decorator doesn't require a "with" statement
@@ -570,139 +567,6 @@ class Hdfcache(object):
             except (TypeError, IOError):
                 node._v_attrs.sourcefile = "built-in"
                 node._v_attrs.sourcecode = ""
-
-
-def hdfmerge(pathname="*.h5", outfilename="merged.h5"):
-    msg = """
-        Use hdfcat() instead, because sorting is tricky and it is not obvious 
-        what to sort by. 
-    """
-    raise NotImplementedError(msg)
-
-def _hdfmerge(pathname="*.h5", outfilename="merged.h5"):
-    """
-    (Abandoned code.) Merge and sort data scattered over many HDF files with equal layout.
-        
-    All HDF files matching pathname are merged into a new file denoted by 
-    outfilename. If the output file already exists, no action is taken. The 
-    function returns True if the output file was created and False otherwise.
-    A lock is held while merging, so that work can be shared between multiple 
-    instances of a script (see the "grabcounter" module), while only one 
-    instance merges the results.
-    
-    The use of iterators conserves memory, so this should work for arbitrarily 
-    large data sets. It is also quite IO-efficient (at least up to 300 files 
-    totalling 10 MB...haven't tested more yet); merging takes only fractionally 
-    longer than the original writing.
-    The only limitation is perhaps that we need simultaneous handles to all 
-    input files. Also, this currently only merges tables, not arrays. (It might 
-    work out of the box, at least for VLArray.)
-    
-    Todo: Guard against adopting the structure of an unpopulated cache file 
-    left by job instances that arrived too late to do any work. Currently I use 
-    the biggest file and hope that's okay.
-    
-    Adapted from http://cilit.umb.no/WebSVN/wsvn/Cigene_Repository/CigeneCode/CompBio/cGPsandbox/h5merge.py
-    
-    The following doctests are more for testing than documentation.
-    
-    Distribute sample data over three HDF files in a temporary directory.
-    
-    >>> import tempfile
-    >>> filename = os.path.join(tempfile.mkdtemp(), 'cachetest.h5')
-    >>> a = np.rec.fromarrays([[0, 2, 1]], names="a")
-    >>> b = np.rec.fromarrays([[11, 12, 10]], names="b")
-    >>> def writedata(i):
-    ...     with pt.openFile("%s.%s.h5" % (filename, i), "w") as f:
-    ...         f.createTable(f.root, "a", a[i:i+1])
-    ...         f.createTable("/group1", "b", b[i:i+1], createparents=True)
-    ...         return str(f.root.a[:]) + " " + str(f.root.group1.b[:]) + " " + str(f)
-    >>> for i in 0, 1, 2:
-    ...     print "Part", i, writedata(i)
-    Part 0 [(0,)] [(11,)] ...cachetest.h5.0.h5...
-    / (RootGroup) ''
-    /a (Table(1,)) ''
-    /group1 (Group) ''
-    /group1/b (Table(1,)) ''
-    Part 1 [(2,)] [(12,)] ...cachetest.h5.1.h5...
-    / (RootGroup) ''
-    /a (Table(1,)) ''
-    /group1 (Group) ''
-    /group1/b (Table(1,)) ''
-    Part 2 [(1,)] [(10,)] ...cachetest.h5.2.h5...
-    / (RootGroup) ''
-    /a (Table(1,)) ''
-    /group1 (Group) ''
-    /group1/b (Table(1,)) ''
-    
-    Merge them together.
-    
-    >>> hdfmerge(filename + ".*.h5", filename + ".merged") # doctest: +SKIP
-    True
-    >>> with pt.openFile(filename + ".merged") as f:
-    ...     print "Merged", str(f)    # doctest: +SKIP
-    Merged ...cachetest.h5.merged...
-    / (RootGroup) ''
-    /a (Table(3,), shuffle, zlib(1)) ''
-    /group1 (Group) ''
-    /group1/b (Table(3,), shuffle, zlib(1)) ''
-    
-    TODO: NOTE THAT EACH TABLE IS SORTED SEPARATELY. 
-    WHAT I REALLY WANT IS TO SORT ALL TABLES BY ONE OF THEM.
-    
-    >>> with pt.openFile(filename + ".merged") as f:
-    ...     print f.root.a[:], f.root.group1.b[:] # doctest: +SKIP
-    [(0,) (1,) (2,)] [(11,) (10,) (12,)]
-
-    False is returned if the output file already exists.
-    
-    >>> hdfmerge(filename + ".*.h5", filename + ".merged") # doctest: +SKIP
-    False
-    """
-    try:
-        with Lock(outfilename + ".lock"):
-            if os.path.exists(outfilename):
-                return False
-            # Find names of all files to be merged, sort by file size.
-            infilenames = glob(pathname)
-            infilenames.sort(key=os.path.getsize, reverse=True)
-            # Open them all safely, using "with nested()"
-            with nested(*(pt.openFile(i) for i in infilenames)) as fin:
-                # Clone the HDF structure of the biggest input file into the outfile 
-                # (stop=0 omits all records), hoping that the biggest file has all 
-                # the caches populated.
-                fin[0].copyFile(outfilename, stop=0, filters=pt.Filters(complevel=1))
-                with pt.openFile(outfilename, "a") as fout:
-                    
-                    def tablewalkers(f):
-                        """List of iterators over nodes of HDF files."""
-                        # tables.File.walkNodes is an iterator, here limited to Table's
-                        return [fi.walkNodes(classname="Table") for fi in f]
-                    
-                    # Remove HDF files with no actual content.
-                    # Exhaust all the iterators and see which ones end up None.
-                    for t in itertools.izip_longest(*tablewalkers(fin)):
-                        pass
-                    fin = [fi for fi, ti in zip(fin, t) if ti]
-                    
-                    # izip yields one node per file at a time, 
-                    # presumably in identical order.
-                    # (The plus in "[fout] + fin" is list concatenation.) 
-                    for t in itertools.izip(*tablewalkers([fout] + fin)):
-                        tout, tin = t[0], t[1:]
-                        # see "Mergesorting tables with heapq.merge",
-                        # http://article.gmane.org/gmane.comp.python.pytables.user/1440
-                        # [(row[:] for row in ti) for ti in tin] is a list with one 
-                        # iterator per table/file.
-                        for inrow in heapq.merge(*[(row[:] for row in ti) for ti in tin]):
-                            # Table.append() needs a sequence, so wrap inrow in a list
-                            tout.append([inrow])
-        return True
-    except IOError, exc:
-        if "Timed out" in str(exc):
-            return False
-        else:
-            raise
 
 def hdfcat(pathname="*.h5", outfilename="concatenated.h5"):
     """
@@ -831,7 +695,7 @@ def hdfcat(pathname="*.h5", outfilename="concatenated.h5"):
                     # Exhaust all the iterators and see which ones end up None.
                     for t in itertools.izip_longest(*tablewalkers(fin)):
                         pass
-                    fin = [fi for fi, ti in zip(fin, t) if ti]
+                    fin = [fi for fi, ti in zip(fin, t) if ti]  # pylint: disable=W0631
                     
                     # izip yields one node per file at a time, 
                     # presumably in identical order.
@@ -857,7 +721,7 @@ if __name__ == "__main__":
         help="Run doctests with verbose output")
     parser.add_option("--debug", action="store_true", 
         help="Turn on debug logging for HDF cache")
-    options, args = parser.parse_args()
+    options, _args = parser.parse_args()
     if options.debug:
         log.setLevel(logging.DEBUG)
     import doctest
