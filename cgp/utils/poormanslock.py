@@ -24,28 +24,6 @@ To turn on debug-level logging:
 
 >>> import poormanslock, logging
 >>> poormanslock.log.setLevel(logging.DEBUG)                    # doctest: +SKIP
-
-
-Doctests:
-
->>> import signal
->>> if hasattr(signal, "alarm"):
-...     log.setLevel(logging.CRITICAL) # suppress error message for next test
-...     # Existing lockfile causes Lock to wait until timeout
-...     f = open("lock","w")
-...     with Lock(max_wait=2):
-...         pass
-... else:
-...     print "signal.alarm() not available, timeout won't work"
-Traceback (most recent call last):
-    ...
-IOError: Timed out waiting to acquire lock
->>> if hasattr(signal, "alarm"):
-...     import os
-...     os.remove("lock") # removing the lockfile allows normal operation
-...     with Lock():
-...         pass
->>> # no error
 """
 import os # os.remove - delete lockfile
 import time # time.sleep - wait between attempts to create lockfile
