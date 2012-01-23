@@ -83,7 +83,7 @@ def test_mmfits():
     with b.autorestore():
         L = b.vecvclamp(protocol)
     np.testing.assert_allclose(mmfits(L, k="i_CaL"), (6.44, 18.14), rtol=1e-3)
-    # Verify improvement of error message in case k is a list rather than a string.
+    # Verify improvement of error message in case k is list rather than string.
     try:
         mmfits(L, 2, ["i_Na"])
     except AssertionError, exc:
