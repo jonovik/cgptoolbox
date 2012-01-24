@@ -34,4 +34,7 @@ def test_hdfcache():
     actual = "\n".join(line.strip() 
         for line in hdfcache.file.root.f._v_attrs.sourcecode.split("\n"))
     np.testing.assert_string_equal(actual[:len(desired)], desired)
-    assert hdfcache.file.root.f._v_attrs.sourcefile.endswith(__file__)
+    
+    desired = __file__.replace(".pyc", ".py")
+    actual = hdfcache.file.root.f._v_attrs.sourcefile
+    np.testing.assert_string_equal(actual[-len(desired):], desired)
