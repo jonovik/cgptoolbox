@@ -43,7 +43,7 @@ def unstruct(x):
     ``(len(x), len(x.dtype), fieldshape)``.
     In this example, there are two records with three fields of shape four.
     
-    >>> dtype = [("a", np.int32, 4), ("b", np.int32, 4), ("c", np.int32, 4)]
+    >>> dtype = [("a", np.int32, (4,)), ("b", np.int32, (4,)), ("c", np.int32, (4,))]
     >>> a = np.zeros(2, dtype=dtype)
     >>> a.view(np.int32)[:] = np.arange(a.nbytes / np.dtype(np.int32).itemsize)
     >>> a

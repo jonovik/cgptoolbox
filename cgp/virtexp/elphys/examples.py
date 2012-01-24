@@ -280,9 +280,9 @@ class Fitz(Bond):
     >>> from cgp.utils.extrema import extrema
     >>> (t0, v0), (t1, v1) = [(t[index], value) for index, value, curv 
     ...                         in extrema(y.V, min=False, withend=False)[-2:]]
-    >>> s = "Period: %5.1f, First peak: %4.2f, Ratio of peaks: %5.3f"
+    >>> s = "Period: %.0f, First peak: %4.2f, Ratio of peaks: %5.3f"
     >>> print s % (t1-t0, v1, v1/v0)
-    Period: 208.2, First peak: 0.97, Ratio of peaks: 1.000
+    Period: 208, First peak: 0.97, Ratio of peaks: 1.000
     
     The constructor defines a "paced" :meth:`~Bond.scenario` where small 
     periodic stimuli elicit action potentials. To hack this, we impose a 

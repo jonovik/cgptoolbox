@@ -212,8 +212,8 @@ def catrec(*args, **kwargs):
     >>> tc, ac = catrec((t, a[:3]), (t, a[-3:]))
     >>> tc
     array([0, 1, 2, 2, 3, 4])
-    >>> (ac == a).all()
-    rec.array(True, dtype=bool)
+    >>> all(ac == a)
+    True
     
     Without globalizing time.
     
@@ -257,7 +257,7 @@ def vclamp2arr(L, nthin=100):
     >>> L = zip(*[traj for proto, traj in b.vecvclamp(protocol)])
     >>> holding, p1, p2 = [vclamp2arr(i, 3) for i in L]
     >>> f = p1.view(float)
-    >>> f[:] = np.round(f * 4) / 4
+    >>> f[:] = np.round(f * 4) / 4 + 0  # adding zero to avoid -0.0
     
     The resulting record array has four fields (t, V, w, I), each with shape 
     (4, 3) for 4 protocols (P1 voltage of -80, -40, 0, 40) and 3 time-points.
@@ -802,8 +802,8 @@ class Clampable(object):
         ...     t1, v1 = proto[1]
         ...     print "%3d: %8.3f" % (v1, traj[1].a.i_Na.min())
         -80:   -0.004
-        -40: -175.84...
-          0: -300.46...
+        -40: -175...
+          0: -300...
          40:    0.000
         
         State and parameters are autorestored after the protocol is finished.

@@ -17,8 +17,9 @@ def getstatusoutput(cmd, **kwargs):
     To verify this, execute a command that redirects its output to the 
     standard error stream.
     
-    >>> getstatusoutput("echo test 1>&2")
-    (0, 'test \\n')
+    >>> status, output = getstatusoutput("echo test 1>&2")
+    >>> output.strip()
+    'test'
     """
     import subprocess
     pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True, **kwargs)  
