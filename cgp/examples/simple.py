@@ -68,8 +68,21 @@ def monogenicpar(genotype, hetpar, relvar=0.5, absvar=None):
     rec.array([(0.0, 0.5, 0.75, 2.0)],...
     >>> monogenicpar(genotype, hetpar, absvar = [0.125, 0.25, 0.5, 0.75])
     rec.array([(0.125, 0.5, 0.75, 1.75)],...
+    
+    Test for recarray genotypes.
+    
+    >>> genotype = np.zeros(shape=1, dtype=hetpar.dtype)
+    >>> monogenicpar(genotype, hetpar)
+    rec.array([(0.125, 0.25, 0.375, 0.5)],
+    dtype=[('a', '<f8'), ('b', '<f8'), ('theta', '<f8'), ('I', '<f8')])
+    >>> genotype = np.ones(shape=1, dtype=[(k, int, 2) for k in hetpar.dtype.names])
+    >>> monogenicpar(genotype, hetpar)
+    rec.array([(0.375, 0.75, 1.125, 1.5)], 
+          dtype=[('a', '<f8'), ('b', '<f8'), ('theta', '<f8'), ('I', '<f8')])
     """
     genotype = np.array(genotype)
+    if genotype.dtype.names:  # recarray
+        genotype = np.array(genotype.item())  # drop names
     if genotype.ndim == 2:
         allelecount = np.array(genotype).sum(axis=1)
     else:
