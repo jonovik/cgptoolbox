@@ -306,3 +306,6 @@ extlinks = {
     'isbn': ('http://www.amazon.com/s?search-alias=stripbooks&field-isbn=%s', ''),
     # or http://isbndb.com/search-all.html?kw=%s
 }
+
+def setup(app):
+    app.add_javascript('copybutton.js')
