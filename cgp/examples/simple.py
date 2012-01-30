@@ -1,197 +1,159 @@
 """
-Causally cohesive genotype-phenotype study: FitzHugh-Nagumo nerve membrane model
+A very simple example of a causally cohesive genotype-phenotype study.
 
 The code in this file is ready to run, but is primarily written to be *read*.
 It exemplifies the building blocks of a cGP model study:
 
-* Genotype-to-parameter map
-* Parameter-to-phenotype map (physiological model)
-* Virtual experiment (manipulating the physiological model)
-* Aggregate phenotypes (summarizing the raw model output)
-* Analysis, summary, visualization
+..  list-table::
+    :header-rows: 1
 
-You may explore the code in several ways:
+    * * Component
+      * Description
+      * Example
+    * * Generation of genotypes
+      * Genotypic variation whose phenotypic effects are to be estimated.
+      * Full enumeration feasible if the genotype space is small.
+        Other options include pedigrees or statistical experimental designs.
+    * * Genotype-to-parameter map
+      * Lumping together lower-level physiology such as gene regulation
+      * Maximum conductances of ion channels
+    * * Parameter-to-phenotype map
+      * Physiological model
+      * Heart cell electrophysiology
+    * * Virtual experiment
+      * Manipulating the physiological model
+      * Pacing with electrical stimuli
+    * * Aggregate phenotypes
+      * Summarizing the raw model output
+      * Action potential duration
+    * * Analysis, summary, visualization
+      *
+      *
 
-* Generate HTML help with `pydoc -p <http://docs.python.org/library/pydoc>`_
+This very simple example defines everything in one file for illustration. 
+Real applications will typically draw upon existing code libraries, model 
+repositories and databases. Linking these together may require a lot of code, 
+a complication which we ignore here to make the main concepts stand out more
+clearly.
 
-* Stepping through the example in IPython, using::
-  
-  %run -d simple --demo
+Our example system is the :func:`FitzHugh-Nagumo model <fitzhugh>` of an 
+excitable heart muscle cell. It has four parameters, one of which represents 
+a stimulus current. Virtual pacing of the cell can be implemented by setting 
+the stimulus current to a nonzero value at regular intervals. The resulting 
+"action potential" (time-course of transmembrane voltage) is often 
+characterized by its duration, for instance APD90 for the action potential 
+duration to 90 % repolarization.
 
-* Interactive coding in IPython::
-    
-    from cgp.examples.simple import *
-    PH = cgpstudy()
+Here, we assume that each parameter is governed by a single gene of which 
+there are two alleles. This trivial genotype-to-parameter map is a caricature 
+in the absence of actual data, but is a minimal assumption to make the model 
+amenable to cGP analysis.
 
-* ``%whos`` will list the functions defined.
-* See individual docstrings for details, e.g. :class:`~ap_cvode.Bond.ap`.
+Here we can compute phenotypes for all 27 genotypes (three loci with three 
+possibilities each gives 
+aa bb cc, aa bb Cc, aa bb CC, aa Bb cc, ..., AA BB CC). In higher-dimensional 
+cases, the genotype space must be sampled according to some experimental 
+design, possibly constrained by pedigree information.
 """
+# pylint: disable=R0913, R0914, W0142, C0111
 
 import numpy as np
 
 # Genotype-to-parameter map
 def monogenicpar(genotype, hetpar, relvar=0.5, absvar=None):
     """
-    Genotype-to-parameter map that assumes one biallelic locus per parameter
+    Genotype-to-parameter map that assumes one biallelic locus per parameter.
     
     :param genotype: sequence where each item is 0, 1, or 2, 
         denoting the "low" homozygote, the "baseline" heterozygote, and 
-        the "high" homozygote, respectively. Alternatively, each item can 
-        be a 2-tuple where each item is 0 or 1.
+        the "high" homozygote, respectively.
     :param recarray hetpar: parameter values for "fully heterozygous" 
-        individual
-    :param float relvar: proportion change
+        individual.
+    :param float relvar: proportion change.
     :param array_like absvar: absolute change, overrides relvar if present
-    :return recarray: Parameter values for the given genotype.
+    :return: Record array of parameter values for the given genotype.
     
     Gene/parameter names are taken from the fieldnames of *hetpar*.
-    Thus, the result has the same dtype (Numpy data type) as the genotype array.
     
-    Creating a record array of baseline parameter values 
-    (corresponding to the fully heterozygous genotype).
+    Example: Define the baseline parameter values for the full heterozygote, 
+    as well as an example genotype whose three loci are high homozygous, 
+    heterozygous, and low homozygous, respectively. Mapping this genotype 
+    onto parameter space, we see that the parameter values are 150%, 100% and
+    50% of their respective baselines, as assumed.
     
-    >>> baseline = [("a", 0.25), ("b", 0.5), ("theta", 0.75), ("I", 1.0)]
-    >>> dtype = [(k, float) for k, v in baseline]
-    >>> hetpar = np.array([v for k, v in baseline]).view(dtype, np.recarray)
-    
-    Parameter values for four "loci" with 
-    (low homozygote, heterozygote, heterozygote, high homozygote).
-    
-    >>> genotype = [[0, 0], [0, 1], [1, 0], [1, 1]]
+    >>> hetpar = np.rec.fromrecords([(0.75, 0.5, 0.25)], 
+    ...     names=["a", "b", "theta"])
+    >>> genotype = [2, 1, 0]
     >>> monogenicpar(genotype, hetpar)
-    rec.array([(0.125, 0.5, 0.75, 1.5)], 
-          dtype=[('a', '<f8'), ('b', '<f8'), ('theta', '<f8'), ('I', '<f8')])
+    rec.array([(1.125, 0.5, 0.125)], 
+          dtype=[('a', '<f8'), ('b', '<f8'), ('theta', '<f8')])
     
     Specifying relative or absolute parameter variation.
     
     >>> monogenicpar(genotype, hetpar, relvar = 1.0)
-    rec.array([(0.0, 0.5, 0.75, 2.0)],...
-    >>> monogenicpar(genotype, hetpar, absvar = [0.125, 0.25, 0.5, 0.75])
-    rec.array([(0.125, 0.5, 0.75, 1.75)],...
-    
-    Test for recarray genotypes.
-    
-    >>> genotype = np.zeros(shape=1, dtype=hetpar.dtype)
-    >>> monogenicpar(genotype, hetpar)
-    rec.array([(0.125, 0.25, 0.375, 0.5)],
-    dtype=[('a', '<f8'), ('b', '<f8'), ('theta', '<f8'), ('I', '<f8')])
-    >>> genotype = np.ones(shape=1, dtype=[(k, int, 2) for k in hetpar.dtype.names])
-    >>> monogenicpar(genotype, hetpar)
-    rec.array([(0.375, 0.75, 1.125, 1.5)], 
-          dtype=[('a', '<f8'), ('b', '<f8'), ('theta', '<f8'), ('I', '<f8')])
+    rec.array([(1.5, 0.5, 0.0)],...
+    >>> monogenicpar(genotype, hetpar, absvar = [1.5, 0.5, 0.0])
+    rec.array([(2.25, 0.5, 0.25)], ...
     """
     genotype = np.array(genotype)
     if genotype.dtype.names:  # recarray
         genotype = np.array(genotype.item())  # drop names
-    if genotype.ndim == 2:
-        allelecount = np.array(genotype).sum(axis=1)
-    else:
-        allelecount = genotype
     result = hetpar.copy().view(float)
     if absvar is None:
         absvar = result * relvar
     else:
         absvar = np.array(absvar).view(float)
-    result += (allelecount - 1) * absvar
+    result += (genotype - 1) * absvar
     return result.view(hetpar.dtype, np.recarray)
 
 # Physiological model mapping parameters to raw phenotype
-def fitzhugh(Y, t=0.0, a=0.7, b=0.8, theta=0.08, I=0.0):
+def fitzhugh(y, _t=None, a=0.7, b=0.8, theta=0.08, I=0.0):
     """
     FitzHugh (1969) version of FitzHugh-Nagumo model of nerve membrane
     
-    References:
-    FitzHugh R (1969) 
-    Mathematical models of excitation and propagation in nerve. 
-    In: Biological engineering, ed. H. P. Schwan, 1-85. New York: McGraw-Hill.
-    
     Default parameter values are from FitzHugh (1969), figure 3-2.
     
-    * V = Y[0] = membrane potential
-    * W = Y[1] = recovery variable
-    * a, b, theta are positive constants
-    * I is the membrane current
+    :param array_like y: State vector [V, W],where V is the transmembrane 
+        potential and W is a "recovery variable".
+    :param scalar _t: Time. Ignored, but required by scipy.integrate.odeint.
+    :param float a, b, theta: Positive constants.
+    :param float I: Transmembrane stimulus current.
 
-    Integration over time.
-    
     .. plot::
-        :context:
+        :width: 400
         :include-source:
-        :nofigs:
         
-        >>> from cgp.examples.simple import *
-        >>> import scipy.integrate
-        >>> t = np.arange(0, 50, 0.1)
-        >>> Y = scipy.integrate.odeint(fitzhugh, [-0.6, -0.6], t)
-    
-    .. plot::
-        :context:
+        from cgp.examples.simple import *
+        import scipy.integrate
         
-        plt.clf()
-        plt.plot(t, Y)
+        t = np.arange(0, 50, 0.1)
+        y = scipy.integrate.odeint(fitzhugh, [-0.6, -0.6], t)
+        plt.plot(t, y)
+        plt.legend(["V (transmembrane potential)", "W (recovery variable)"])
     
-    Showing only the first and last two states.
+    References:
     
-    >>> ix = np.r_[0:2, -2:0]
-    >>> Y[ix]
-    array([[-0.6       , -0.6       ],
-           [-0.59280103, -0.59534608],
-           [-1.2045089 , -0.62472546],
-           [-1.20423976, -0.62476208]])
+    * FitzHugh R (1961) 
+      :doi:`Impulses and physiological states
+      in theoretical models of nerve membrane 
+      <10.1016/S0006-3495(61)86902-6>`. 
+      Biophysical J. 1:445-466
+    * FitzHugh R (1969) 
+      Mathematical models of excitation and propagation in nerve. 
+      In: :isbn:`Biological engineering <978-0070557345>`, 
+      ed. H. P. Schwan, 1-85. New York: McGraw-Hill.
     
-    The original version of the model is        
-    FitzHugh R (1961) 
-    Impulses and physiological states in theoretical models of nerve membrane. 
-    Biophysical J. 1:445-466
-    
-    In the original version, the definition of the transmembrane potential is 
-    such that it decreases during depolarization, so that the action potential 
-    starts with a downstroke, contrary to the convention used in FitzHugh 1969 
-    and in most other work. The equations are also somewhat rearranged. 
-    However, figure 1 of FitzHugh 1961 gives a very good overview of the phase 
-    plane of the model.
+    In the original version (FitzHugh 1961), the definition of the transmembrane
+    potential is such that it decreases during depolarization, so that the
+    action potential starts with a downstroke, contrary to the convention used
+    in FitzHugh 1969 and in most other work. The equations are also somewhat
+    rearranged. However, figure 1 of FitzHugh 1961 gives a very good overview of
+    the phase plane of the model.
     """
-    V, W = Y
+    V, W = y
     Vdot = V - V * V * V / 3.0 - W + I # Eq. (3-6) of FitzHugh (1969)
     Wdot = theta * (V + a - b * W)     # Eq. (3-6) of FitzHugh (1969)
     return Vdot, Wdot
-
-# Plot phase plane for FitzHugh-Nagumo model
-
-def phaseplane():
-    """
-    Phase plane plot for the FitzHugh-Nagumo model
-    
-    Produces a plot similar to Figure 3.2 in FitzHugh (1969)
-
-    .. plot::
-    
-       from cgp.examples.simple import *
-       phaseplane()
-    """
-    import pylab
-
-    X, Y, U, V = [], [], [], []
-    for w in np.linspace(-1,1.5,50):
-        for v in np.linspace(-2.5, 2, 50):
-            X.append(v)
-            Y.append(w)
-            u, v = fitzhugh([v, w])
-            U.append(u)
-            V.append(v)
-    # Plot phase plane, omitting magnitudes
-    pylab.quiver(X, Y, np.sign(U), np.sign(V), np.sign(U) + 2 * np.sign(V))
-    pylab.hold(True)
-
-    for s in np.linspace(0.6, 0.7, 10):
-        t, Y = ap(fitzhugh, [-1.2, -0.6],stim_curr=s)
-        pylab.plot(*Y.T)
-
-    pylab.xlabel('Membrane potential (V)')
-    pylab.ylabel('Recovery variable (W)')
-    pylab.title('Phase plane and some trajectories for the FitzHugh-Nagumo model')
-    pylab.show()
-    return
 
 # Deriving phenotypes from the physiological model
 import scipy.optimize
@@ -200,7 +162,10 @@ def eq(func, Y0, disp=False, *args, **kwargs):
     """
     Find equilibrium by minimizing the norm of the rate vector.
     
-    :param bool disp: Prints diagnostics from the minimization?
+    :param function func: Function to be minimized.
+    :param array_like Y0: Starting point for estimation.
+    :param bool disp: Print diagnostics from the minimization?
+    :param ``*args, **kwargs``: Additional arguments passed to ``func()``.
     
     >>> eq(fitzhugh, [0, 0])
     array([-1.19942411, -0.62426308])
@@ -212,42 +177,45 @@ def eq(func, Y0, disp=False, *args, **kwargs):
 # Virtual experiment: stimulus-induced action potential
 import scipy.integrate
 import functools # partial() to simplify function signature
-def ap(func, Y0, t0=0.0, stim_per=100.0, stim_curr=0.7, stim_dur=1.0, 
-    dt=1.0, curr_name="I", *args, **kwargs):
+def ap(func, Y0, t0=0.0, stim_period=100.0, stim_amplitude=0.7, 
+    stim_duration=1.0, dt=1.0, curr_name="I", *args, **kwargs):
     """
-    Stimulus-induced action potential
+    Stimulus-induced action potential.
     
-    Return an array of time-points and an array of states at each time-point.
-    Experiments that run consecutive action potentials can keep cumulative time
-    by passing the last time-point returned by the current action potential as
-    the initial time t0 for the next.
+    :param function func: Right-hand side of ordinary differential equation 
+        which can be passed to :func:`scipy.integrate.odeint`.
+    :param ndarray Y0: Initial state vector.
+    :param float t0: Initial time; helpful in keeping cumulative time for 
+        successive action potentials.
+    :param float stim_period: Time between start of successive stimuli.
+    :param float stim_amplitude: Amplitude of stimulus current.
+    :param stim_duration: Duration of stimulus current.
+    :param float dt: Time resolution of integration.
+    :param str curr_name: Name of the stimulus current argument.
+    :param ``*args, **kwargs``: Passed to ``func()``.
+    :return: (t, y), where y[i] is state at time t[i].
     
-    >>> t, Y = ap(fitzhugh, [-1.2, -0.6])
-    >>> Y.max(axis=0)
-    array([ 1.69664227,  0.98256442])
-    >>> Y.min(axis=0)
-    array([-2.00558297, -0.62509846])
-    
-    Plotting trajectory vs. time or in state space.
-    
-    .. plot::
-       :include-source:
-       
-       from cgp.examples.simple import *
-       t, Y = ap(fitzhugh, [-1.2, -0.6])
-       plt.plot(t, Y)
-       plt.show()
-       plt.plot(*Y.T)
+    ..  plot::
+        :include-source:
+        
+        from cgp.examples.simple import *
+        t, Y = ap(fitzhugh, [-1.2, -0.6])
+        plt.subplot(121)
+        plt.plot(t, Y)
+        plt.legend(["V", "W"])
+        plt.subplot(122)
+        plt.plot(*Y.T)
+        plt.xlabel("V")
+        plt.ylabel("W")
     """
-    # Make two functions with different defaults
+    # Create right-hand sides for two sets of ordinary differential equations,
+    # one with stimulus and one without.
     f1 = functools.partial(func, *args, **kwargs)
-    kwargs[curr_name] = stim_curr
+    kwargs[curr_name] = stim_amplitude
     f0 = functools.partial(func, *args, **kwargs)
     # Make time arrays with step dt but length at least 2
-    n0 = max(2, round(stim_dur / dt))
-    n1 = max(2, round((stim_per - stim_dur) / dt))
-    t0_ = t0 + np.linspace(0, stim_dur, n0)
-    t1_ = t0 + np.linspace(stim_dur, stim_per, n1)
+    t0_ = t0 + np.r_[np.arange(0, stim_duration, dt), stim_duration]
+    t1_ = t0 + np.r_[np.arange(stim_duration, stim_period, dt), stim_period]
     # Integrate piecewise
     Yout0 = scipy.integrate.odeint(f0, Y0, t0_)
     Yout1 = scipy.integrate.odeint(f1, Yout0[-1], t1_)
@@ -280,39 +248,20 @@ def aps(func, Y0, n=5, apfunc=ap, *args, **kwargs):
     insufficient stimulus will not elicit an action potential.
     
     .. plot::
-       :include-source:
-       :nofigs:
-       :context:
        
-       >>> from cgp.examples.simple import *
-       >>> regular = aps(fitzhugh, [0, 0])
-       >>> alternans = aps(fitzhugh, [0, 0], stim_per=7.0)
-       >>> insufficient = aps(fitzhugh, [0, 0], stim_dur=0.1)
-
-    Plotting:
-    
-    .. plot::
-       :include-source:
-       :context:
-       
-       for L in regular, alternans, insufficient:
-           for t, Y in L:        
-               plt.plot(t, Y)
-    
-    (Doctests to guard against accidental changes.)
-    
-    >>> ix = np.r_[0:2, -2:0]
-    >>> t1[ix]
-    array([ 100.        ,  101.        ,  198.98979592,  200.        ])
-    >>> Y1[ix]
-    array([[-1.19940804, -0.62426004],
-           [-0.49837833, -0.59772333],
-           [-1.19940805, -0.62426004],
-           [-1.19940805, -0.62426004]])
+       from cgp.examples.simple import *
+       scenarios = dict(Regular=aps(fitzhugh, [0, 0]),
+                        Alternans=aps(fitzhugh, [0, 0], stim_period=7.0, dt=0.01),
+                        Insufficient=aps(fitzhugh, [0, 0], stim_duration=0.1))
+       for i, (k, v) in enumerate(scenarios.items()):
+           for t, y in v:
+               plt.subplot(len(scenarios), 1, 1 + i)
+               plt.plot(t, y)
+               plt.title(k)
     """
     result = []
     t0 = 0.0
-    for i in range(n):
+    for _i in range(n):
         t, Y = apfunc(func, Y0, t0, *args, **kwargs)
         result.append((t, Y))
         t0, Y0 = t[-1], Y[-1]
@@ -357,8 +306,8 @@ def cgpstudy():
     """A simple causally cohesive genotype-phenotype model study"""
     # Define baseline parameters
     baseline = [("a", 0.7), ("b", 0.8), ("theta", 0.08), ("I", 0.0)]
-    dtype = [(k, float) for k, v in baseline]
-    hetpar = np.array([v for k, v in baseline]).view(dtype, np.recarray)
+    names, rec = zip(*baseline)
+    hetpar = np.rec.fromrecords([rec], names=names)
     # Enumerate all possible genotypes
     nloci = len(baseline)
     gts = np.broadcast_arrays(*np.ix_(*([[0, 1, 2]] * nloci)))
@@ -366,7 +315,7 @@ def cgpstudy():
     
     # Iterate over genotypes:
     @hdfcache.cache
-    def ph(gt, dtype=[("apd90", float)]):
+    def ph(gt, dtype=[("apd90", float)]):  # pylint: disable=W0102
         """Ad hoc function to compute the phenotype of a single genotype"""
         par = monogenicpar(gt, hetpar)
         # Must cast par[k] to float for fitzhugh() to work properly
@@ -376,34 +325,18 @@ def cgpstudy():
         # Keep only the last action potential for statistics
         t, Y = aps(f, Y0=eq(f, [0, 0]))[-1]
         # Aggregating to simpler phenotypes
-        apd90 = recovery_time(Y[:,1], t - t[0])
+        apd90 = recovery_time(Y[:, 1], t - t[0])
         return np.array((apd90,), dtype=dtype)
     
-    PH = np.concatenate([ph(gt) for gt in gts]).view(np.recarray)
+    result = np.concatenate([ph(gt) for gt in gts]).view(np.recarray)
     # Visualization (example intended for interactive use, e.g. under IPython)
-    from pylab import plot, xlabel, ylabel, show
-    plot(np.sort(PH.apd90))
-    xlabel("Genotype #")
-    ylabel("APD90")
-    show()
-    return PH
+    import matplotlib.pyplot as plt
+    plt.plot(np.sort(result.apd90))
+    plt.xlabel("Genotype #")
+    plt.ylabel("APD90")
+    plt.show()
+    return result
 
 if __name__ == "__main__":
-    from optparse import OptionParser
-    usage = """usage: %prog [options]
-        With no options or -v, run doctests. 
-        With --demo, run a simple cGP model study."""
-    parser = OptionParser(usage=usage)
-    # Run time-consuming demo only if requested
-    parser.add_option("-d", "--demo", action="store_true", 
-        help="Run an example cGP analysis")
-    # The doctest module expects a --verbose option
-    parser.add_option("-v", "--verbose", action="store_true", 
-        help="Run doctests with verbose output")
-    (options, args) = parser.parse_args()
-    if options.demo:
-        with hdfcache:
-            PH = cgpstudy()
-    else:
-        import doctest
-        doctest.testmod(optionflags=doctest.ELLIPSIS)
+    with hdfcache:
+        PH = cgpstudy()
