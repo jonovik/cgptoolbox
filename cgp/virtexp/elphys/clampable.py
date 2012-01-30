@@ -1052,7 +1052,7 @@ def decayfits(L, i, k, abs_=True):
     >>> b = Bond()
     >>> L = b.vecvclamp(protocol=[(1000, -140), (500, (-80, -50, 10))])
     >>> decayfits(L, 1, "i_Na")
-    ([-80, -50, 10], [nan, 58.5..., 0.4829...])
+    ([-80, -50, 10], [nan, 58.5..., 0.482...])
     
     Idiot proofing to avoid cryptic error.
     
@@ -1159,10 +1159,10 @@ def markovplot(t, y, a=None, names=None, model=None, comp=None, col="bgrcmyk",
     
     .. ggplot::
        
-       >>> from cgp.virtexp.elphys.examples import Bond
-       >>> bond = Bond()
-       >>> t, y, stats = bond.ap()
-       >>> p = markovplot(t, y, model=bond, comp="fast_sodium")
+       from cgp.virtexp.elphys.examples import Bond
+       bond = Bond()
+       t, y, stats = bond.ap()
+       p = markovplot(t, y, model=bond, comp="fast_sodium")
     """
     t, i = np.unique(t, return_index=True)
     y = y[i]
@@ -1230,7 +1230,13 @@ def markovplots(t, y, a=None, model=None):
     >>> t, y, stats = bond.ap()
     >>> from cgp.utils.thinrange import thin
     >>> i = thin(len(t), 100)
-    >>> L = markovplots(t[i], y[i], model=bond)
+    
+    (Below, the ... ellipsis makes doctest ignore messages that R may print 
+    about packages getting loaded. However, doctest output cannot start with 
+    ellipsis, so we need to print something else first. Sigh.)
+    
+    >>> print "Text output ignored:"; L = markovplots(t[i], y[i], model=bond)
+    Text output ignored:...
     >>> from rnumpy import r
     >>> r.windows(record=True) # doctest: +SKIP
     >>> print L # doctest: +SKIP    
