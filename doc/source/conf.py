@@ -29,7 +29,7 @@ extensions = [
     'matplotlib.sphinxext.ipython_console_highlighting',
     'matplotlib.sphinxext.only_directives',
     'matplotlib.sphinxext.plot_directive',
-    # 'utils.plot_directive_ggplot',
+    'cgp.utils.plot_directive_ggplot',
     'sphinx.ext.graphviz',
     'sphinx.ext.inheritance_diagram',
     # 'utils.inheritance_diagram',
