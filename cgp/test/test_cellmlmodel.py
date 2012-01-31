@@ -57,7 +57,7 @@ def test_Sundials_convention():
     # Here, the input to my_f_ode() is invalid, but no exception is raised.
     assert_equal(-1, vdp_uncompiled.my_f_ode(None, None, None, None))
 
-def test_properties():    
+def test_properties():
     """
     Parameters and initial value arrays for a model module.
     
