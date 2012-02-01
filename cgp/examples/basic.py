@@ -4,9 +4,10 @@ import numpy as np
 import scipy.integrate
 from matplotlib import pyplot as plt
 
-from cgp.utils.extrema import extrema
 from cgp.gt.genotype import Genotype
 from cgp.gt.gt2par import monogenicpar
+from cgp.utils.extrema import extrema
+from cgp.utils.splom import spij
 
 # Assuming each parameter is governed by one biallelic, additive locus
 par0 = np.rec.array([(0.7, 0.8, 0.08, 0.0)], names="a b theta I".split())
@@ -69,7 +70,7 @@ def par2ph(par):
     y0 = np.rec.array([(-0.5, -0.5)], 
         dtype=[("V", float), 
                ("W", float)])
-    t = np.arange(0, 100, 0.1)
+    t = np.arange(0, 1000, 0.1)
     # Use .item() to convert between named and plain arrays
     y = scipy.integrate.odeint(fitzhugh, y0.item(), t, args=(par.item(),))
     y = y.view(y0.dtype, np.recarray)
@@ -80,35 +81,25 @@ def ph2agg(t, y, tol=1e-3):
     e = extrema(y.V, withend=False)
     peak = e[e.curv < 0]
     trough = e[e.curv > 0]
-    if abs(peak.value[-1] - trough.value[-1]) > tol:
-        period = np.diff(t[peak.index[-2:]])
-        amplitude = peak.value[-1] - trough.value[-1]
+    period = np.diff(t[peak.index[-2:]])
+    amplitude = peak.value[-1] - trough.value[-1]
+    if period and (amplitude > tol):
         return period, amplitude
     else:
-        return np.inf, 0.0
+        return 0.0, 0.0
 
-i = gt[0]
-par = monogenicpar(i, par0)
-ph = par2ph(par)
-agg = ph2agg(ph)
-
-par = [monogenicpar(i, par0) for i in gt]
-ph = [par2ph(i) for i in par]
-agg = [ph2agg(i) for i in ph]
-
-
-
-par0.I = 1
-t, y = ph = par2ph(par0)
-agg = ph2agg(t, y)
-print agg
-for k in y.dtype.names:
-    plt.plot(t, y[k], label=k)
-plt.legend()
-plt.show()
-
-#t = np.arange(0, 50, 0.1)
-#y = scipy.integrate.odeint(fitzhugh, [-0.6, -0.6], t)
-#plt.plot(t, y)
-#plt.legend(["V (transmembrane potential)", "W (recovery variable)"])
-#plt.show()
+if __name__ == "__main__":
+    for g in np.array(gt).view(np.recarray):
+        par = monogenicpar(g, par0)
+        t, y = par2ph(par)
+        period, amplitude = ph2agg(t, y)
+        spij(3, 3, g.a, g.b)
+        plt.plot(period, amplitude, 'ko', ms=1)
+        plt.text(period, amplitude, g.theta, 
+            ha="center", va="center", size="large")
+        plt.title("a = {}, b = {}".format(g.a, g.b))
+        if g.a == 2:
+            plt.xlabel("Period")
+        if g.b == 0:
+            plt.ylabel("Amplitude")    
+    plt.show()
