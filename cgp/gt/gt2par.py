@@ -4,6 +4,8 @@ from copy import copy
 
 import numpy as np
 
+from ..utils.unstruct import unstruct
+
 def flatten(nestedList):
     """
     Flatten a nested list structure.
@@ -23,60 +25,40 @@ def flatten(nestedList):
     
     return list(aux(nestedList))
 
-def monogenicpar(genotype, hetpar, relvar=0.5, nloci=None, absvar=None):
+def monogenicpar(genotype, hetpar, relvar=0.5, absvar=None):
     """
-    Genotype-to-parameter map that assumes one biallelic locus per parameter.
+    Monogenic genotype-to-phenotype map.
     
-    :return recarray: parameter values for the given genotype.
-    :param int nloci: :func:`geno2par` argument not used here.
-    :param sequence genotype: each item is 0, 1, or 2, denoting the "low" 
-        homozygote, the "baseline" heterozygote, and the "high" homozygote, 
-        respectively. Alternatively, each item can be a 2-tuple where each 
-        item is 0 or 1.
-    
-    :param recarray hetpar: record array of "fully heterozygous" parameter 
-        values
-    
-    :param float relvar : proportion change (scalar)
-    :param array_like absvar : absolute change, overrides relvar if present.
+    :param array_like genotype: Array with one item for each locus. 
+        Item values of 0, 1, 2 indicate the low homozygote, the heterozygote, 
+        and the high heterozygote, respectively.
+    :param array_like hetpar: Baseline parameter values corresponding to an 
+        individual that is heterozygous at all loci.
+    :param float relvar: Proportion of relative variation.
+    :param array_like absvar: Absolute change, overrides relvar if present.
     
     Gene/parameter names are taken from the fieldnames of hetpar.
     Thus, the result has the same dtype (Numpy data type) as the genotype array.
-    
-    Creating a record array of baseline parameter values 
-    (corresponding to the fully heterozygous genotype).
-    
-    >>> baseline = [("a", 0.25), ("b", 0.5), ("theta", 0.75), ("I", 1.0)]
-    >>> dtype = [(k, float) for k, v in baseline]
-    >>> hetpar = np.array([v for k, v in baseline]).view(dtype, np.recarray)
-    
-    Parameter values for four "loci" with 
-    (low homozygote, heterozygote, heterozygote, high homozygote).
-    
-    >>> genotype = [[0, 0], [0, 1], [1, 0], [1, 1]]
+
+    >>> genotype = [0, 1, 2]
+    >>> hetpar = np.rec.fromrecords([(10, 11, 12)], 
+    ...     dtype=[(i, np.int8) for i in "a", "b", "c"])
     >>> monogenicpar(genotype, hetpar)
-    rec.array([(0.125, 0.5, 0.75, 1.5)], 
-          dtype=[('a', '<f8'), ('b', '<f8'), ('theta', '<f8'), ('I', '<f8')])
-    
-    Specifying relative or absolute parameter variation.
-    
-    >>> monogenicpar(genotype, hetpar, relvar = 1.0)
-    rec.array([(0.0, 0.5, 0.75, 2.0)],...
-    >>> monogenicpar(genotype, hetpar, absvar = [0.125, 0.25, 0.5, 0.75])
-    rec.array([(0.125, 0.5, 0.75, 1.75)],...
+    rec.array([(5, 11, 18)], dtype=[('a', '|i1'), ('b', '|i1'), ('c', '|i1')])
+    >>> monogenicpar(genotype, hetpar, relvar=1)
+    rec.array([(0, 11, 24)], dtype=[('a', '|i1'), ('b', '|i1'), ('c', '|i1')])
+    >>> monogenicpar(genotype, hetpar, absvar=hetpar)
+    rec.array([(0, 11, 24)], dtype=[('a', '|i1'), ('b', '|i1'), ('c', '|i1')])
     """
-    genotype = np.array(genotype)
-    if genotype.ndim == 2:
-        allelecount = np.array(genotype).sum(axis=1)
-    else:
-        allelecount = genotype
-    result = hetpar.copy().view(float)
+    result = hetpar.copy()
+    par = unstruct(result)
+    genotype, hetpar, relvar = [unstruct(i) for i in genotype, hetpar, relvar]
     if absvar is None:
-        absvar = result * relvar
+        absvar = relvar * hetpar
     else:
-        absvar = np.array(absvar).view(float)
-    result += (allelecount - 1) * absvar
-    return result.view(hetpar.dtype, np.recarray)
+        absvar = unstruct(absvar)
+    par += (genotype - 1) * absvar
+    return result
 
 def geno2par_additive(genotype, hetpar, relvar=0.5, nloci=0, absvar=None):
     """
@@ -336,4 +318,4 @@ def geno2par_diploid(genotype, hetpar, relvar):
 
 if __name__ == "__main__":
     import doctest
-    doctest.testmod(optionflags=doctest.ELLIPSIS)
+    doctest.testmod(optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE)
