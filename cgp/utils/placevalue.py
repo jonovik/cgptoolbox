@@ -83,6 +83,17 @@ class Placevalue(object):
     >>> b = Placevalue([2] * 8) # eight binary digits
     >>> b.int2vec(15)     # most significant digit first!
     array([0, 0, 0, 0, 1, 1, 1, 1])
+    >>> Placevalue([3], names=["a"])
+    Placevalue(rec.array([(3,)], dtype=[('a', '<i...
+    
+    Named positions
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    
+    Passing a *names* argument makes the Placevalue object generate structured 
+    ndarrays.
+    
+    >>> Placevalue([3, 4], names=["a", "b"])[0]
+    array([(0, 0)], dtype=[('a', '...'), ('b', '...')])
     
     If a structured array is used to construct the Placevalue object, the same 
     dtype and field names are used for the vectors returned by int2vec(), 
@@ -93,15 +104,16 @@ class Placevalue(object):
     >>> pr[11]
     array([(2, 3)], dtype=[('a', '|i1'), ('b', '|i1')])
     
-    This returns a structured ndarray rather than a recarray.
-    If you prefer, you can:
+    To convert a structured ndarray to a recarray, use .view().
     
     >>> pr[11].view(np.recarray)
-    rec.array([(2, 3)], dtype=[('a', '|i1'), ('b', '|i1')])
+    rec.array([(2, 3)], dtype=[('a', '|i1'), ('b', '|i1')])    
     """
     
-    def __init__(self, n, msd_first=True):
+    def __init__(self, n=None, msd_first=True, names=None):
         """Constructor for :class:`Placevalue`."""
+        if names:
+            n = np.rec.fromrecords([n], names=names)
         # Copy n into an array and make an unstructured view into it
         self.n = np.atleast_1d(n).copy()
         self.u = np.atleast_1d(np.squeeze(unstruct(self.n)))

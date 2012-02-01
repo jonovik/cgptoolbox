@@ -62,6 +62,13 @@ class Genotype(Placevalue):
     with k factors, keeping the remaining n-k loci as heterozygotes.
     
     See :mod:`genotype` for examples.
+    
+    If a *names* argument is given, *n* can be omitted and defaults to 
+    [3] * len(names).
+    
+    >>> Genotype(names=["a", "b"])
+    Genotype(rec.array([(3, 3)], dtype=[('a', '...'), ('b', '...
+
     """
     code = np.array([1, 0, 2])
     def int2vec(self, i):
@@ -97,11 +104,13 @@ class Genotype(Placevalue):
         """
         return super(Genotype, self).vec2int(self.code[unstruct(v)])
     
-    def __init__(self, n, msd_first=True):
+    def __init__(self, n=None, msd_first=True, names=None):
         """Constructor for class :class:`Genotype`."""
+        if not n:
+            n = [3] * len(names)
         msg = "Genotype only implemented for biallelic loci"
         assert all(unstruct(n).squeeze() <= 3), msg
-        super(Genotype, self).__init__(n, msd_first)
+        super(Genotype, self).__init__(n, msd_first, names)
 
 if __name__ == "__main__":
     import doctest
