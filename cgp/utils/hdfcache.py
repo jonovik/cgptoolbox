@@ -28,6 +28,8 @@ running the doctests.
 >>> try:
 ...     filename = options.filename
 ... except NameError:
+...     filename = None
+>>> if filename is None:
 ...     import tempfile
 ...     filename = os.path.join(tempfile.mkdtemp(), 'cachetest.h5')
 
@@ -716,7 +718,6 @@ def hdfcat(pathname="*.h5", outfilename="concatenated.h5"):
             return False
         else:
             raise
-
 
 
 if __name__ == "__main__":
