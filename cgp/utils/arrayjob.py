@@ -28,7 +28,7 @@ otherwise size, rank = 1, 0.
 
 Example:
 
->>> from utils.arrayjob import *
+>>> from cgp.utils.arrayjob import *
 >>> set_NID(16)
 
 Next, define one function per stage of computation.
@@ -74,8 +74,8 @@ from collections import defaultdict, namedtuple
 
 import numpy as np
 
-from utils.ordereddict import OrderedDict
-from utils.rec2dict import dict2rec
+from ..utils.ordereddict import OrderedDict
+from ..utils.rec2dict import dict2rec
 
 __all__ = """arun presub par ID get_NID set_NID reset_NID
              qopt alog wait memmap_chunk Mmapdict Timing""".split()
@@ -267,10 +267,10 @@ def key(func):
     ...     def test():
     ...         pass
     >>> a = A()
-    >>> a.test, A.test              # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-    (<bound method A.test of <__main__.A object at 0x...>>, 
+    >>> a.test, A.test
+    (<bound method A.test of <...A object at 0x...>>, 
      <unbound method A.test>)
-    >>> key(a.test), key(A.test)    # doctest: +ELLIPSIS
+    >>> key(a.test), key(A.test)
     (<function test at 0x...>, <function test at 0x...>)
     >>> a.test == A.test
     False
@@ -397,7 +397,7 @@ def arun(*stages, **kwargs):
     >>> set_NID(16)
     >>> def f0(): pass
     >>> def f1(): pass
-    >>> arun(par(f0), par(f1)) # doctest: +NORMALIZE_WHITESPACE +ELLIPSIS
+    >>> arun(par(f0), par(f1))
     Traceback (most recent call last):
     AssertionError: Consecutive stages <function f0 at 0x...> and <function f1 
     at 0x...> are both parallel. qsub dependencies cannot handle this case. 
@@ -601,8 +601,8 @@ class Timing(OrderedDict):
         """
         Convert timing to record array.
         
-        >>> np.array(Timing())
-        array([(0, nan, nan, nan, nan, nan)],
+        >>> np.array(Timing())  # ...ellipsis to allow 0 or 0L
+        array([(0..., nan, nan, nan, nan, nan)],
             dtype=[('attempts', '<i8'), ('waiting', '<f8'), ('started', '<f8'), 
             ('finished', '<f8'), ('error', '<f8'), ('seconds', '<f8')])
         """
@@ -612,8 +612,8 @@ class Timing(OrderedDict):
         """
         Emulate .item() method of np.recarray.
         
-        >>> Timing().item()
-        (0, nan, nan, nan, nan, nan)
+        >>> Timing().item()  # ...ellipsis to allow 0 or 0L
+        (0..., nan, nan, nan, nan, nan)
         """
         return np.array(self).item()
 
@@ -624,4 +624,4 @@ if d:
 
 if __name__ == "__main__":
     import doctest
-    doctest.testmod(optionflags=doctest.NORMALIZE_WHITESPACE)
+    doctest.testmod(optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE)
