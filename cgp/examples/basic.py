@@ -35,6 +35,7 @@ in FitzHugh 1969 and in most other work. The equations are also somewhat
 rearranged. However, figure 1 of FitzHugh 1961 gives a very good overview of
 the phase plane of the model.
 """
+# pylint: disable=W0621
 
 import numpy as np
 import scipy.integrate
@@ -45,8 +46,6 @@ from cgp.gt.gt2par import monogenicpar
 from cgp.utils.extrema import extrema
 from cgp.utils.splom import spij
 from cgp.utils.recfun import cbind, restruct
-from numpy.distutils.system_info import agg2_info
-from cgp.utils.ordereddict import OrderedDict
 
 # Default parameter values from FitzHugh (1969), figure 3-2.
 par0 = np.rec.array([(0.7, 0.8, 0.08, 0.0)], names="a b theta I".split())
@@ -56,7 +55,7 @@ absvar = np.array([(0.5, 0.5, 0.05, 0.05)])
 genotypes = Genotype(names=par0.dtype.names)
 
 # Physiological model mapping parameters to raw phenotype
-def fitzhugh(y, t=None, par=par0):
+def fitzhugh(y, t=None, par=par0):  # pylint: disable=W0613
     """
     FitzHugh (1969) version of FitzHugh-Nagumo model of nerve membrane.
     
@@ -105,31 +104,37 @@ def ph2agg(ph, tol=1e-3):
     return np.rec.fromrecords([(period, amplitude)], 
         names=["period", "amplitude"])
 
+def summarize(gt, agg):
+    """Scatterplot matrix of aggregated phenotypes vs genotypes."""
+    for i, ai in enumerate(agg.dtype.names):
+        for j, gj in enumerate(gt.dtype.names):
+            spij(len(agg.dtype.names), len(gt.dtype.names), i, j)
+            plt.plot(gt[gj], agg[ai], 'o')
+            if i == len(agg.dtype) - 1:
+                plt.xlabel(gj)
+            if j == 0:
+                plt.ylabel(ai)
+
+def pad_plot():
+    """Adjust axis limits to fully show markers."""
+    for ax in plt.gcf().axes:
+        plt.axes(ax)
+        ymin, ymax = plt.ylim()
+        ypad = 0.1 * (ymax - ymin)
+        plt.axis([-0.5, 2.5, -ypad, ymax + ypad])
 
 # Various options for connecting the pipeline pieces
 
 def stepwise():
     """Processing all genotypes for one step at a time."""
-    
-    def cat(arrays):
-        return np.concatenate(arrays, axis=-1)
-    
+    from numpy import concatenate as cat
+
     gt = np.array(genotypes)
     par = cat([monogenicpar(g, hetpar=par0, absvar=absvar) for g in gt])
     ph = cat([par2ph(p) for p in par])
     agg = cat([ph2agg(p) for p in ph])
     
-    # Scatterplot matrix of aggregated phenotypes vs genotypes
-    for i, ai in enumerate(agg.dtype.names):
-        for j, gj in enumerate(gt.dtype.names):
-            spij(len(agg.dtype.names), len(gt.dtype.names), i, j)
-            plt.plot(gt[gj], agg[ai], 'o')
-            plt.axis([-0.5, 2.5, 0, agg[ai].max() * 1.1])
-            if i == len(agg.dtype) - 1:
-                plt.xlabel(gj)
-            if j == 0:
-                plt.ylabel(ai)
-    plt.show()
+    summarize(gt, agg)
 
 def genotypewise():
     """Passing one genotype at a time through all steps of the workflow."""
@@ -138,64 +143,91 @@ def genotypewise():
         par = monogenicpar(gt, par0)
         ph = par2ph(par)
         agg = ph2agg(ph).view(np.recarray)
-        
-        print agg
-        
-        # Scatterplot matrix of aggregated phenotypes vs genotypes
-        for i, ai in enumerate(agg.dtype.names):
-            for j, gj in enumerate(gt.dtype.names):
-                spij(len(agg.dtype.names), len(gt.dtype.names), i, j)
-                plt.plot(gt[gj], agg[ai], 'ko')
-                if i == len(agg.dtype) - 1:
-                    plt.xlabel(gj)
-                if j == 0:
-                    plt.ylabel(ai)
-    plt.show()
+        summarize(gt, agg)
+    plt.axis("auto")
 
-def functional(gt, gt2par, par2ph, ph2agg):
-    gt = list(gt)
-    par = [gt2par(i) for i in gt]
-    ph = [par2ph(i) for i in par]
-    agg = [ph2agg(i) for i in ph]
+import functools
+
+def functional(gt=genotypes, 
+    gt2par=functools.partial(monogenicpar, hetpar=par0, absvar=absvar), 
+    par2ph=par2ph, ph2agg=ph2agg):
+    """"Functional programming" style, takes mapping functions as arguments."""
+    
+    from numpy import concatenate as cat
+
+    gt = np.array(gt)
+    par = cat([gt2par(i) for i in gt])
+    ph = cat([par2ph(i) for i in par])
+    agg = cat([ph2agg(i) for i in ph])
+    summarize(gt, agg)
     return dict(gt=gt, par=par, ph=ph, agg=agg)    
 
 def hdfcaching():
     """Auto-cache/save results to HDF."""
+    import os
+    import tables as pt    
     from cgp.utils.hdfcache import Hdfcache
+    
     filename = "/home/jonvi/hdfcache.h5"
     hdfcache = Hdfcache(filename)
-    
     pipeline = [hdfcache.cache(i) for i in gt2par, par2ph, ph2agg]
-    
     with hdfcache:
         for i in genotypes:
             for func in pipeline:
                 i = func(i)
-    
-    import tables as pt
-    
     with pt.openFile(filename) as f:
         gt = f.root.gt2par.input[:]
         agg = f.root.ph2agg.output[:]
-        for i, ai in enumerate(agg.dtype.names):
-            for j, gj in enumerate(gt.dtype.names):
-                spij(len(agg.dtype.names), len(gt.dtype.names), i, j)
-                plt.plot(gt[gj], agg[ai], 'ko')
-                if i == len(agg.dtype) - 1:
-                    plt.xlabel(gj)
-                if j == 0:
-                    plt.ylabel(ai)
-                xmin, xmax, ymin, ymax = plt.axis()
-                plt.axis([xmin-0.5, xmax+0.5, -0.1*(ymax-ymin), 1.1*ymax])
-    plt.show()
-    
-    import os
+    summarize(gt, agg)
     os.system("h5ls -r " + filename)
 
 def clusterjob():
-    pass
+    """Splitting tasks as arrayjobs on a PBS cluster."""
+    import os
+    from cgp.utils import arrayjob
+    arrayjob.set_NID(8)
+    
+    def workpiece(gt):
+        """Map a single genotype to parameter to phenotype to aggregate."""
+        par = gt2par(gt)
+        ph = par2ph(par)
+        agg = ph2agg(ph)
+        return par, ph, agg
+    
+    def setup():
+        """Generate genotypes and allocate result arrays on disk."""
+        if not os.path.exists("gt.npy"):
+            np.save("gt.npy", genotypes)
+            # Pass the first genotype through the pipeline 
+            # to get dtypes for allocating result files for memory-mapping.
+            par, ph, agg = workpiece(genotypes[0])
+            # Preallocate arrays on disk (can be larger than available memory).
+            # Changes are written back to disk when array goes out of scope.
+            d = dict(par=par, ph=ph, agg=agg)
+            for k, v in d.items():
+                a = np.memmap(k + ".npy", v.dtype, "w+", shape=len(genotypes))
+                a[0] = v
+    
+    def task():
+        """Process a chunk of workpieces using :func:`memmap_chunk` magic."""
+        filenames = [i + ".npy" for i in "gt par ph agg".split()]
+        gt, par, ph, agg = [arrayjob.memmap_chunk(i) for i in filenames]
+        for i in range(len(gt)):
+            par[i], ph[i], agg[i] = workpiece(gt[i])
+    
+    def wrapup():
+        """Summarize results once all are done."""
+        import matplotlib as mpl
+        mpl.use("agg")
+        gt = np.load("gt.npy")
+        agg = np.load("agg.npy")
+        summarize(gt, agg)
+        plt.savefig("summary.png")
+    
+    arrayjob.arun(arrayjob.presub(setup), arrayjob.par(task), wrapup)
 
-if __name__ == "__main__":
+def main():
+    """Run demos specified on the command line."""
     import argparse
     parser = argparse.ArgumentParser(
         description="""Basic example of the building blocks of a cGP study.\n\n
@@ -208,8 +240,22 @@ if __name__ == "__main__":
     for func in options:
         parser.add_argument("--" + func.__name__, help=func.__doc__, 
             action="store_const", const=func)
+    parser.add_argument("--all", help="Run all examples", action="store_true")
     args = vars(parser.parse_args())
+    if args["all"]:
+        args.update((func.__name__, func) for func in options)
+        args.pop("all")
     for func in args.values():
         if func:
             print "Running '{}'...".format(func.__name__)
-            func()
+            try:
+                func()
+                pad_plot()
+                plt.show()
+            except Exception:  # pylint: disable=W0703
+                import logging
+                logging.exception("Error")
+
+
+if __name__ == "__main__":
+    main()
