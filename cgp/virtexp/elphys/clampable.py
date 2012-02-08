@@ -1138,7 +1138,7 @@ def decayfit(t, y, p=(0.05, 0.9), prepend_zero=False, rse=False, lm=False):
     return result if len(result) > 1 else result[0]
 
 def markovplot(t, y, a=None, names=None, model=None, comp=None, col="bgrcmyk", 
-    plotpy=False, plotr=True):
+    plotpy=False, plotr=True, newfig=True, **legend_kwargs):
     """
     Plot markov state distribution for ion channel.
     
@@ -1151,6 +1151,8 @@ def markovplot(t, y, a=None, names=None, model=None, comp=None, col="bgrcmyk",
     :param col: sequence of fill colours for stacked area chart
     :param bool plotpy: plot using Python (matplotlib)?
     :param bool plotr: plot using R (ggplot2)?
+    :param bool newfig: create a new figure? (if using matplotlib)
+    :param ``**legend_kwargs``: passed to matplotlib legend()
     
     If a is None, it will be computed using 
     ``model.rates_and_algebraic(t, y)``.
@@ -1204,7 +1206,8 @@ def markovplot(t, y, a=None, names=None, model=None, comp=None, col="bgrcmyk",
         return r(cmd)
     if plotpy:
         from pylab import figure, fill_between, legend, axis, Rectangle
-        figure()
+        if newfig:
+            figure()
         prev = 0
         col = [col[i % len(col)] for i in range(len(names))]
         # Workaround for fill_between not being compatible with legend():
@@ -1219,7 +1222,10 @@ def markovplot(t, y, a=None, names=None, model=None, comp=None, col="bgrcmyk",
             symbols.append(Rectangle((0, 0), 1, 1, **kwargs))
             labels.append(k)
         axis("tight")
-        legend(reversed(symbols), reversed(labels)) # Match vertical order
+        # Reverse to match vertical order
+        legend(reversed(symbols), reversed(labels), labelspacing=0, 
+               handlelength=1, handletextpad=0.5, borderaxespad=0, 
+               **legend_kwargs)
 
 def markovplots(t, y, a=None, model=None):
     """
