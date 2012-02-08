@@ -13,18 +13,19 @@ is easier to define as function than pass as arguments.
 Todo: Add illustration for models.
 """
 
+import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import (plot, ylabel, title, 
     tick_params, xlim, axis, box, setp, getp)
 import os
 from joblib import Memory
-from ap_cvode import Bond
-from protocols import catrec, Clampable, markovplot, listify, Bond_protocol
-from splom import spij
+from cgp.virtexp.elphys.examples import Bond
+from cgp.virtexp.elphys.clampable import catrec, markovplot, listify, Bond_protocol
+from cgp.utils.splom import spij
 
 ### Options, model and protocols
 
-cell = Clampable.mixin(Bond)
+cell = Bond()
 protocols = cell.bond_protocols()
 # Pacing parameters
 nprepace = 10
@@ -42,10 +43,10 @@ vargap = Bond_protocol(varnames, protocol, limits, url)
 
 # Lineplot options
 lineplotopt = dict(linestyle="-", color="k", linewidth=2)
-markovopt = dict(model=cell, plotpy=True, plotr=False, newfig=False)
+markovopt = dict(model=cell, plotpy=True, plotr=False, newfig=False, loc="upper left")
 
 
-mem = Memory(os.path.join(os.environ["TEMP"], "fig_virtual_experiments"))
+mem = Memory(os.path.join(os.environ.get("TEMP", "/tmp"), "fig_virtual_experiments"))
 
 @mem.cache
 def vecvclamp(*args, **kwargs):
@@ -64,7 +65,7 @@ def pacing_output():
     return t, y, dy, a
 
 t, y, dy, a = pacing_output()
-pacelim = (cell.pr.stim_period / 2), (t[-1] - cell.pr.stim_period / 2)
+pacelim = np.r_[(cell.pr.stim_period / 2), (t[-1] - cell.pr.stim_period / 2)]
 
 
 def tweak():
@@ -74,6 +75,9 @@ def tweak():
     axis([xmin - xpad, xmax + xpad, ymin - ypad, ymax + ypad])
     tick_params(length=0)
     box("off")
+
+def tweak_legend():
+    plt.gca().get_legend().texts[0].set_size("xx-small")
 
 # Hack: Use default parameters as hack to store current value of a before it 
 # gets redefined below.
@@ -126,7 +130,8 @@ def exp_p1p2(L=L):
 
 def vis_p1p2(t=t, y=y):
     markovplot(t, y, comp="fast_sodium", **markovopt)
-
+    tweak_legend()
+    title("P1-P2 protocol, I_Na")
 
 ### Variable-gap protocol
 
@@ -150,10 +155,11 @@ def exp_vargap(L=L):
     xmax = getp(hi, "xdata")[-1]
     # from IPython.core.debugger import Tracer; Tracer()()
     xlim(xmin, xmax)
-    
 
 def vis_vargap(t=t, y=y):
     markovplot(t, y, comp="L_type", **markovopt)
+    tweak_legend()
+    title("Variable gap protocol, I_CaL")
 
 
 ### List of models
