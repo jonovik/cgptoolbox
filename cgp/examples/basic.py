@@ -68,6 +68,8 @@ def fitzhugh(y, t=None, par=par0):  # pylint: disable=W0613
     :param float I: Transmembrane stimulus current.
     
     References: see :mod:`module docstring <cgp.examples.basic>`.
+    
+    .. seealso:: :class:`cgp.virtexp.examples.Fitz`.
     """
     V, W = y
     a, b, theta, I = par
@@ -110,6 +112,10 @@ def summarize(gt, agg):
         for j, gj in enumerate(gt.dtype.names):
             spij(len(agg.dtype.names), len(gt.dtype.names), i, j)
             plt.plot(gt[gj], agg[ai], 'o')
+            xmin, xmax, ymin, ymax = plt.axis()
+            ypad = 0.1 * (ymax - ymin)
+            plt.axis([xmin - 0.5, xmax + 0.5, -ypad, ymax + ypad])
+            plt.axis()
             if i == len(agg.dtype) - 1:
                 plt.xlabel(gj)
             if j == 0:
@@ -123,10 +129,15 @@ def pad_plot():
         ypad = 0.1 * (ymax - ymin)
         plt.axis([-0.5, 2.5, -ypad, ymax + ypad])
 
-# Various options for connecting the pipeline pieces
-
-def stepwise():
-    """Processing all genotypes for one step at a time."""
+def cgpstudy():
+    """
+    Basic example of connecting the building blocks of a cGP study.
+    
+    This top-level orchestration can be done in many different ways, depending 
+    on personal preference and on the need for features such as storage, 
+    caching, memory management or parallelization. Some examples are given in 
+    :mod:`cgp.examples.hpc`.
+    """
     from numpy import concatenate as cat
 
     gt = np.array(genotypes)
@@ -135,127 +146,8 @@ def stepwise():
     agg = cat([ph2agg(p) for p in ph])
     
     summarize(gt, agg)
-
-def genotypewise():
-    """Passing one genotype at a time through all steps of the workflow."""
-    for gt in genotypes:
-        gt = gt.view(np.recarray)
-        par = monogenicpar(gt, par0)
-        ph = par2ph(par)
-        agg = ph2agg(ph).view(np.recarray)
-        summarize(gt, agg)
-    plt.axis("auto")
-
-import functools
-
-def functional(gt=genotypes, 
-    gt2par=functools.partial(monogenicpar, hetpar=par0, absvar=absvar), 
-    par2ph=par2ph, ph2agg=ph2agg):
-    """"Functional programming" style, takes mapping functions as arguments."""
-    
-    from numpy import concatenate as cat
-
-    gt = np.array(gt)
-    par = cat([gt2par(i) for i in gt])
-    ph = cat([par2ph(i) for i in par])
-    agg = cat([ph2agg(i) for i in ph])
-    summarize(gt, agg)
-    return dict(gt=gt, par=par, ph=ph, agg=agg)    
-
-def hdfcaching():
-    """Auto-cache/save results to HDF."""
-    import os
-    import tables as pt    
-    from cgp.utils.hdfcache import Hdfcache
-    
-    filename = "/home/jonvi/hdfcache.h5"
-    hdfcache = Hdfcache(filename)
-    pipeline = [hdfcache.cache(i) for i in gt2par, par2ph, ph2agg]
-    with hdfcache:
-        for i in genotypes:
-            for func in pipeline:
-                i = func(i)
-    with pt.openFile(filename) as f:
-        gt = f.root.gt2par.input[:]
-        agg = f.root.ph2agg.output[:]
-    summarize(gt, agg)
-    os.system("h5ls -r " + filename)
-
-def clusterjob():
-    """Splitting tasks as arrayjobs on a PBS cluster."""
-    import os
-    from cgp.utils import arrayjob
-    arrayjob.set_NID(8)
-    
-    def workpiece(gt):
-        """Map a single genotype to parameter to phenotype to aggregate."""
-        par = gt2par(gt)
-        ph = par2ph(par)
-        agg = ph2agg(ph)
-        return par, ph, agg
-    
-    def setup():
-        """Generate genotypes and allocate result arrays on disk."""
-        if not os.path.exists("gt.npy"):
-            np.save("gt.npy", genotypes)
-            # Pass the first genotype through the pipeline 
-            # to get dtypes for allocating result files for memory-mapping.
-            par, ph, agg = workpiece(genotypes[0])
-            # Preallocate arrays on disk (can be larger than available memory).
-            # Changes are written back to disk when array goes out of scope.
-            d = dict(par=par, ph=ph, agg=agg)
-            for k, v in d.items():
-                a = np.memmap(k + ".npy", v.dtype, "w+", shape=len(genotypes))
-                a[0] = v
-    
-    def task():
-        """Process a chunk of workpieces using :func:`memmap_chunk` magic."""
-        filenames = [i + ".npy" for i in "gt par ph agg".split()]
-        gt, par, ph, agg = [arrayjob.memmap_chunk(i) for i in filenames]
-        for i in range(len(gt)):
-            par[i], ph[i], agg[i] = workpiece(gt[i])
-    
-    def wrapup():
-        """Summarize results once all are done."""
-        import matplotlib as mpl
-        mpl.use("agg")
-        gt = np.load("gt.npy")
-        agg = np.load("agg.npy")
-        summarize(gt, agg)
-        plt.savefig("summary.png")
-    
-    arrayjob.arun(arrayjob.presub(setup), arrayjob.par(task), wrapup)
-
-def main():
-    """Run demos specified on the command line."""
-    import argparse
-    parser = argparse.ArgumentParser(
-        description="""Basic example of the building blocks of a cGP study.\n\n
-        The top-level orchestration can be done in many different ways, 
-        depending on personal preference and on the need for features such as 
-        storage, caching, memory management or parallelization. A few examples 
-        are offered here. To run them, pass one or more arguments such as 
-        --stepwise.""")
-    options = stepwise, genotypewise, functional, hdfcaching, clusterjob
-    for func in options:
-        parser.add_argument("--" + func.__name__, help=func.__doc__, 
-            action="store_const", const=func)
-    parser.add_argument("--all", help="Run all examples", action="store_true")
-    args = vars(parser.parse_args())
-    if args["all"]:
-        args.update((func.__name__, func) for func in options)
-        args.pop("all")
-    for func in args.values():
-        if func:
-            print "Running '{}'...".format(func.__name__)
-            try:
-                func()
-                pad_plot()
-                plt.show()
-            except Exception:  # pylint: disable=W0703
-                import logging
-                logging.exception("Error")
+    plt.show()
 
 
 if __name__ == "__main__":
-    main()
+    cgpstudy()
