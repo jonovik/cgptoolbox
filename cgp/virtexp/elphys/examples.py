@@ -267,22 +267,12 @@ class Fitz(Bond):
         :include-source:
         :width: 300
         
-        >>> from cgp.virtexp.elphys.examples import Fitz
-        >>> fitz = Fitz()
-        >>> with fitz.autorestore(stim_amplitude=0, V=0.01):
-        ...     t, y, flag = fitz.integrate(t=[0, 700])
-        >>> plt.plot(t, y.view(float))                              # doctest: +SKIP
-        >>> plt.legend(fitz.dtype.y.names)                          # doctest: +SKIP
-    
-    Estimate period of oscillation and verify that the last two maxima are 
-    approximately equal.
-    
-    >>> from cgp.utils.extrema import extrema
-    >>> (t0, v0), (t1, v1) = [(t[index], value) for index, value, curv 
-    ...                         in extrema(y.V, min=False, withend=False)[-2:]]
-    >>> s = "Period: %.0f, First peak: %4.2f, Ratio of peaks: %5.3f"
-    >>> print s % (t1-t0, v1, v1/v0)
-    Period: 208, First peak: 0.97, Ratio of peaks: 1.000
+        from cgp.virtexp.elphys.examples import Fitz
+        fitz = Fitz()
+        with fitz.autorestore(stim_amplitude=0, V=0.01):
+            t, y, flag = fitz.integrate(t=[0, 700])
+        plt.plot(t, y.view(float))
+        plt.legend(fitz.dtype.y.names)
     
     The constructor defines a "paced" :meth:`~Bond.scenario` where small 
     periodic stimuli elicit action potentials. To hack this, we impose a 

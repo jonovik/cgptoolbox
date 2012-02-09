@@ -203,8 +203,8 @@ def catrec(*args, **kwargs):
     This is a quick hack, use at your own risk.
     
     Positional arguments: tuples whose items are arrays.
-    Optional keyword *globalize_time*=True means to assume that the first 
-    item of each tuple is "local time", and convert it to "global time" 
+    Optional keyword *globalize_time* (default: True) means to assume that the 
+    first item of each tuple is "local time", and convert it to "global time" 
     in the output.
     
     >>> t = np.arange(3)
