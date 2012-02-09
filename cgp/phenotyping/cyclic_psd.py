@@ -8,12 +8,10 @@ Functionality
 3. Custom functions for finding and summarizing limit cycles and steady states
  
 """
-from __future__ import division # 7 / 4 = 1.75 rather than 1
-from cellmlmodel import Cellmlmodel
+from ..physmod.cellmlmodel import Cellmlmodel
 from pysundials import cvode
 import numpy as np
 import logging
-import pickle
 import ctypes
 
 # Logger objects keep a dict of some relevant information
