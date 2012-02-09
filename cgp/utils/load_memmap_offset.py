@@ -201,13 +201,13 @@ def open_memmap(filename, mode='r+', dtype=None, shape=None,
 
     return marray
 
-def load(file_, mmap_mode=None, offset=0, shape=None):
+def load(file, mmap_mode=None, offset=0, shape=None): # pylint: disable=W0622
     """
     Load a pickled, ``.npy``, or ``.npz`` binary file.
 
     Parameters
     ----------
-    file_ : file-like object or string
+    file : file-like object or string
         The file to read.  It must support ``seek()`` and ``read()`` methods.
         If the filename extension is ``.gz``, the file is first decompressed.
     mmap_mode: {None, 'r+', 'r', 'w+', 'c'}, optional
@@ -266,12 +266,12 @@ def load(file_, mmap_mode=None, offset=0, shape=None):
 
     import gzip
 
-    if isinstance(file_, basestring):
-        fid = _file(file_, "rb")
-    elif isinstance(file_, gzip.GzipFile):
-        fid = np.lib.npyio.seek_gzip_factory(file_)
+    if isinstance(file, basestring):
+        fid = _file(file, "rb")
+    elif isinstance(file, gzip.GzipFile):
+        fid = np.lib.npyio.seek_gzip_factory(file)
     else:
-        fid = file_
+        fid = file
 
     # Code to distinguish from NumPy binary files and pickles.
     _ZIP_PREFIX = 'PK\x03\x04'
@@ -282,7 +282,7 @@ def load(file_, mmap_mode=None, offset=0, shape=None):
         return np.lib.npyio.NpzFile(fid)
     elif magic_ == np.lib.format.MAGIC_PREFIX: # .npy file
         if mmap_mode:
-            return open_memmap(file_, mode=mmap_mode, shape=shape, offset=offset)
+            return open_memmap(file, mode=mmap_mode, shape=shape, offset=offset)
         else:
             return np.lib.format.read_array(fid)
     else:  # Try a pickle
@@ -290,7 +290,7 @@ def load(file_, mmap_mode=None, offset=0, shape=None):
             return np.lib.npyio._cload(fid)  # pylint: disable=W0212
         except:
             raise IOError, \
-                "Failed to interpret file %s as a pickle" % repr(file_)
+                "Failed to interpret file %s as a pickle" % repr(file)
 
 if __name__ == "__main__":
     import doctest
