@@ -375,8 +375,10 @@ class Cvodeint(object):
         mupper=None, mlower=None):
         # Ensure that t and y can be indexed
         t = np.array(t, dtype=float, ndmin=1)
-        y = np.array(y, dtype=float, ndmin=1)
-        # y = np.array(t, dtype=float, ndmin=1)
+        try:
+            y = np.array(y, dtype=float, ndmin=1)
+        except ValueError:
+            raise ValueError("State vector y not interpretable as float: %s" % y)
         # Ensure that f_ode assigns a value to all elements of the rate vector
         assert_assigns_all(f_ode, y, f_data)
         # Ensure that the function returns 0 on success and <0 on exception. 

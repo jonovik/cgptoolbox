@@ -201,3 +201,11 @@ def test_simple_example():
         array([[ 0.1       ], [ 0.10002346], ... [ 0.73890686]]), 1)
     """
     pass
+
+def test_y_dtype():
+    Cvodeint(example_ode.vdp, t=[0, 2], y=[1.0, 2.0])
+    Cvodeint(example_ode.vdp, t=[0, 2], y=[1, 2])
+
+@raises(ValueError)
+def test_y_dtype_rec():
+    Cvodeint(example_ode.vdp, t=[0, 2], y=np.rec.fromrecords([(1.0, 2.0)], dtype=[("u", float), ("v", float)]))
