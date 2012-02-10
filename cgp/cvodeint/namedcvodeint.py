@@ -19,7 +19,7 @@ class Namedcvodeint(Cvodeint):
     With no arguments, this returns the van der Pol model as an example.
         
     >>> Namedcvodeint()
-    Namedcvodeint(f_ode=vanderpol, t=array([0, 1]), y=[-2.0, 0.0])
+    Namedcvodeint(f_ode=vanderpol, t=array([ 0.,  1.]), y=[-2.0, 0.0])
         
     .. todo:: 
         
@@ -105,9 +105,14 @@ class Namedcvodeint(Cvodeint):
         Nt = namedtuple("Example", "ode t y p")
         return Nt(vanderpol, t, y, p)
     
-    def __init__(self, f_ode=None, t=None, y=None, p=None, *args, **kwargs):
+    def __init__(self, f_ode=None, t=None, y=None, p=None, 
+        *args, **kwargs):
         if f_ode is None:
             f_ode, t, y, p = self.example()
+        if p is None:
+            # Simplest array that allows copying and [:] assignment, etc.
+            # Shape (), dtype float, no dtype.names
+            p = np.zeros(0)
         super(Namedcvodeint, self).__init__(f_ode, t, y.view(float), 
             *args, **kwargs)
         self.yr = Recarraylink(self.y, y.dtype)
