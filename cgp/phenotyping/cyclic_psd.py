@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Cyclic cellmodels
 
@@ -28,8 +27,10 @@ class Cyclic(Cellmlmodel):
         
     def cycle(self, y=None, ignore_flags=False):
         """
-        Simulate with rootfinding for cycle_state until the second extremal point.
-        If the initial condition is an extremal point itself the solution will be one complete cycle. 
+        Simulate with rootfinding for cycle_state until second extremal point.
+        
+        If the initial condition is an extremal point itself the solution will 
+        be one complete cycle. 
         
         Example:
         
@@ -136,14 +137,9 @@ class Cyclic(Cellmlmodel):
         return t, Y, stats  
     
     def vdot(self):
-        """
-        Return rate-of-change as a function of (t, y, gout, g_data).
-        
-        """
+        """Return rate-of-change as a function of (t, y, gout, g_data)."""
         def result(t, y, gout, _g_data):
-            """
-            Rate-of-change. Use with CVodeRootInit to find MB peak.
-            """
+            """Rate-of-change. Use with CVodeRootInit to find MB peak."""
             self.model.ode(t, y, self.model.ydot, None)
             gout[0] = self.model.ydot[self.cycle_state]
             return 0
@@ -151,14 +147,18 @@ class Cyclic(Cellmlmodel):
 
     def limit_cycle(self, parameters=None, timecourse=False): #pylint:disable=R
         """
-        Solve cvodeint model for stable limit cycle and returns oscillation period, extremal values and timespans between extrema
+        Solve cvodeint model for stable limit cycle.
         
-        The function takes in names and values of parameter to be changed from the default
+        Returns oscillation period, extremal values and timespans between extrema.
+        
+        The function takes in names and values of parameter to be changed from 
+        the default
         and return timecourse (optional) and phenotype records for stable cycle.
 
         Input:
             parameters:      recarray with non-default parameter values
-            timecourse:      Booean flag indicating whether the par2pheno should return timecourse data in addition to aggregated phenotypes
+            timecourse:      Booean flag indicating whether the par2pheno 
+            should return timecourse data in addition to aggregated phenotypes
             
         Output: 
             phenotypes:     phenotype recarray with phenotype names as dtype.names and
@@ -184,10 +184,11 @@ class Cyclic(Cellmlmodel):
 
         try:
             #solve until cycles have converged
-            self._ReInit_if_required(t=[0, 0], y=self.y0r)
+            self._ReInit_if_required(t=[0,0], y=self.y0r)
+            convergence = False
             tstop = None
-            for tstop in [2**N for N in range(6, 32)]:
-                tint, _Yint, _flag = self.integrate(t=tstop)
+            for tstop in [2**N for N in range(6,32)]:
+                tint, Yint, flag = self.integrate(t=tstop)
                 t, Y, stats = self.next_extremum()
                 if stats == 'peak': #find first bottom point for MB
                     t, Y, stats = self.next_extremum()
@@ -310,11 +311,9 @@ class Cyclic(Cellmlmodel):
                 if diff1 < 1e-8:   
                     convergence = True
                     break
-
             if not convergence:
                 msg = 'Solution did not converge to steady state. Max diff: %s'
                 raise Exception(msg % diff1)
-        
         finally:    #reset parametr values
             self.pr[:] = pr0
         
