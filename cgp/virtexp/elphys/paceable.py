@@ -282,42 +282,6 @@ class Paceable(object):
             pass
         return t, Y, stats
     
-    def vdot(self, index="V"):
-        """
-        Return voltage rate-of-change as a function of (t, y, gout, g_data).
-        
-        :param str_or_int index: Name or index of voltage state variable.
-        
-        For use with CVode's `rootfinding
-        <https://computation.llnl.gov/casc/sundials/documentation/cv_guide/node3.html#SECTION00340000000000000000>`_
-        functions.
-        
-        >>> from cgp.virtexp.elphys.examples import Bond
-        >>> bond = Bond()
-        >>> gout = cvode.NVector([0.0])
-        >>> f = bond.vdot()
-        >>> f(0, bond.model.y0, gout, None)   # returns 0, as required by CVODE
-        0
-        >>> gout    # the actual result is written to the output parameter gout
-        [80.000016441101...]
-        """
-        # Get integer index if given as string
-        try:
-            index = self.dtype.y.names.index(index)
-        except NameError:
-            pass
-        
-        def result(t, y, gout, g_data):
-            """
-            Voltage rate-of-change.
-            
-            Use with pysundials.cvode.CVodeRootInit to find voltage peak.
-            """
-            self.model.ode(t, y, self.model.ydot, None)
-            gout[0] = self.model.ydot[index]
-            return 0
-        return result
-    
     def repol(self):
         """
         Difference between current V and repolarization threshold.
