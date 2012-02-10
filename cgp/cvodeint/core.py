@@ -114,6 +114,7 @@ def assert_assigns_all(fun, y, f_data=None):
     ...     print exc.i
     [0]
     """
+    y = np.array(y)
     ydot = np.array(y, dtype=float, copy=True) # int(np.nan)==0, so need float
     ydot.fill(np.nan)
     fun(0, y, ydot, f_data)
@@ -372,7 +373,10 @@ class Cvodeint(object):
     def __init__(self, f_ode, t, y, reltol=1e-8, abstol=1e-8, nrtfn=None, 
         g_rtfn=None, f_data=None, g_data=None, chunksize=2000, maxsteps=1e4, 
         mupper=None, mlower=None):
-        t = np.array(t, ndmin=1) # ensure t can be indexed 
+        # Ensure that t and y can be indexed
+        t = np.array(t, dtype=float, ndmin=1)
+        y = np.array(y, dtype=float, ndmin=1)
+        # y = np.array(t, dtype=float, ndmin=1)
         # Ensure that f_ode assigns a value to all elements of the rate vector
         assert_assigns_all(f_ode, y, f_data)
         # Ensure that the function returns 0 on success and <0 on exception. 
@@ -882,16 +886,16 @@ class Cvodeint(object):
         <BLANKLINE>
         >>> a.y[0] = 1
         >>> print a.diff(b)
-        - Cvodeint(f_ode=vdp, t=array([ 0, 20]), y=[1.0, -2.0],
+        - Cvodeint(f_ode=vdp, t=array([ 0., 20.]), y=[1.0, -2.0],
         ?                                           ^
-        + Cvodeint(f_ode=vdp, t=array([ 0, 20]), y=[0.0, -2.0],
+        + Cvodeint(f_ode=vdp, t=array([ 0., 20.]), y=[0.0, -2.0],
         ?                                           ^
         >>> c = Cvodeint(exp_growth, t=[0,2], y=[0.25])
         >>> print a.diff(c)
-        - Cvodeint(f_ode=vdp, t=array([ 0, 20]), y=[1.0, -2.0],
-        ?                ^^            -    -       ^ ---- ^^
-        + Cvodeint(f_ode=exp_growth, t=array([0, 2]), y=[0.25],
-        ?                ^^ +++++++                      ^  ^
+        - Cvodeint(f_ode=vdp, t=array([  0.,  20.]), y=[1.0, -2.0],
+        ?                ^^             -      -        ^ ---- ^^
+        + Cvodeint(f_ode=exp_growth, t=array([ 0.,  2.]), y=[0.25],
+        ?                ^^ +++++++                          ^  ^
         """
         import textwrap, difflib
         s, o = [textwrap.wrap(repr(x)) for x in self, other]
