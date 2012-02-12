@@ -130,7 +130,7 @@ class Namedcvodeint(Cvodeint):
         self.originals = dict(pr=self.pr, y=self.y, yr=self.yr)
         self.dtype = Dotdict(y=y.dtype, p=p.dtype)
     
-    def vdot(self, index):
+    def ydoti(self, index):
         """
         Get rate-of-change of y[index] as a function of (t, y, gout, g_data).
         
@@ -142,7 +142,7 @@ class Namedcvodeint(Cvodeint):
         
         >>> vdp = Namedcvodeint()
         >>> gout = [None]
-        >>> f = vdp.vdot("y")
+        >>> f = vdp.ydoti("y")
         >>> f(0, vdp.y, gout, None)  # returns 0 per CVODE convention
         0
         >>> gout  # The actual result is written to the output parameter gout
@@ -153,7 +153,7 @@ class Namedcvodeint(Cvodeint):
             index = self.dtype.y.names.index(index)
         except (NameError, ValueError):
             pass        
-        return super(Namedcvodeint, self).vdot(index)
+        return super(Namedcvodeint, self).ydoti(index)
     
     def integrate(self, **kwargs):
         """

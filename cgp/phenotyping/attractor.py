@@ -100,7 +100,7 @@ class SteadyMixin(object):
             plt.plot(t, y, '-', te, ye, 'o')
         """
         t, y, _flag = self.integrate(t=tmax, nrtfn=1, 
-            g_rtfn=self.vdot(index), assert_flag=cvode.CV_ROOT_RETURN)
+            g_rtfn=self.ydoti(index), assert_flag=cvode.CV_ROOT_RETURN)
         return t, y, (t[-1], y[-1])
     
     def cycle(self, index=0, tmax=None, tol=1e-4, n=None):

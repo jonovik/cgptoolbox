@@ -438,7 +438,7 @@ class Cvodeint(object):
             cvode.CVBand(self.cvode_mem, self.n, mupper, mlower)        
         self.RootInit(nrtfn, g_rtfn, g_data)
     
-    def vdot(self, index):
+    def ydoti(self, index):
         """
         Get rate-of-change of y[index] as a function of (t, y, gout, g_data).
         
@@ -451,7 +451,7 @@ class Cvodeint(object):
         >>> from cgp.cvodeint.example_ode import vdp
         >>> c = Cvodeint(vdp, t=[0, 1], y=[1, 1])
         >>> gout = cvode.NVector([0.0])
-        >>> f = c.vdot(0)
+        >>> f = c.ydoti(0)
         >>> f(0, c.y, gout, None)  # returns 0 per CVODE convention
         0
         >>> gout  # The actual result is written to the output parameter gout

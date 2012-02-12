@@ -202,7 +202,7 @@ class Paceable(object):
         while True:
             j_peak += 1
             result.append(self.integrate(t=self.pr.stim_period, 
-                nrtfn=1, g_rtfn=self.vdot("V"), assert_flag=cvode.CV_ROOT_RETURN, 
+                nrtfn=1, g_rtfn=self.ydoti("V"), assert_flag=cvode.CV_ROOT_RETURN, 
                 ignore_flags=ignore_flags))
             _tj, yj, flagj = result[-1]
             if (flagj == cvode.CV_TSTOP_RETURN) or (yj.V[-1] > 0):
