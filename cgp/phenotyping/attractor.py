@@ -104,6 +104,30 @@ class AttractorMixin(object):
         return t, y, (t[-1], y[-1])
     
     def cycle(self, index=0, tmax=None, tol=1e-4, n=None):
+        """
+        Find limit cycle (integrate until successive extrema are almost equal).
+        
+        :param str_or_int index: Index of state variable to base search on.
+        :param float tmax: Time limit for aborting search for limit cycle.
+        :param float tol: Tolerance for weighted root-mean-square norm of 
+            change in state vector between successive extrema.
+        :param int n: Keep history of up to n extrema while searching for 
+            limit cycle.
+        
+        ..  plot::
+            from cgp.cvodeint.namedcvodeint import Namedcvodeint
+            from cgp.utils.unstruct import unstruct
+            
+            class Test(Namedcvodeint, AttractorMixin):
+                '''Inherits van der Pol equations as default example.'''
+                pass
+            
+            test = Test(t=[0, 10000])
+            t, y, period = test.cycle()
+            plt.plot(t, unstruct(y).squeeze(), '-')
+        """
+        if tmax is None:
+            tmax = self.t[-1]
         extrema = deque([self.next_extremum(tmax, index)], maxlen=n)
         while True:
             t, y, (te, ye) = tup = self.next_extremum(tmax, index)
@@ -117,29 +141,5 @@ class AttractorMixin(object):
                     t, y, _ = catrec(*L, globalize_time=False)
                     period = te_ - te
                     return t, y, period
-                    # Possbly stats, a la ap_stats
 
-from cgp import cvodeint
-class Test(cvodeint.Cvodeint, AttractorMixin):
-    pass
-
-def f():
-    test = Test(cvodeint.example_ode.logistic_growth, t=[0, 20], y=0.1)
-    t, y, flag = test.eq(last_only=False)
-
-
-if __name__ == "__main__":
-    from matplotlib import pyplot as plt
-    
-    from cgp.cvodeint.namedcvodeint import Namedcvodeint
-    from cgp.utils.unstruct import unstruct
-    class Test(Namedcvodeint, AttractorMixin):
-        pass
-    
-    test = Test(t=[0, 10000])
-    t, y, period = test.cycle(tmax=10000)
-    # t, y, (te, ye) = test.next_extremum(tmax=10000)
-    
-    plt.plot(t, unstruct(y).squeeze(), '-') # , te, ye, 'o')
-    plt.show()
-    plt.savefig("test.png")
+# TODO: Separate function to compute statistics from raw trajectory
