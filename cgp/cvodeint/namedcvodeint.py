@@ -130,6 +130,31 @@ class Namedcvodeint(Cvodeint):
         self.originals = dict(pr=self.pr, y=self.y, yr=self.yr)
         self.dtype = Dotdict(y=y.dtype, p=p.dtype)
     
+    def vdot(self, index):
+        """
+        Get rate-of-change of y[index] as a function of (t, y, gout, g_data).
+        
+        :param str_or_int index: Name or index of a state variable.
+        
+        For use with CVode's `rootfinding
+        <https://computation.llnl.gov/casc/sundials/documentation/cv_guide/node3.html#SECTION00340000000000000000>`_
+        functions.
+        
+        >>> vdp = Namedcvodeint()
+        >>> gout = [None]
+        >>> f = vdp.vdot("y")
+        >>> f(0, vdp.y, gout, None)  # returns 0 per CVODE convention
+        0
+        >>> gout  # The actual result is written to the output parameter gout
+        [2.0]
+        """
+        # Get integer index if given as string
+        try:
+            index = self.dtype.y.names.index(index)
+        except (NameError, ValueError):
+            pass        
+        return super(Namedcvodeint, self).vdot(index)
+    
     def integrate(self, **kwargs):
         """
         Return Cvodeint.integrate() of CellML model; convert state to recarray

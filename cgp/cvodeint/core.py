@@ -114,7 +114,7 @@ def assert_assigns_all(fun, y, f_data=None):
     ...     print exc.i
     [0]
     """
-    y = np.array(y)
+    y = np.array(y, ndmin=1)
     ydot = np.array(y, dtype=float, copy=True) # int(np.nan)==0, so need float
     ydot.fill(np.nan)
     fun(0, y, ydot, f_data)
@@ -438,40 +438,33 @@ class Cvodeint(object):
             cvode.CVBand(self.cvode_mem, self.n, mupper, mlower)        
         self.RootInit(nrtfn, g_rtfn, g_data)
     
-    def vdot(self, index="V"):
+    def vdot(self, index):
         """
-        Return voltage rate-of-change as a function of (t, y, gout, g_data).
+        Get rate-of-change of y[index] as a function of (t, y, gout, g_data).
         
-        :param str_or_int index: Name or index of voltage state variable.
+        :param int index: Index of a state variable.
         
         For use with CVode's `rootfinding
         <https://computation.llnl.gov/casc/sundials/documentation/cv_guide/node3.html#SECTION00340000000000000000>`_
         functions.
         
-        >>> from cgp.virtexp.elphys.examples import Bond
-        >>> bond = Bond()
+        >>> from cgp.cvodeint.example_ode import vdp
+        >>> c = Cvodeint(vdp, t=[0, 1], y=[1, 1])
         >>> gout = cvode.NVector([0.0])
-        >>> f = bond.vdot()
-        >>> f(0, bond.model.y0, gout, None)   # returns 0, as required by CVODE
+        >>> f = c.vdot(0)
+        >>> f(0, c.y, gout, None)  # returns 0 per CVODE convention
         0
-        >>> gout    # the actual result is written to the output parameter gout
-        [80.000016441101...]
+        >>> gout  # The actual result is written to the output parameter gout
+        [1.0]
         """
-        # Get integer index if given as string
-        try:
-            index = self.dtype.y.names.index(index)
-        except NameError:
-            pass
+        ydot = np.empty_like(self.y)
         
-        def result(t, y, gout, g_data):
-            """
-            Voltage rate-of-change.
-            
-            Use with pysundials.cvode.CVodeRootInit to find voltage peak.
-            """
-            self.model.ode(t, y, self.model.ydot, None)
-            gout[0] = self.model.ydot[index]
+        def result(t, y, gout, g_data):  # pylint: disable=W0613
+            """Function for CVODE rootfinding."""
+            self.f_ode(t, y, ydot, None)
+            gout[0] = ydot[index]
             return 0
+        
         return result
         
     def integrate(self, t=None, y=None, nrtfn=None, g_rtfn=None, g_data=None, 
