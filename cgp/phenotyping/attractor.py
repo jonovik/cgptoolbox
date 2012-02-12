@@ -6,7 +6,7 @@ import numpy as np
 from pysundials import cvode
 from cgp.virtexp.elphys.clampable import catrec
 
-class SteadyMixin(object):
+class AttractorMixin(object):
     """Mixin to find steady state or stable limit cycle of dynamic system."""
     # Integrate until norm of rate-of-change < tol (steady state) or 
     # norm of difference between successive extrema < tol (stable limit cycle))
@@ -22,7 +22,7 @@ class SteadyMixin(object):
         
         See cvode.h and associated CVODE help pages.
         
-        >>> class Test(SteadyMixin):
+        >>> class Test(AttractorMixin):
         ...     def __init__(self, ydot, reltol, abstol):
         ...         self.ydot = np.array(ydot)
         ...         self.reltol = np.array(reltol)
@@ -49,7 +49,7 @@ class SteadyMixin(object):
         :param float last_only: Include only the last time and state?
         
         >>> from cgp import cvodeint
-        >>> class Test(cvodeint.Cvodeint, SteadyMixin):
+        >>> class Test(cvodeint.Cvodeint, AttractorMixin):
         ...     pass            
         >>> test = Test(cvodeint.example_ode.logistic_growth, t=[0, 20], y=0.1)
         >>> test.eq()
@@ -58,7 +58,7 @@ class SteadyMixin(object):
         .. plot::
             
             from cgp import cvodeint
-            class Test(cvodeint.Cvodeint, SteadyMixin):
+            class Test(cvodeint.Cvodeint, AttractorMixin):
                 pass
             test = Test(cvodeint.example_ode.logistic_growth, t=[0, 20], y=0.1)
             t, y, flag = test.eq(last_only=False)
@@ -93,7 +93,7 @@ class SteadyMixin(object):
             def ode(t, y, ydot, f_data):
                 ydot[0] = y[1]
                 ydot[1] = - y[0]
-            class Test(cvodeint.Cvodeint, SteadyMixin):
+            class Test(cvodeint.Cvodeint, AttractorMixin):
                 pass
             test = Test(ode, t=[0, 10], y=[1, 1])
             t, y, (te, ye) = test.next_extremum()
@@ -120,7 +120,7 @@ class SteadyMixin(object):
                     # Possbly stats, a la ap_stats
 
 from cgp import cvodeint
-class Test(cvodeint.Cvodeint, SteadyMixin):
+class Test(cvodeint.Cvodeint, AttractorMixin):
     pass
 
 def f():
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     
     from cgp.cvodeint.namedcvodeint import Namedcvodeint
     from cgp.utils.unstruct import unstruct
-    class Test(Namedcvodeint, SteadyMixin):
+    class Test(Namedcvodeint, AttractorMixin):
         pass
     
     test = Test(t=[0, 10000])
