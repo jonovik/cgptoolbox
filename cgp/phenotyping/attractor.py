@@ -4,7 +4,9 @@ from collections import deque
 
 import numpy as np
 from pysundials import cvode
+
 from cgp.virtexp.elphys.clampable import catrec
+from cgp.utils.unstruct import unstruct
 
 class AttractorMixin(object):
     """Mixin to find steady state or stable limit cycle of dynamic system."""
@@ -18,21 +20,14 @@ class AttractorMixin(object):
     
     def ydotnorm(self, tol):
         """
-        Weighted root-mean-square norm of rate of change.
+        Make rootfinding function: :func:`weighted_rms` norm of rate of change.
         
         See cvode.h and associated CVODE help pages.
-        
-        >>> class Test(AttractorMixin):
-        ...     def __init__(self, ydot, reltol, abstol):
-        ...         self.ydot = np.array(ydot)
-        ...         self.reltol = np.array(reltol)
-        ...         self.abstol = np.array(abstol)
-        ...     def my_f_ode(self, t, y, ydot, g_data):
-        ...         ydot[:] = self.ydot        
         """
         ydot = np.empty_like(self.y)
         
         def result(t, y, gout, g_data=None):
+            """Rootfinding function for convergence to equilibrium."""
             self.my_f_ode(t, y, ydot, g_data)
             gout[0] = self.weighted_rms(ydot) - tol
             return 0
@@ -48,21 +43,17 @@ class AttractorMixin(object):
             dy/dt. The WRMS norm is defined in cvode.h.
         :param float last_only: Include only the last time and state?
         
-        >>> from cgp import cvodeint
-        >>> class Test(cvodeint.Cvodeint, AttractorMixin):
-        ...     pass            
-        >>> test = Test(cvodeint.example_ode.logistic_growth, t=[0, 20], y=0.1)
-        >>> test.eq()
-        (11.407..., array([ 0.999...]))
-        
-        .. plot::
+        ..  plot::
+            :include-source:
             
-            from cgp import cvodeint
-            class Test(cvodeint.Cvodeint, AttractorMixin):
-                pass
-            test = Test(cvodeint.example_ode.logistic_growth, t=[0, 20], y=0.1)
-            t, y, flag = test.eq(last_only=False)
-            plt.plot(t, y, '-', t[-1], y[-1], 'o')
+            >>> from cgp import cvodeint
+            >>> from cgp.phenotyping.attractor import AttractorMixin
+            >>> class Test(cvodeint.Cvodeint, AttractorMixin):
+            ...     pass
+            >>> test = Test(cvodeint.example_ode.logistic_growth, 
+            ...     t=[0, 20], y=0.1)
+            >>> t, y, flag = test.eq(last_only=False)
+            >>> h = plt.plot(t, y, '-', t[-1], y[-1], 'o')
         """
         g_rtfn = self.ydotnorm(tol)
         gout = np.zeros(1)
@@ -76,6 +67,7 @@ class AttractorMixin(object):
                 tmax = self.t[-1]
             t, y, flag = self.integrate(t=tmax, nrtfn=1, g_rtfn=g_rtfn, 
                 assert_flag=cvode.CV_ROOT_RETURN)
+        y = y.squeeze()
         if last_only:
             return t[-1], y[-1]
         else:
@@ -88,20 +80,26 @@ class AttractorMixin(object):
         :return tuple t, y, e: Time and state arrays, and e = (t[-1], y[-1]).
         
         ..  plot::
+            :include-source:
             
-            from cgp import cvodeint
-            def ode(t, y, ydot, f_data):
-                ydot[0] = y[1]
-                ydot[1] = - y[0]
-            class Test(cvodeint.Cvodeint, AttractorMixin):
-                pass
-            test = Test(ode, t=[0, 10], y=[1, 1])
-            t, y, (te, ye) = test.next_extremum()
-            plt.plot(t, y, '-', te, ye, 'o')
+            >>> from cgp import cvodeint
+            >>> from cgp.phenotyping.attractor import AttractorMixin
+            >>> def ode(t, y, ydot, f_data):
+            ...     ydot[0] = y[1]
+            ...     ydot[1] = - y[0]
+            >>> class Test(cvodeint.Cvodeint, AttractorMixin):
+            ...     pass
+            >>> test = Test(ode, t=[0, 10], y=[1, 1])
+            >>> t1, y1, (te1, ye1) = test.next_extremum()
+            >>> np.testing.assert_almost_equal(te1, np.pi / 4)
+            >>> np.testing.assert_allclose(ye1, [np.sqrt(2), 0], atol=1e-6)
+            >>> t2, y2, (te2, ye2) = test.next_extremum()
+            >>> h = plt.plot(t1, y1, '-', t2, y2, ':', 
+            ...     te1, ye1[0], 'o', te2, ye2[0], 's')
         """
         t, y, _flag = self.integrate(t=tmax, nrtfn=1, 
             g_rtfn=self.ydoti(index), assert_flag=cvode.CV_ROOT_RETURN)
-        return t, y, (t[-1], y[-1])
+        return t, y.squeeze(), (t[-1], y[-1])
     
     def cycle(self, index=0, tmax=None, tol=1e-4, n=None):
         """
@@ -115,16 +113,18 @@ class AttractorMixin(object):
             limit cycle.
         
         ..  plot::
-            from cgp.cvodeint.namedcvodeint import Namedcvodeint
-            from cgp.utils.unstruct import unstruct
+            :include-source:
             
-            class Test(Namedcvodeint, AttractorMixin):
-                '''Inherits van der Pol equations as default example.'''
-                pass
-            
-            test = Test(t=[0, 10000])
-            t, y, period = test.cycle()
-            plt.plot(t, unstruct(y).squeeze(), '-')
+            >>> from cgp.cvodeint.namedcvodeint import Namedcvodeint
+            >>> from cgp.utils.unstruct import unstruct
+            >>> from cgp.phenotyping.attractor import AttractorMixin
+            >>> class Test(Namedcvodeint, AttractorMixin):
+            ...     '''Inherits van der Pol equations as default example.'''
+            ...     pass
+            >>> test = Test(t=[0, 10000])
+            >>> t, y, period = test.cycle()
+            >>> period
+            >>> h = plt.plot(t, unstruct(y), '-')
         """
         if tmax is None:
             tmax = self.t[-1]
@@ -139,7 +139,7 @@ class AttractorMixin(object):
                 if self.weighted_rms(diff) < tol:
                     L = reversed(list(extrema)[:lag])
                     t, y, _ = catrec(*L, globalize_time=False)
-                    period = te_ - te
-                    return t, y, period
+                    period = te - te_
+                    return t, y.squeeze(), period
 
 # TODO: Separate function to compute statistics from raw trajectory
