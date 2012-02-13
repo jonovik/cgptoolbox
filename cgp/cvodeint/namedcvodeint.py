@@ -108,7 +108,10 @@ class Namedcvodeint(Cvodeint):
     def __init__(self, f_ode=None, t=None, y=None, p=None, 
         *args, **kwargs):
         if f_ode is None:
-            f_ode, t, y, p = self.example()
+            f_ode, t_, y_, p_ = self.example()
+            t = t_ if t is None else t
+            y = y_ if y is None else y
+            p = p_ if p is None else p
         if p is None:
             # Simplest array that allows copying and [:] assignment, etc.
             # Shape (), dtype float, no dtype.names
