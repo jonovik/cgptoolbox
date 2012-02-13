@@ -14,6 +14,7 @@ class Test_cell(Namedcvodeint, Paceable, Clampable):
     ..  plot::
         :width: 400
         
+        from cgp.test.test_elphys_analytic import Test_cell
         c = Test_cell()
         for t, y, stats in c.aps(n=2):
             plt.plot(t, y.V, '.-')
