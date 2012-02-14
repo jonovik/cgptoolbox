@@ -7,7 +7,7 @@ from nose.tools import raises
 from .. import cvodeint
 from ..phenotyping import attractor
 
-class Test(cvodeint.Cvodeint, attractor.SteadyMixin):  # pylint:disable=W
+class Test(cvodeint.Cvodeint, attractor.AttractorMixin):  # pylint:disable=W
     pass
 
 def ode(t, y, ydot, g_data):

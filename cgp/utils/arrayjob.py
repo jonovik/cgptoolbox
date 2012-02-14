@@ -29,7 +29,7 @@ otherwise size, rank = 1, 0.
 Example:
 
 >>> from cgp.utils.arrayjob import *
->>> set_NID(16)
+>>> set_NID(16)                                                 # doctest: +SKIP
 
 Next, define one function per stage of computation.
 Finally, specify the sequence of stages, and which of them should run in 

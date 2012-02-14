@@ -11,9 +11,18 @@ class Test_cell(Namedcvodeint, Paceable, Clampable):
     """
     Mockup of action potential model, see :meth:`f_ode` and :meth:`solution`.
     
+    ..  inheritance-diagram:: 
+        cgp.cvodeint.core.Cvodeint
+        cgp.cvodeint.namedcvodeint.Namedcvodeint
+        cgp.virtexp.elphys.Paceable
+        cgp.virtexp.elphys.Clampable
+        Test_cell
+        :parts: 1
+    
     ..  plot::
         :width: 400
         
+        from cgp.test.test_elphys_analytic import Test_cell
         c = Test_cell()
         for t, y, stats in c.aps(n=2):
             plt.plot(t, y.V, '.-')

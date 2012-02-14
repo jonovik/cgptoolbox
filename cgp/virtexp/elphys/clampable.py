@@ -1162,6 +1162,8 @@ def markovplot(t, y, a=None, names=None, model=None, comp=None, col="bgrcmyk",
     .. ggplot::
        
        from cgp.virtexp.elphys.examples import Bond
+       from cgp.virtexp.elphys.clampable import markovplot
+       
        bond = Bond()
        t, y, stats = bond.ap()
        p = markovplot(t, y, model=bond, comp="fast_sodium")

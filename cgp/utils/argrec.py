@@ -99,8 +99,8 @@ def argrec(func, *args, **kwargs):
     
     #>>> def i(r, s): pass
     #>>> argrec(i, r, r) # DOES NOT WORK YET
-    array(((2,3), (2,3)), dtype=[("r", [("a", "<i4"), ("b", "<i4")]), 
-                                 ("s", [("a", "<i4"), ("b", "<i4")])])
+    #array(((2,3), (2,3)), dtype=[("r", [("a", "<i4"), ("b", "<i4")]), 
+    #                             ("s", [("a", "<i4"), ("b", "<i4")])])
     
     Verify bugfix when there are no defaults. Slicing by [:-ndef] or [-ndef:] 
     breaks down when ndef is zero, because 
@@ -111,13 +111,14 @@ def argrec(func, *args, **kwargs):
     >>> argrec(g, "This is a", "This is b")
     rec.array([('This is a', 'This is b')], dtype=[('a', '|S9'), ('b', '|S9')])
     
-    #>>> argrec(g, "This is a", "This is b", ignore=0) # DOES NOT WORK YET
-    rec.array([('This is b')], dtype=[('b', '|S9')])
-    #>>> argrec(g, "This is a", "This is b", ignore="a") # DOES NOT WORK YET
-    rec.array([('This is b')], dtype=[('b', '|S9')])
-    #>>> argrec(g, "This is a", "This is b", ignore=1) # DOES NOT WORK YET
-    rec.array([('This is a',)], dtype=[('a', '|S9')])
-    #>>> argrec(g, "This is a", "This is b", ignore=["b"]) # DOES NOT WORK YET
+    ..  Tests not working yet::
+        #>>> argrec(g, "This is a", "This is b", ignore=0) # DOES NOT WORK YET
+        rec.array([('This is b')], dtype=[('b', '|S9')])
+        #>>> argrec(g, "This is a", "This is b", ignore="a") # DOES NOT WORK YET
+        rec.array([('This is b')], dtype=[('b', '|S9')])
+        #>>> argrec(g, "This is a", "This is b", ignore=1) # DOES NOT WORK YET
+        rec.array([('This is a',)], dtype=[('a', '|S9')])
+        #>>> argrec(g, "This is a", "This is b", ignore=["b"]) # DOES NOT WORK YET
     """
     ignore = kwargs.pop("ignore", ())
     # Make sure ignore is a sequence that is not a string
