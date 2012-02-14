@@ -209,7 +209,7 @@ Contents
 ========
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 5
    
    cgp-programme
    features
