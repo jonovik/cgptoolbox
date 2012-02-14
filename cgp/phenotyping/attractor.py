@@ -46,6 +46,7 @@ class AttractorMixin(object):
         ..  plot::
             :include-source:
             
+            >>> from matplotlib import pyplot as plt
             >>> from cgp import cvodeint
             >>> from cgp.phenotyping.attractor import AttractorMixin
             >>> class Test(cvodeint.Cvodeint, AttractorMixin):
@@ -57,7 +58,8 @@ class AttractorMixin(object):
         """
         g_rtfn = self.ydotnorm(tol)
         gout = np.zeros(1)
-        g_rtfn(self.t, self.y, gout)
+        # CV_ROOT_RETURN may never happen if already converged, so check now
+        g_rtfn(self.tret.value, self.y, gout)
         if gout < 0:
             t = np.atleast_1d(self.tret)
             y = np.copy(self.y)
@@ -82,6 +84,7 @@ class AttractorMixin(object):
         ..  plot::
             :include-source:
             
+            >>> from matplotlib import pyplot as plt
             >>> from cgp import cvodeint
             >>> from cgp.phenotyping.attractor import AttractorMixin
             >>> def ode(t, y, ydot, f_data):
@@ -115,6 +118,7 @@ class AttractorMixin(object):
         ..  plot::
             :include-source:
             
+            >>> from matplotlib import pyplot as plt
             >>> from cgp.cvodeint.namedcvodeint import Namedcvodeint
             >>> from cgp.utils.unstruct import unstruct
             >>> from cgp.phenotyping.attractor import AttractorMixin
@@ -124,6 +128,7 @@ class AttractorMixin(object):
             >>> test = Test(t=[0, 10000])
             >>> t, y, period = test.cycle()
             >>> period
+            6.663...
             >>> h = plt.plot(t, unstruct(y), '-')
         """
         if tmax is None:
