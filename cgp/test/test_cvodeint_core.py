@@ -53,7 +53,7 @@ def test_ReInit():
     ...     for t in [None, 1, [1], [1, 2], [1, 2, 3]]:
     ...         o._ReInit_if_required(t, y)
     ...         print y, o.y, t, o.t, o.t0, o.tstop
-    None [0.5] None [0 2] c_double(0.0) 2
+    None [0.5] None [ 0.  2.] c_double(0.0) 2.0
     None [0.5] 1 [0.0, 1] c_double(0.0) 1
     None [0.5] [1] [0.0, 1] c_double(0.0) 1
     None [0.5] [1, 2] [1 2] c_double(1.0) 2
