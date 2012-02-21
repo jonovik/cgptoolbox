@@ -4,6 +4,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from IPython.parallel import Client
 import rpy2.rinterface as ri
+from joblib import Memory
 
 from cgp.rnumpy.rnumpy import r, RRuntimeError, rcopy, py2ri
 import cgp.virtexp.elphys.examples as ex
@@ -24,12 +25,19 @@ except RRuntimeError:
 class Model(ex.Bond, AttractorMixin):
     pass
 
+r.set_seed(20120221)
 m = Model(reltol=1e-10, maxsteps=1e6, chunksize=100000)
+mem = Memory("/tmp/sensitivity")
+
+#             mu   mu.star     sigma
+#Cm   -0.4348831 0.6603604 0.9338907
+#Vmyo  0.1264869 0.1264869 0.1657938
 
 factors = ["Cm", "Vmyo"]
 
 @ri.rternalize
 # @lview.parallel
+@mem.cache
 def apd90(par):
     """Input is a matrix (with colnames if factors is string)."""
     par = np.copy(par)  # Convert from low-level R object
