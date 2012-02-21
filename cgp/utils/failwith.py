@@ -47,7 +47,7 @@ def nans_like(x):
     
     >>> x = np.arange(3.0)
     >>> nans_like(x)
-    array([ NaN,  NaN,  NaN])
+    array([ nan,  nan,  nan])
     >>> y = x.view([(k, float) for k in "a", "b", "c"])
     >>> nans_like(y)
     array([(nan, nan, nan)], dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])
@@ -57,35 +57,35 @@ def nans_like(x):
     Tuple, list, dict.
     
     >>> nans_like((x, y))
-    [array([ NaN,  NaN,  NaN]), array([(nan, nan, nan)], 
+    [array([ nan,  nan,  nan]), array([(nan, nan, nan)], 
           dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])]
     >>> nans_like([x, y])
-    [array([ NaN,  NaN,  NaN]), array([(nan, nan, nan)], 
+    [array([ nan,  nan,  nan]), array([(nan, nan, nan)], 
           dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])]
     >>> nans_like(dict(a=x, b=y))
-    {'a': array([ NaN,  NaN,  NaN]), 'b': array([(nan, nan, nan)], 
+    {'a': array([ nan,  nan,  nan]), 'b': array([(nan, nan, nan)], 
           dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])}
     
     Nested list and dict.
     
     >>> nans_like([x, [x, y]])
-    [array([ NaN, NaN, NaN]), [array([ NaN, NaN, NaN]), array([(nan, nan, nan)],
+    [array([ nan, nan, nan]), [array([ nan, nan, nan]), array([(nan, nan, nan)],
                             dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])]]
     >>> nans_like(dict(a=x, b=dict(c=x, d=y)))
-    {'a': array([ NaN,  NaN,  NaN]), 
-     'b': {'c': array([ NaN,  NaN,  NaN]), 'd': array([(nan, nan, nan)], 
+    {'a': array([ nan,  nan,  nan]), 
+     'b': {'c': array([ nan,  nan,  nan]), 'd': array([(nan, nan, nan)], 
                 dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])}}
     
-    Note that there is no NaN for integers.
+    Note that there is no nan for integers.
     
     >>> nans_like((1, 2, 3))
     Traceback (most recent call last):
-    AssertionError: NaN is only defined for float types, not int...
+    AssertionError: nan is only defined for float types, not int...
     
     This works because the 1.0 makes Numpy interpret the tuple as a float array.
     
     >>> nans_like((1.0, 2, 3))
-    array([ NaN,  NaN,  NaN])
+    array([ nan,  nan,  nan])
     """
     try:
         return dict((k, nans_like(v)) for k, v in x.iteritems())
@@ -96,7 +96,7 @@ def nans_like(x):
                 xc = x.__array_wrap__(xc)
             except AttributeError:
                 pass
-            msg = "NaN is only defined for float types, not %s" % xc.dtype
+            msg = "nan is only defined for float types, not %s" % xc.dtype
             assert not xc.dtype.kind == "i", msg
             xc.view(np.float).fill(np.nan)
             return xc
@@ -159,7 +159,7 @@ def failwithnanlikefirst(func):
     >>> f(0)
     Failure in <function f at 0x...>. Default: nan. args = (0,), kwargs = {}
     Traceback (most recent call last):...
-    ZeroDivisionError: float division
+    ZeroDivisionError: float division...
     array(nan)
     
     If the first evaluation fails, the exception is logged with an explanatory 
@@ -210,7 +210,7 @@ def failwithnan_asfor(*args, **kwargs):
     ... def f(value, length):
     ...     return [value] * length
     >>> f()
-    array([ NaN,  NaN,  NaN])
+    array([ nan,  nan,  nan])
     """
     def decorator(func):
         default = nans_like(func(*args, **kwargs))
