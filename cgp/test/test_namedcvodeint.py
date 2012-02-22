@@ -1,12 +1,25 @@
 """Tests for :mod:`cgp.cvodeint.namedcvodeint`."""
+# pylint: disable=W0142
 
 from nose.tools import raises
 import numpy as np
 
 from ..cvodeint.namedcvodeint import Namedcvodeint
 
-@raises(Exception)
 def test_autorestore():
+    n = Namedcvodeint()
+    tlist = []
+    ylist = []
+    for _ in range(2):
+        with n.autorestore():
+            t, y, _flag = n.integrate(t=1)
+        tlist.append(t)
+        ylist.append(y)
+    np.testing.assert_array_equal(*tlist)
+    np.testing.assert_array_equal(*ylist)
+
+@raises(Exception)
+def test_autorestore_check_size():
     """Require correct size for state vector."""
     n = Namedcvodeint()
     with n.autorestore(_y=(1, 2, 3)):

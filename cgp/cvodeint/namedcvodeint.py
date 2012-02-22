@@ -190,7 +190,7 @@ class Namedcvodeint(Cvodeint):
     @contextmanager
     def autorestore(self, _p=None, _y=None, **kwargs):
         """
-        Context manager to restore state and parameters after use.
+        Context manager to restore time, state and parameters after use.
         
         :param array_like _p: Temporary parameter vector
         :param array_like _y: Temporary initial state
@@ -240,7 +240,7 @@ class Namedcvodeint(Cvodeint):
         >>> bool(vdp.pr.epsilon == before[1])
         True
         """
-        oldy, oldpar = np.copy(self.y), np.copy(self.pr)
+        oldt, oldy, oldpar = self.t, np.copy(self.y), np.copy(self.pr)
         if _p is not None:
             self.pr[:] = _p
         if _y is not None:
@@ -266,12 +266,14 @@ class Namedcvodeint(Cvodeint):
                 raise TypeError("Key %s not in parameter or rate vectors" % k)
             raise TypeError(
                 "Key %s occurs in both parameter and state vectors" % k)
+        self._ReInit_if_required(self.tret.value, self.y)
         
         try:
             yield
         finally:
+            self._ReInit_if_required(oldt, oldy)
             self.RootInit(0) # Disable any rootfinding
-            self.y[:], self.pr[:] = oldy, oldpar
+            self.pr[:] = oldpar
     
     @contextmanager
     def clamp(self, **kwargs):
