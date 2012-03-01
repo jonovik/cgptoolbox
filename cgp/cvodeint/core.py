@@ -900,8 +900,12 @@ class Cvodeint(object):
                 elif val != default:
                     arglist.append((arg, repr(val)))
             except ValueError:
-                if any(val != default):
-                    arglist.append((arg, repr(val)))
+		try:                
+		    if any(val != default):
+                        arglist.append((arg, repr(val)))
+		except ValueError:
+                    if np.any(val != default):
+                        arglist.append((arg, repr(val)))
             except AttributeError:
                 continue
         argstr = ", ".join(["%s=%s" % x for x in arglist])
