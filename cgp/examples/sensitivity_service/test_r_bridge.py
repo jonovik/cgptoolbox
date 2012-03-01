@@ -42,7 +42,47 @@ def pheno(rmatrix):
     return py2ri(result)
 
 # Works fine:
-print r.funfun(pheno, [(m.pr.g_Na, m.pr.Nao) for i in range(10)])
+print r.funfun(pheno, [(m.pr.g_Na, m.pr.Nao) for i in range(2)])
 
 # raises ValueError: All parameters must be of type Sexp_Type,or Python int/long, float, bool, or None
-pheno([(m.pr.g_Na, m.pr.Nao) for i in range(10)])
+try:
+    pheno([(m.pr.g_Na, m.pr.Nao) for i in range(10)])
+except ValueError, exc:
+    print exc
+
+def unwrapped(arr):
+    return arr.sum(axis=1)
+
+def wrap(func):
+    
+    def wrapper(rmatrix):
+        arr = np.copy(rmatrix)
+        result = func(arr)
+        return py2ri(result)
+    
+    return wrapper
+
+print r.funfun(ri.rternalize(wrap(unwrapped)), np.arange(10).reshape(5, 2))
+
+@ri.rternalize
+@wrap
+def decorated(arr):
+    return arr.sum(axis=0)
+
+print r.funfun(decorated, np.arange(10).reshape(5, 2))
+
+def twowrap(func):
+    
+    @ri.rternalize
+    def wrapper(rmatrix):
+        arr = np.copy(rmatrix)
+        result = func(arr)
+        return py2ri(result)
+    
+    return wrapper
+
+@twowrap
+def twowrapped(arr):
+    return arr.sum(axis=1)
+
+print r.funfun(twowrapped, np.arange(10).reshape(5, 2))
