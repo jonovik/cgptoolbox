@@ -41,4 +41,8 @@ def pheno(rmatrix):
         result.append(stats["peak"])
     return py2ri(result)
 
-print pheno(r.matrix(range(6), ncol=2))
+# Works fine:
+print r.funfun(pheno, [(m.pr.g_Na, m.pr.Nao) for i in range(10)])
+
+# raises ValueError: All parameters must be of type Sexp_Type,or Python int/long, float, bool, or None
+pheno([(m.pr.g_Na, m.pr.Nao) for i in range(10)])
