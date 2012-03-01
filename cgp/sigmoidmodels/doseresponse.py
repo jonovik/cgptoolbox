@@ -33,8 +33,8 @@ def Hill(x,theta,p):
     
       >>> Hill(5,5,1)
       0.5
-      >>> Hill(10,5,5)
-      0.96969696969696972
+      >>> Hill(10, 5, 5)
+      0.96969...
       
     References:
 
@@ -57,7 +57,7 @@ def nonmono(x,mu,sigma):
     
     Example usage:
     
-      >>> nonmono(5,10,1)
+      >>> nonmono(5, 7, 1)
       0.1353352832366127
     
     Reference:
