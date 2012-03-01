@@ -11,13 +11,19 @@ r("funfun <- function(callback, x) callback(x)")
 def fun(x):
     return sum(x)
 
-print r.funfun(fun, range(10))
+print r.funfun(fun, range(10))  # Simple callback
 
-@ri.rternalize
+@ri.rternalize  # Required for use as callback from R
 def y(rmatrix):
     r.str(rmatrix)
-    return py2ri((10, 20, 30))
+    x = np.copy(rmatrix)  # For easier handling in Python
+    result = x.sum(axis=1)
+    return py2ri(result)  # Required for return to R
 
 r.library("sensitivity")
 
-print r.morris(y, factors=2, r=1, design={"type": "oat", "levels": 10, "grid.jump": 5})
+# morris parameters:
+# factors >= 2 is required (presumably to estimate mu)
+# r >= 2 is required to estimate sigma
+
+print r.morris(y, factors=2, r=2, design={"type": "oat", "levels": 10, "grid.jump": 5})
