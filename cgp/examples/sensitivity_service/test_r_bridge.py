@@ -4,6 +4,7 @@ import numpy as np
 import rpy2.rinterface as ri
 
 from cgp.rnumpy.rnumpy import r, py2ri
+from cgp.virtexp.elphys.examples import Bond
 
 r("funfun <- function(callback, x) callback(x)")
 
@@ -27,3 +28,17 @@ r.library("sensitivity")
 # r >= 2 is required to estimate sigma
 
 print r.morris(y, factors=2, r=2, design={"type": "oat", "levels": 10, "grid.jump": 5})
+
+m = Bond()
+
+@ri.rternalize
+def pheno(rmatrix):
+    result = []
+    arr = np.copy(rmatrix)
+    for g_Na, Nao in arr:
+        with m.autorestore(g_Na=g_Na, Nao=Nao):
+            t, y, stats = m.ap()
+        result.append(stats["peak"])
+    return py2ri(result)
+
+print pheno(r.matrix(range(6), ncol=2))
