@@ -12,10 +12,11 @@ vdp_compiled = Cellmlmodel(use_cython=True)
 vdp_uncompiled = Cellmlmodel(use_cython=False)
 
 def test_rates_and_algebraic():
-    exposure_workspace = ("b0b1820b1376263e16c6086ca64d513e/"
-                          "bondarenko_szigeti_bett_kim_rasmusson_2004_apical")
+    workspace = "bondarenko_szigeti_bett_kim_rasmusson_2004"
+    exposure = "b0b1820b1376263e16c6086ca64d513e"
+    variant = "bondarenko_szigeti_bett_kim_rasmusson_2004_apical"
     for use_cython in False, True:
-        bond = Cellmlmodel(exposure_workspace, t=[0, 5], 
+        bond = Cellmlmodel(workspace, exposure, variant, t=[0, 5], 
                            use_cython=use_cython, reltol=1e-5)
         bond.yr.V = 100 # simulate stimulus
         t, y, _flag = bond.integrate()
@@ -43,7 +44,7 @@ def test_source():
     """Alert if code generation changes format."""
     import hashlib
     assert_equal(hashlib.sha1(vdp.py_code).hexdigest(), 
-        '971383955d7d1582b3145459fcdb3a22afb0035b')
+        'b01797dc4280e54b9aecbd1d0df83c3a959dddac')
 
 def test_Sundials_convention():    
     """
