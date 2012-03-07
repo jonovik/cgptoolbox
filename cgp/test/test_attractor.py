@@ -26,8 +26,8 @@ def test_exponential_decay():
 def test_logistic_growth():
     test = Test(cvodeint.example_ode.logistic_growth, t=[0, 100], y=0.1)
     t, y, _flag = test.eq(tol=1e-8, last_only=False)
-    np.testing.assert_approx_equal(y[-1], 1)
-    np.testing.assert_approx_equal(t[-1], 20.687484)
+    np.testing.assert_allclose(y[-1], 1)
+    np.testing.assert_allclose(t[-1], 20.687, rtol=1e-4)
 
 def test_already_converged():
     test = Test(ode, t=[0, 1e5], y=0)
