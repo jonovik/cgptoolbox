@@ -57,8 +57,8 @@ class Hodgkin(Cellmlmodel, Paceable, Clampable):
         t, y, stats = hh.ap()
         plt.plot(t, y.V)
     """
-    def __init__(self, exposure_workspace="/hodgkin_huxley_1952", **kwargs):
-        super(Hodgkin, self).__init__(exposure_workspace, **kwargs)
+    def __init__(self, localfile="hodgkin_huxley_1952", **kwargs):
+        super(Hodgkin, self).__init__(localfile=localfile, **kwargs)
 
 class Tentusscher(Cellmlmodel, Paceable, Clampable):
     """
@@ -92,8 +92,9 @@ class Tentusscher(Cellmlmodel, Paceable, Clampable):
     names to follow the conventions of a :class:`Paceable` object.
     """
     def __init__(self,  # pylint: disable=W0102
-        exposure_workspace="c7f7ced1e002d9f0af1b56b15a873736/"
-            + "tentusscher_noble_noble_panfilov_2004_a",
+        workspace="tentusscher_noble_noble_panfilov",
+        exposure="c7f7ced1e002d9f0af1b56b15a873736",
+        variant="tentusscher_noble_noble_panfilov_2004_a",
         rename={"y": {"Na_i": "Nai", "Ca_i": "Cai", "K_i": "Ki"}, "p": {
             "IstimStart": "stim_start", 
             "IstimEnd": "stim_end", 
@@ -102,7 +103,8 @@ class Tentusscher(Cellmlmodel, Paceable, Clampable):
             "IstimPulseDuration": "stim_duration"
         }}, **kwargs):
         kwargs["rename"] = rename
-        super(Tentusscher, self).__init__(exposure_workspace, **kwargs)
+        super(Tentusscher, self).__init__(workspace, exposure, variant, 
+                                          **kwargs)
         self.pr.stim_start = 0
 
 class Bond(Cellmlmodel, Paceable, Clampable):
@@ -133,7 +135,7 @@ class Bond(Cellmlmodel, Paceable, Clampable):
         bond = Bond()
         t, y, stats = bond.ap()
         plt.plot(t, y.V)
-    
+        
     References:
     
     * :doi:`original paper <10.1152/ajpheart.00185.2003>`
@@ -141,29 +143,26 @@ class Bond(Cellmlmodel, Paceable, Clampable):
       <11df840d0150d34c9716cd4cbdd164c8/bondarenko_szigeti_bett_kim_rasmusson_2004_apical>`
     """
     
-    ew_apex = ("11df840d0150d34c9716cd4cbdd164c8/" +
-        "bondarenko_szigeti_bett_kim_rasmusson_2004_apical")
-    
-    def __init__(self, exposure_workspace=ew_apex, 
+    def __init__(self, workspace="bondarenko_szigeti_bett_kim_rasmusson_2004", 
                  *args, **kwargs):
         """Constructor for the :class:`Bond` class."""
-        super(Bond, self).__init__(exposure_workspace, *args, **kwargs)
+        super(Bond, self).__init__(workspace, *args, **kwargs)
         if "stim_start" in self.dtype.p.names:
             self.pr.stim_start = 0.0
         # Mapping None to an empty dict, and letting the scenario name default 
         # to None, makes self.scenario() equivalent to self.autorestore().
         self.scenarios = OrderedDict({None: {}})
-        ew_septum = self.ew_apex.replace("apical", "septal")
-        modelnw = [("apex", self.ew_apex), ("septum", ew_septum)]
-        for n, w in modelnw:
-            self.scenarios[n] = dict(workspace=w, 
+        for variant in self.get_variants():
+            name = variant.replace(self.workspace, "").replace("_", "")
+            self.scenarios[name] = dict(workspace=self.workspace, 
+                exposure=self.exposure, variant=variant, 
                 y=self.y0r.copy(), p=self.pr.copy())
-            m = Cellmlmodel(w, **kwargs)
+            m = Cellmlmodel(self.workspace, self.exposure, variant, **kwargs)
             m.pr.stim_start = 0.0
             for k in set(m.dtype.p.names) & set(self.dtype.p.names):
-                self.scenarios[n]["p"][k] = m.pr[k]
+                self.scenarios[name]["p"][k] = m.pr[k]
             for k in set(m.dtype.y.names) & set(self.dtype.y.names):
-                self.scenarios[n]["y"][k] = m.y0r[k]
+                self.scenarios[name]["y"][k] = m.y0r[k]
     
     def scenario(self, name=None, **kwargs):
         """
@@ -191,6 +190,20 @@ class Bond(Cellmlmodel, Paceable, Clampable):
                     t, y, stats = bond.ap()
                 plt.plot(t, y.V, label=k)
                 plt.legend()
+        
+        >>> bond = Bond()
+        >>> bond.scenarios
+        OrderedDict([(None, {}), 
+        ('apical', {'y': rec.array([ (-82.4202, ...)], dtype=[('V', '<f8'), ...]), 
+                    'p': rec.array([ (1.0, ...)], dtype=[('Cm', '<f8'), ...)]), 
+                    'variant': 'bondarenko_szigeti_bett_kim_rasmusson_2004_apical', 
+                    'workspace': 'bondarenko_szigeti_bett_kim_rasmusson_2004', 
+                    'exposure': '11df840d0150d34c9716cd4cbdd164c8'}), 
+        ('septal', {'y': rec.array([ (-82.4202, ...)], dtype=[('V', '<f8'), ...]), 
+                    'p': rec.array([ (1.0, ...)], dtype=[('Cm', '<f8'), ...)]), 
+              'variant': 'bondarenko_szigeti_bett_kim_rasmusson_2004_septal', 
+              'workspace': 'bondarenko_szigeti_bett_kim_rasmusson_2004', 
+              'exposure': '11df840d0150d34c9716cd4cbdd164c8'})])
         """
         return self.autorestore(_y=self.scenarios[name].get("y"), 
                                 _p=self.scenarios[name].get("p"), **kwargs)
@@ -280,7 +293,7 @@ class Fitz(Bond):
     action potential.
     """
         
-    def __init__(self, exposure_workspace="/fitzhugh_1961",  # pylint: disable=W0102
+    def __init__(self, localfile="fitzhugh_1961",  # pylint: disable=W0102
             rename={"y": {"v": "V"}}, **kwargs):
         """
         Return a Fitzhugh (1961) model object.
@@ -295,7 +308,7 @@ class Fitz(Bond):
         See the class docstring for examples.
         """
         kwargs["rename"] = rename
-        super(Fitz, self).__init__(exposure_workspace, **kwargs)
+        super(Fitz, self).__init__(localfile=localfile, **kwargs)
         pr = self.pr.copy()
         pr.stim_period = 200
         pr.stim_duration = 190
@@ -309,7 +322,7 @@ class Li(Cellmlmodel, Paceable, Clampable):
     .. seealso:: :doi:`10.1152/ajpheart.00219.2010`
     """
     
-    def __init__(self, exposure_workspace="/BL6WT_260710", **kwargs):
+    def __init__(self, localfile="BL6WT_260710", **kwargs):
         """
         Return a Li-Niederer-Casadei-Smith (LNCS) model object.
         
@@ -323,7 +336,7 @@ class Li(Cellmlmodel, Paceable, Clampable):
         This is because the stepwise integration assumes that the stimulus is 
         at the start of the action potential.
         """
-        super(Li, self).__init__(exposure_workspace, **kwargs)
+        super(Li, self).__init__(localfile=localfile, **kwargs)
         # Assume AP starts with stimulus
         self.pr.stim_offset = 0.0
         # Disable caffeine injection unless specifically requested
@@ -360,8 +373,8 @@ class Bond_uhc(Bond):
     >>> list(np.setxor1d(b.dtype.a.names, bu.dtype.a.names))
     ['i_NCX', 'i_NaCa']
     """
-    def __init__(self, exposure_workspace="/bond_uhc", *args, **kwargs):
-        super(Bond_uhc, self).__init__(exposure_workspace, *args, **kwargs)
+    def __init__(self, localfile="bond_uhc", *args, **kwargs):
+        super(Bond_uhc, self).__init__(localfile=localfile, *args, **kwargs)
 
 class Li_uhc(Li):
     """
@@ -379,8 +392,8 @@ class Li_uhc(Li):
     >>> li.dtype.a == liu.dtype.a
     True
     """
-    def __init__(self, exposure_workspace="/li_uhc", *args, **kwargs):
-        super(Li_uhc, self).__init__(exposure_workspace, *args, **kwargs)
+    def __init__(self, localfile="li_uhc", *args, **kwargs):
+        super(Li_uhc, self).__init__(localfile=localfile, *args, **kwargs)
 
 if __name__ == "__main__":
     import doctest

@@ -206,6 +206,6 @@ def test_y_dtype():
     Cvodeint(example_ode.vdp, t=[0, 2], y=[1.0, 2.0])
     Cvodeint(example_ode.vdp, t=[0, 2], y=[1, 2])
 
-@raises(ValueError)
+@raises(ValueError, IndexError)
 def test_y_dtype_rec():
     Cvodeint(example_ode.vdp, t=[0, 2], y=np.rec.fromrecords([(1.0, 2.0)], dtype=[("u", float), ("v", float)]))
