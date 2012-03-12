@@ -19,6 +19,8 @@ import urllib
 from collections import namedtuple
 import re
 import os
+import subprocess
+from tempfile import NamedTemporaryFile as Tempfile
 import json
 from contextlib import closing
 import sys
@@ -58,6 +60,45 @@ except ImportError:
     with write_if_not_exists(
         os.path.join(dirname, "_cellml2py", "__init__.py")):
         pass # just create an empty __init__.py file
+
+@mem.cache
+def generate_code(url):
+    """
+    Generate Python code for CellML model at url. Wraps cellml-api/testCeLEDS.
+    
+    Written as a replacement for the code generation at models.cellml.org, 
+    which was broken at the time of writing:
+     
+    https://tracker.physiomeproject.org/show_bug.cgi?id=3199
+    
+    This function encapsulates the command-line usage::
+    
+    cd cellml-api
+    ./testCeLEDS http://models.cellml.org/workspace/tentusscher_noble_noble_panfilov_2004/@@rawfile/3e0eeae90b16221bb1ca327a5572de482990cacc/tentusscher_noble_noble_panfilov_2004_a.cellml CeLEDS/languages/Python.xml
+    
+    >>> print generate_code("http://models.cellml.org/workspace/"
+    ... "tentusscher_noble_noble_panfilov_2004/@@rawfile/"
+    ... "3e0eeae90b16221bb1ca327a5572de482990cacc/"
+    ... "tentusscher_noble_noble_panfilov_2004_a.cellml")
+    # Size of variable arrays:
+    sizeAlgebraic = 67
+    sizeStates = 17
+    sizeConstants = 46
+    ...
+    algebraic[21] = 1125.00*exp(-pow(states[0]+27.0000, 2.00000)/240.000)+80...
+    if __name__ == "__main__":
+    (voi, states, algebraic) = solve_model()
+    plot_model(voi, states, algebraic)
+    """
+    args = ["/home/jonvi/hg/cellml-api/testCeLEDS", 
+            "-", 
+            "/home/jonvi/hg/cellml-api/CeLEDS/languages/Python.xml"]
+    with Tempfile() as cellml, Tempfile() as pycode:
+        cellml.write(urlcache(url))
+        cellml.seek(0)
+        subprocess.call(args, stdin=cellml, stdout=pycode, stderr=subprocess.STDOUT)
+        pycode.seek(0)
+        return pycode.read()
 
 Legend = namedtuple("Legend", "name component unit")
 
