@@ -92,7 +92,7 @@ class Tentusscher(Cellmlmodel, Paceable, Clampable):
     names to follow the conventions of a :class:`Paceable` object.
     """
     def __init__(self,  # pylint: disable=W0102
-        workspace="tentusscher_noble_noble_panfilov",
+        workspace="tentusscher_noble_noble_panfilov_2004",
         exposure="c7f7ced1e002d9f0af1b56b15a873736",
         variant="tentusscher_noble_noble_panfilov_2004_a",
         rename={"y": {"Na_i": "Nai", "Ca_i": "Cai", "K_i": "Ki"}, "p": {

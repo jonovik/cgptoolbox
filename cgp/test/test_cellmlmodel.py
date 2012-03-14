@@ -23,7 +23,7 @@ def test_rates_and_algebraic():
         ydot, alg = bond.rates_and_algebraic(t, y)
         actual = ydot.V[-1], ydot.Cai[-1], alg.i_Na[-1]
         desired = [[-4.08092831], [ 0.06698888], [-1.70527191]]
-        np.testing.assert_allclose(actual, desired, rtol=1e-5, atol=1e-5)
+        np.testing.assert_allclose(actual, desired, rtol=1e-4, atol=1e-4)
     
 def test_parse_legend():
     """Protect against empty legend entry, bug in CellML code generation."""
@@ -44,7 +44,7 @@ def test_source():
     """Alert if code generation changes format."""
     import hashlib
     assert_equal(hashlib.sha1(vdp.py_code).hexdigest(), 
-        'b01797dc4280e54b9aecbd1d0df83c3a959dddac')
+        'c0dd70377cffe294433cdad6ae378ea38912d1f9')
 
 def test_Sundials_convention():    
     """
