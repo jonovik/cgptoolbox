@@ -24,7 +24,7 @@ from cgp.utils.failwith import failwithnanlikefirst, failwithnan_asfor, failwith
 try:
     r.library("sensitivity")
 except RRuntimeError:
-    r.install_packages("sensitivity")
+    r.install_packages("sensitivity", repos="http://cran.us.r-project.org")
     r.library("sensitivity")
 
 class Model(ex.Bond, AttractorMixin):

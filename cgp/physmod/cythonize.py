@@ -102,9 +102,8 @@ def rates_and_algebraic(np.ndarray[dtype_t, ndim=1] t, y):
     and algebraics at each time step for the given state.
     
     >>> from cgp.physmod.cellmlmodel import Cellmlmodel
-    >>> exposure_workspace=("11df840d0150d34c9716cd4cbdd164c8/"
-    ...                     "bondarenko_szigeti_bett_kim_rasmusson_2004_apical")
-    >>> bond = Cellmlmodel(exposure_workspace, t=[0, 20])
+    >>> workspace = "bondarenko_szigeti_bett_kim_rasmusson_2004"
+    >>> bond = Cellmlmodel(workspace, t=[0, 20])
     >>> bond.yr.V = 100 # simulate stimulus
     >>> t, y, flag = bond.integrate()
     >>> ydot, alg = bond.model.rates_and_algebraic(t, y)
@@ -113,7 +112,7 @@ def rates_and_algebraic(np.ndarray[dtype_t, ndim=1] t, y):
     
     Verify that this Cython version is equivalent to the pure Python version.
     
-    >>> bondp = Cellmlmodel(exposure_workspace, t=[0, 20], 
+    >>> bondp = Cellmlmodel(workspace, t=[0, 20], 
     ...     use_cython=False, purge=True)
     >>> ydotp, algp = bondp.model.rates_and_algebraic(t, y)
     >>> np.testing.assert_almost_equal(ydot, ydotp, decimal=5)
@@ -154,7 +153,7 @@ def computeRates(voi, states, constants):
     # Replace some functions with Cython replacements
     L = [prepend("cy_", w, line) for line in L]
     compute_rates_code = "\n".join(L)
-    s += compute_rates_code.replace(s0, """
+    s += compute_rates_code.replace(s0.strip(), """
 
 ## BEGIN Added by cythonize_model() ##
 
@@ -176,6 +175,7 @@ cdef inline bint cy_less_equal(dtype_t x, dtype_t y):
 cimport cython
 @cython.cdivision(True)
 cdef void compute_rates(dtype_t voi, dtype_t* states, dtype_t* rates, dtype_t* constants, dtype_t* algebraic):
+    pass  # in case function body is empty
 """) + "\n"
 
 
@@ -247,14 +247,12 @@ Usage: python setup.py build_ext --inplace
 It may be necessary to remove intermediate files from previous builds:
 
 Linux:
-M=%(modelname)s
-rm -rf build $M.so $M.c && python setup.py build_ext --inplace && python -c "import $M"
+rm -rf build m.so m.c && python setup.py build_ext --inplace && python -c "import m"
 
 Windows:
-set M=%(modelname)s
-del /q build %%M%%.pyd %%M%%.c
+del /q build m.pyd m.c
 python setup.py build_ext --inplace
-python -c "import %%M%%"
+python -c "import m"
 """
 from distutils.core import setup
 from distutils.extension import Extension
@@ -263,7 +261,7 @@ import numpy as np
 import platform
 import os
 
-extname = "%(modelname)s"
+extname = "m"
 HOME = os.environ["HOME"]
 
 if platform.system() == "Windows":

@@ -30,7 +30,7 @@ class Model(Cellmlmodel, Clampable, Paceable, AttractorMixin):
     pass
 
 # Wrap CellML model and adjust parameter names to conform with pacing protocol
-m = Model("/beeler_reuter_1977", rename=dict(
+m = Model(workspace="beeler_reuter_1977", rename=dict(
     p=dict(IstimPeriod="stim_period", IstimAmplitude="stim_amplitude", 
     IstimPulseDuration="stim_duration")), 
     reltol=1e-10, maxsteps=1e6, chunksize=100000)

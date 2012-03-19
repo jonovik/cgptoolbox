@@ -3,6 +3,10 @@ Web service for sensitivity analysis of CellML models.
 
 Usage example:
 
+wget http://localhost:8081 -O -
+
+wget http://localhost:8081/sensitivity/ap/ctd50/beeler_reuter_1977?par=g_Na+E_Na -O -
+
 http://localhost:8080/sensitivity/11df840d0150d34c9716cd4cbdd164c8/bondarenko_szigeti_bett_kim_rasmusson_2004_apical/protocol/statistic?par=g_Na+Nao
 
 In general:
@@ -65,6 +69,26 @@ r.library("sensitivity")
 # Initialize caching
 mem = Memory("/tmp/sensitivity_service")
 
+# Numerics
+import numpy as np
+# Bridge to the R statistical software
+import rpy2.rinterface as ri
+from cgp.rnumpy.rnumpy import r, py2ri
+
+r.library("sensitivity")
+
+def scalar_pheno(field):
+    """Make a function to return a named field of the phenotype array."""
+    
+    @ri.rternalize
+    def fun(rmatrix):
+        """Scalar function for use with R's sensitivity::morris()."""
+        ph = np.concatenate([phenotypes(i) for i in mat2par(rmatrix)])
+        return py2ri(ph[field])
+    
+    return fun
+
+
 @route("/")
 def index():
     """Usage instructions."""
@@ -74,8 +98,8 @@ class Model(Cellmlmodel, Paceable, AttractorMixin):
     """CellML model wrapper with virtual experiments mixed in."""
     pass
 
-mem.clear()
-
+@route
+def sensitivity(protocol, statistic, workspace, exposure="", changeset="", variant=""):
 @failwithnanlikefirst
 @mem.cache()
 def phenotypes(m, par=None):
@@ -169,7 +193,7 @@ def do_sensitivity(exposure, workspace, protocol, statistic, par=None, seed=None
     TODO: Accept json dict of model_kwargs, morris_kwargs
     """
     if model is None:
-        m = Model(exposure + "/" + workspace, maxsteps=1e6, chunksize=1e5, reltol=1e-8)
+        m = Model(workspace, exposure, changeset, variant, maxsteps=1e6, chunksize=1e5, reltol=1e-8)
         m.pr.stim_start = 0
     else:
         m = model

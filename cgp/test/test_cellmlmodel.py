@@ -12,17 +12,18 @@ vdp_compiled = Cellmlmodel(use_cython=True)
 vdp_uncompiled = Cellmlmodel(use_cython=False)
 
 def test_rates_and_algebraic():
-    exposure_workspace = ("b0b1820b1376263e16c6086ca64d513e/"
-                          "bondarenko_szigeti_bett_kim_rasmusson_2004_apical")
+    workspace = "bondarenko_szigeti_bett_kim_rasmusson_2004"
+    exposure = "b0b1820b1376263e16c6086ca64d513e"
+    variant = "bondarenko_szigeti_bett_kim_rasmusson_2004_apical"
     for use_cython in False, True:
-        bond = Cellmlmodel(exposure_workspace, t=[0, 5], 
+        bond = Cellmlmodel(workspace, exposure, variant, t=[0, 5], 
                            use_cython=use_cython, reltol=1e-5)
         bond.yr.V = 100 # simulate stimulus
         t, y, _flag = bond.integrate()
         ydot, alg = bond.rates_and_algebraic(t, y)
         actual = ydot.V[-1], ydot.Cai[-1], alg.i_Na[-1]
         desired = [[-4.08092831], [ 0.06698888], [-1.70527191]]
-        np.testing.assert_allclose(actual, desired, rtol=1e-5, atol=1e-5)
+        np.testing.assert_allclose(actual, desired, rtol=1e-4, atol=1e-4)
     
 def test_parse_legend():
     """Protect against empty legend entry, bug in CellML code generation."""
@@ -43,7 +44,7 @@ def test_source():
     """Alert if code generation changes format."""
     import hashlib
     assert_equal(hashlib.sha1(vdp.py_code).hexdigest(), 
-        '971383955d7d1582b3145459fcdb3a22afb0035b')
+        'c0dd70377cffe294433cdad6ae378ea38912d1f9')
 
 def test_Sundials_convention():    
     """

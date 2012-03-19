@@ -1197,6 +1197,7 @@ def markovplot(t, y, a=None, names=None, model=None, comp=None, col="bgrcmyk",
         # r["df"] = r.data_frame(t=t, **rec2dict(xc))
         # r["df"] = r("df[c('" + "','".join(["t"] + names) + "')]")
         r.library("ggplot2")
+        r.library("reshape")
         r.library("jov")
         # r.plot(r.df)
         r["xm"] = r.melt(r.df, id_var="t")

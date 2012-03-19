@@ -44,9 +44,7 @@ def test_scenario():
     The two scenarios are available as separate models at cellml.org.
     Verify that switching scenarios is equivalent to using the other version.
     
-    >>> import inspect
-    >>> exposure_workspace = inspect.getargspec(Bond.__init__).defaults[0]
-    >>> septum = Bond(exposure_workspace.replace("apical", "septal"))
+    >>> septum = Bond(bond.workspace, bond.exposure, bond.variant.replace("apical", "septal"))
     >>> with septum.autorestore():
     ...     t1, y1, stats1 = septum.ap()
     

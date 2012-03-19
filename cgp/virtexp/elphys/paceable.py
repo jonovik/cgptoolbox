@@ -50,17 +50,13 @@ class Paceable(object):
     :class:`~cgp.physmod.cellmlmodel.Cellmlmodel`.
     
     >>> from cgp.virtexp.elphys import Cellmlmodel, Paceable
-    >>> class Bond(Cellmlmodel, Paceable):
+    >>> class Model(Cellmlmodel, Paceable):
     ...    pass
-    >>> bond = Bond(exposure_workspace="11df840d0150d34c9716cd4cbdd164c8/" +
-    ...     "bondarenko_szigeti_bett_kim_rasmusson_2004_apical")
+    >>> model = Model("bondarenko_szigeti_bett_kim_rasmusson_2004")
     
-    ..  inheritance-diagram: cgp.physmod.cellmlmodel.Cellmlmodel Paceable Bond
-        parts: 1
-    
-    The model identifier can be cumbersome to remember, and it may be 
-    convenient to define it as the default *exposure_workspace* for the class 
-    constructor. See :class:`Bond` for an example.
+    The model identifiers (workspace, exposure, workspace) can be cumbersome 
+    to remember, and it may be convenient to define new defaults in the class 
+    constructor. See mod:`cgp.virtexp.elphys.examples` for examples.
     """
 
     def ap(self, p_repol=(0.25, 0.5, 0.75, 0.9), 
