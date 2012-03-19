@@ -313,19 +313,9 @@ class Namedcvodeint(Cvodeint):
         # Indices to state variables whose rate-of-change will be set to zero
         i = np.array([self.dtype.y.names.index(k) for k in kwargs.keys()])
         v = np.array(kwargs.values())
+        
         def clamped(t, y, ydot, f_data):
             """New RHS that prevents some elements from changing."""
-            # Argh: clamped state variables may change slightly 
-            # (within solver precision) despite setting ydot[i] = 0 below.
-            # Therefore, we must also set the state variables to their clamped 
-            # values on every invocation.
-            
-            # # Desperate debugging:
-            # for k, v in kwargs.items():
-            #     val = y[self.dtype.y.names.index(k)]
-            #     if val == v:  print k, "should be", v, ", and it is"
-            #     else:         print k, "should be", v, "but is", val
-            
             # CVODE forbids modifying the state directly...
             y_ = np.copy(y)
             # ...but may modify state variables even if ydot is always 0
@@ -352,6 +342,7 @@ class Namedcvodeint(Cvodeint):
         try:
             yield clamped # enter "with" block
         finally:
+            # Copy values of state variables from clamped to original model
             for k in clamped.dtype.y.names:
                 if k in self.dtype.y.names:
                     setattr(self.yr, k, getattr(clamped.yr, k))
