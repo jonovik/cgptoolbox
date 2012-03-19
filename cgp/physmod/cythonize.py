@@ -11,8 +11,6 @@ def cythonize_model(s, modelname=""):
     :param str modelname: name of model
     :rtype str: Cython source code
     """
-    # fix bug in CellML code generation
-    s = s.replace("VOI", "voi")
     # declare constants as float to avoid integer division of constants
     s = s.replace(
         "constants = [0.0] * sizeConstants; states = [0.0] * sizeStates;", 

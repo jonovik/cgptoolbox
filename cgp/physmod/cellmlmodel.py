@@ -505,8 +505,6 @@ class Cellmlmodel(Namedcvodeint):
             # use numpy.core.* instead of math.* to work with arrays
             self.py_code = self.py_code.replace("from math import *", 
                 "from numpy.core import *")
-            # fix bug in CellML code generation
-            self.py_code = self.py_code.replace("VOI", "voi")
             # write generated code to a module file
             with open(modelfilename, "w") as f:
                 f.write(self.py_code)
