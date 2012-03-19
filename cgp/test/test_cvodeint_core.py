@@ -8,6 +8,7 @@ from pysundials import cvode
 
 from ..cvodeint import (  # pylint: disable=F0401
     Cvodeint, CvodeException, example_ode)
+import pickle
 
 def test_CvodeException():
     """
@@ -209,3 +210,12 @@ def test_y_dtype():
 @raises(ValueError)
 def test_y_dtype_rec():
     Cvodeint(example_ode.vdp, t=[0, 2], y=np.rec.fromrecords([(1.0, 2.0)], dtype=[("u", float), ("v", float)]))
+
+def test_pickling():
+    """Verify that Cvodeint objects can be serialized."""
+    old = Cvodeint(example_ode.logistic_growth, t=[0, 2], y=[0.1], reltol=1e-3)
+    s = pickle.dumps(old)
+    new = pickle.loads(s)
+    for desired, actual in zip(old.integrate(), new.integrate()):
+        np.testing.assert_array_equal(desired, actual)
+    

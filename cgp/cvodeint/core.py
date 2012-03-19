@@ -222,6 +222,13 @@ def cvodefun(fun):
             return "@cvodefun wrapper around %s" % fun
     return odefun()
 
+def new_with_kwargs(cls, args, kwargs):
+    """
+    A helper function for pickling classes with keyword arguments.
+    
+    http://stackoverflow.com/questions/5238252/unpickling-new-style-with-kwargs-not-possible
+    """
+    return cls.__new__(cls, *args, **kwargs)
 
 class Cvodeint(object):
     """
@@ -437,6 +444,19 @@ class Cvodeint(object):
         else:
             cvode.CVBand(self.cvode_mem, self.n, mupper, mlower)        
         self.RootInit(nrtfn, g_rtfn, g_data)
+    
+    def __new__(cls, *args, **kwargs):
+        """Used for pickling."""
+        instance = super(Cvodeint, cls).__new__(cls)
+        instance.__init__(*args, **kwargs)
+        instance._init_args = args, kwargs
+        return instance
+    
+    def __reduce__(self):
+        """Used for pickling."""
+        args, kwargs = self._init_args
+        return new_with_kwargs, (self.__class__, args, kwargs), None
+
     
     def ydoti(self, index):
         """
@@ -853,7 +873,7 @@ class Cvodeint(object):
         elif (g_rtfn is not None) or (g_data is not None):
             raise CvodeException(
                 "If g_rtfn or g_data is given, nrtfn is required.")
-        
+    
     def __repr__(self):
         """
         String representation of Cvodeint object
@@ -880,8 +900,12 @@ class Cvodeint(object):
                 elif val != default:
                     arglist.append((arg, repr(val)))
             except ValueError:
-                if any(val != default):
-                    arglist.append((arg, repr(val)))
+		try:                
+		    if any(val != default):
+                        arglist.append((arg, repr(val)))
+		except ValueError:
+                    if np.any(val != default):
+                        arglist.append((arg, repr(val)))
             except AttributeError:
                 continue
         argstr = ", ".join(["%s=%s" % x for x in arglist])

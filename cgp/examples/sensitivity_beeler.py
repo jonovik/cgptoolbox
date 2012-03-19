@@ -65,9 +65,7 @@ def scalar_pheno(field):
     def fun(rmatrix):
         """Scalar function for use with R's sensitivity::morris()."""
         ph = np.concatenate([phenotypes(i) for i in mat2par(rmatrix)])
-        result = ph[field]
-        result[np.isnan(result)] = 0
-        return py2ri(result)
+        return py2ri(ph[field])
     
     return fun
 
