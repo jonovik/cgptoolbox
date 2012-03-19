@@ -155,7 +155,7 @@ def do_sensitivity(exposure, workspace, protocol, statistic, par=None, seed=None
     
     >>> m = Model("/beeler_reuter_1977", rename=dict(
     ...     p=dict(IstimPeriod="stim_period", IstimAmplitude="stim_amplitude", 
-    ...     IstimPulseDuration="stim_duration")), 
+    ...     IstimPulseDuration="stim_duration", IstimStart="stim_start")), 
     ...     reltol=1e-10, maxsteps=1e6, chunksize=100000)
     >>> m.pr.IstimStart = 0
     >>> print "Result:", do_sensitivity("", "", "protocol", "apbase", ("C", "g_Na"), seed=1, model=m)
@@ -170,6 +170,7 @@ def do_sensitivity(exposure, workspace, protocol, statistic, par=None, seed=None
     """
     if model is None:
         m = Model(exposure + "/" + workspace, maxsteps=1e6, chunksize=1e5, reltol=1e-8)
+        m.pr.stim_start = 0
     else:
         m = model
     phenotypes(m)  # initialize and cache default
@@ -194,10 +195,10 @@ def sensitivity(exposure, workspace, protocol, statistic):
     seed = request.params.seed
     m = Model("/beeler_reuter_1977", rename=dict(
         p=dict(IstimPeriod="stim_period", IstimAmplitude="stim_amplitude", 
-        IstimPulseDuration="stim_duration")), 
+        IstimPulseDuration="stim_duration", IstimStart="stim_start")), 
         reltol=1e-10, maxsteps=1e6, chunksize=100000)
     m.pr.IstimStart = 0
-    return "<pre>%s</pre>" % do_sensitivity(exposure, workspace, protocol, statistic, par=("C", "g_Na"), seed=None, model=m)
+    return "<pre>%s</pre>" % do_sensitivity(exposure, workspace, protocol, statistic, par=par, seed=None, model=m)
 
 if __name__ == "__main__":
     bottle.run(host='localhost', port=8080, debug=True, reloader=True)
