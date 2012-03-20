@@ -1,6 +1,8 @@
 """Tests for :mod:`cgp.physmod.cellmlmodel`."""
 # pylint: disable=C0111, E0611, F0401, E1101
 
+import hashlib
+
 import numpy as np
 from nose.tools import assert_equal
 
@@ -8,21 +10,22 @@ from ..physmod import cellmlmodel
 from ..physmod.cellmlmodel import Cellmlmodel, Legend, parse_legend
 
 vdp = Cellmlmodel()
-vdp_compiled = Cellmlmodel(use_cython=True)
+vdp_compiled = Cellmlmodel(use_cython=False)
 vdp_uncompiled = Cellmlmodel(use_cython=False)
 
 def test_rates_and_algebraic():
-    workspace = "bondarenko_szigeti_bett_kim_rasmusson_2004"
-    exposure = "b0b1820b1376263e16c6086ca64d513e"
-    variant = "bondarenko_szigeti_bett_kim_rasmusson_2004_apical"
+    url = ("http://models.cellml.org/workspace/"
+           "bondarenko_szigeti_bett_kim_rasmusson_2004/@@rawfile/"
+           "99f4fd6804311c571a7143515003691ab2e430fb/"
+           "bondarenko_szigeti_bett_kim_rasmusson_2004_apical.cellml")
     for use_cython in False, True:
-        bond = Cellmlmodel(workspace, exposure, variant, t=[0, 5], 
+        bond = Cellmlmodel(url, t=[0, 5], 
                            use_cython=use_cython, reltol=1e-5)
         bond.yr.V = 100 # simulate stimulus
         t, y, _flag = bond.integrate()
         ydot, alg = bond.rates_and_algebraic(t, y)
         actual = ydot.V[-1], ydot.Cai[-1], alg.i_Na[-1]
-        desired = [[-4.08092831], [ 0.06698888], [-1.70527191]]
+        desired = [-3.67839219], [ 0.06717483], [-2.21334685]
         np.testing.assert_allclose(actual, desired, rtol=1e-4, atol=1e-4)
     
 def test_parse_legend():
@@ -42,9 +45,8 @@ def test_compiled_behaviour():
 
 def test_source():
     """Alert if code generation changes format."""
-    import hashlib
-    assert_equal(hashlib.sha1(vdp.py_code).hexdigest(), 
-        'c0dd70377cffe294433cdad6ae378ea38912d1f9')
+    assert_equal(hashlib.sha1(vdp.py_code).hexdigest(),
+        '22395c712a286f65548a5b174fc4ea8d8decb390')
 
 def test_Sundials_convention():    
     """
