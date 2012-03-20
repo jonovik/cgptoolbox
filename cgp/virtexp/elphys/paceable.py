@@ -52,7 +52,7 @@ class Paceable(object):
     >>> from cgp.virtexp.elphys import Cellmlmodel, Paceable
     >>> class Model(Cellmlmodel, Paceable):
     ...    pass
-    >>> model = Model("bondarenko_szigeti_bett_kim_rasmusson_2004")
+    >>> model = Model(workspace="bondarenko_szigeti_bett_kim_rasmusson_2004")
     
     The model identifiers (workspace, exposure, workspace) can be cumbersome 
     to remember, and it may be convenient to define new defaults in the class 

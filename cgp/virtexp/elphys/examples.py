@@ -93,8 +93,6 @@ class Tentusscher(Cellmlmodel, Paceable, Clampable):
     """
     def __init__(self,  # pylint: disable=W0102
         workspace="tentusscher_noble_noble_panfilov_2004",
-        exposure="c7f7ced1e002d9f0af1b56b15a873736",
-        variant="tentusscher_noble_noble_panfilov_2004_a",
         rename={"y": {"Na_i": "Nai", "Ca_i": "Cai", "K_i": "Ki"}, "p": {
             "IstimStart": "stim_start", 
             "IstimEnd": "stim_end", 
@@ -103,8 +101,7 @@ class Tentusscher(Cellmlmodel, Paceable, Clampable):
             "IstimPulseDuration": "stim_duration"
         }}, **kwargs):
         kwargs["rename"] = rename
-        super(Tentusscher, self).__init__(workspace, exposure, variant, 
-                                          **kwargs)
+        super(Tentusscher, self).__init__(workspace=workspace, **kwargs)
         self.pr.stim_start = 0
 
 class Bond(Cellmlmodel, Paceable, Clampable):
@@ -146,7 +143,7 @@ class Bond(Cellmlmodel, Paceable, Clampable):
     def __init__(self, workspace="bondarenko_szigeti_bett_kim_rasmusson_2004", 
                  *args, **kwargs):
         """Constructor for the :class:`Bond` class."""
-        super(Bond, self).__init__(workspace, *args, **kwargs)
+        super(Bond, self).__init__(workspace=workspace, *args, **kwargs)
         if "stim_start" in self.dtype.p.names:
             self.pr.stim_start = 0.0
         # Mapping None to an empty dict, and letting the scenario name default 

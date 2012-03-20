@@ -15,33 +15,32 @@ Shorter naming scheme, e.g. __main__.py in package.
     plt.plot(t, y.x, t, y.y)
 """
 # pylint: disable=W0621, W0142
-from tempfile import gettempdir
-from StringIO import StringIO
-import hashlib
-from importlib import import_module
-import shutil
-import urllib
-from collections import namedtuple
-import os
-import subprocess
-from tempfile import NamedTemporaryFile as Tempfile
-import json
-from contextlib import closing
-import sys
-import warnings
-
-import numpy as np
-from numpy import recarray # recarray allows named columns: y.V etc.
-import joblib
-
 from ..cvodeint.namedcvodeint import Namedcvodeint
 from ..utils.commands import getstatusoutput
 from ..utils.dotdict import Dotdict
-from cgp import physmod as cellmlmodels
 from ..utils.ordereddict import OrderedDict
 from ..utils.rec2dict import dict2rec
 from ..utils.write_if_not_exists import write_if_not_exists
+from StringIO import StringIO
+from cgp import physmod as cellmlmodels
 from cgp.physmod.cythonize import cythonize_model
+from collections import namedtuple
+from contextlib import closing
+from importlib import import_module
+from numpy import recarray # recarray allows named columns: y.V etc.
+from tempfile import NamedTemporaryFile as Tempfile, gettempdir
+import hashlib
+import joblib
+import json
+import numpy as np
+import os
+import shutil
+import subprocess
+import sys
+import urllib
+import warnings
+
+
 
 __all__ = ["Cellmlmodel"]
 
@@ -66,7 +65,7 @@ except ImportError:
         pass # just create an empty __init__.py file
 
 @mem.cache
-def generate_code(url):
+def generate_code(url_or_cellml):
     """
     Generate Python code for CellML model at url. Wraps cellml-api/testCeLEDS.
     
@@ -91,14 +90,18 @@ def generate_code(url):
     ...
     algebraic[21] = 1125.00*exp(-pow(states[0]+27.0000, 2.00000)/240.000)+80...
     if __name__ == "__main__":
-    (voi, states, algebraic) = solve_model()
-    plot_model(voi, states, algebraic)
+        (voi, states, algebraic) = solve_model()
+        plot_model(voi, states, algebraic)
     """
     args = ["/home/jonvi/hg/cellml-api/testCeLEDS", 
             "-", 
             "/home/jonvi/hg/cellml-api/CeLEDS/languages/Python.xml"]
+    try:
+        src = urlcache(url_or_cellml)
+    except IOError:
+        src = url_or_cellml
     with Tempfile() as cellml, Tempfile() as pycode:
-        cellml.write(urlcache(url))
+        cellml.write(src)
         cellml.seek(0)
         subprocess.call(args, stdin=cellml, stdout=pycode, stderr=subprocess.STDOUT)
         pycode.seek(0)
@@ -315,9 +318,14 @@ def guess_url(self, urlpattern="exposure/{exposure}/{variant}.cellml/"):
     ...     def __init__(self, **kwargs):
     ...         self.__dict__.update(kwargs)
     >>> guess_url(Test(workspace="bondarenko_szigeti_bett_kim_rasmusson_2004",
-    ...     exposure=None, changeset=None, variant=None))
+    ...     exposure=None, changeset=None, variant=None, localfile=None))
     'http://models.cellml.org/exposure/11df840d0150d34c9716cd4cbdd164c8/bondarenko_szigeti_bett_kim_rasmusson_2004_apical.cellml/'
+    >>> guess_url(Test(localfile="test"))
+    'file:///.../cgp/physmod/_cellml2py/test.cellml'
     """
+    if self.localfile:
+        pathname = os.path.join(_cellml2py_dir, self.localfile + ".cellml")
+        return "file:" + urllib.pathname2url(pathname)
     if not self.exposure:
         self.exposure = self.get_latest_exposure()
     if not self.variant:
@@ -362,7 +370,8 @@ class Cellmlmodel(Namedcvodeint):
         url="http://models.cellml.org/workspace/vanderpol_vandermark_1928/"
         "@@rawfile/371151b156888430521cbf15a9cfa5e8d854cf37/"
         "vanderpol_vandermark_1928.cellml",
-        workspace=None, exposure=None, changeset=None, variant=None,  
+        workspace=None, exposure=None, changeset=None, variant=None,
+        localfile=None,  
         t=[0, 1], y=None, p=None, rename={}, use_cython=True, purge=False, 
         **kwargs):
         """
@@ -434,6 +443,7 @@ class Cellmlmodel(Namedcvodeint):
         self.exposure = exposure
         self.changeset = changeset
         self.variant = variant
+        self.localfile = localfile
         self.url = url or guess_url(self)
         self.cellml = urlcache(url)
         self.hash = "_" + hashlib.sha1(self.cellml).hexdigest()[:6]
