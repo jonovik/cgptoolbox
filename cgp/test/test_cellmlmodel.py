@@ -10,7 +10,7 @@ from ..physmod import cellmlmodel
 from ..physmod.cellmlmodel import Cellmlmodel, Legend, parse_legend
 
 vdp = Cellmlmodel()
-vdp_compiled = Cellmlmodel(use_cython=False)
+vdp_compiled = Cellmlmodel(use_cython=True)
 vdp_uncompiled = Cellmlmodel(use_cython=False)
 
 def test_rates_and_algebraic():
@@ -34,10 +34,6 @@ def test_parse_legend():
         Legend(name=('x', 'empty__1'), component=('A', ''), unit=('u', '')))
 
 def test_compiled_behaviour():
-    assert str(vdp_uncompiled.model).startswith(
-        "<module 'cgp.physmod._cellml2py.vanderpol_vandermark_19285756af26cf")
-    assert str(vdp_compiled.model).startswith(
-        "<module 'cgp.physmod._cellml2py.cython.vanderpol")
     # This module holds the ode() function passed to CVode.
     assert str(vdp_uncompiled.model.ode).startswith("<function ode at")
     # If compiled, it appears as a built-in function.
@@ -46,7 +42,7 @@ def test_compiled_behaviour():
 def test_source():
     """Alert if code generation changes format."""
     assert_equal(hashlib.sha1(vdp.py_code).hexdigest(),
-        '22395c712a286f65548a5b174fc4ea8d8decb390')
+        '925c4dff98fc9a192e0129946f93cc223fd0841d')
 
 def test_Sundials_convention():    
     """

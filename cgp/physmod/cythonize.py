@@ -259,7 +259,7 @@ import numpy as np
 import platform
 import os
 
-extname = "m"
+extname = "cy"
 HOME = os.environ["HOME"]
 
 if platform.system() == "Windows":
