@@ -13,20 +13,31 @@ vdp = Cellmlmodel()
 vdp_compiled = Cellmlmodel(use_cython=True)
 vdp_uncompiled = Cellmlmodel(use_cython=False)
 
+def test_purge():
+    c = Cellmlmodel(purge=True)
+
+def test_autorestore_reinit():
+    """Guard against bug setting t=[0, 0] on autorestore."""
+    c = Cellmlmodel()
+    old = np.copy(c.t)
+    with c.autorestore():
+        np.testing.assert_equal(c.t, old)
+
 def test_rates_and_algebraic():
     url = ("http://models.cellml.org/workspace/"
            "bondarenko_szigeti_bett_kim_rasmusson_2004/@@rawfile/"
            "99f4fd6804311c571a7143515003691ab2e430fb/"
            "bondarenko_szigeti_bett_kim_rasmusson_2004_apical.cellml")
+    desired = [-3.67839219], [ 0.06717483], [-2.21334685]
     for use_cython in False, True:
         bond = Cellmlmodel(url, t=[0, 5], 
                            use_cython=use_cython, reltol=1e-5)
-        bond.yr.V = 100 # simulate stimulus
-        t, y, _flag = bond.integrate()
+        with bond.autorestore():
+            bond.yr.V = 100 # simulate stimulus
+            t, y, _flag = bond.integrate()
         ydot, alg = bond.rates_and_algebraic(t, y)
         actual = ydot.V[-1], ydot.Cai[-1], alg.i_Na[-1]
-        desired = [-3.67839219], [ 0.06717483], [-2.21334685]
-        np.testing.assert_allclose(actual, desired, rtol=1e-4, atol=1e-4)
+        np.testing.assert_allclose(actual, desired, rtol=1e-5, atol=1e-5)
     
 def test_parse_legend():
     """Protect against empty legend entry, bug in CellML code generation."""

@@ -455,6 +455,8 @@ class Cellmlmodel(Namedcvodeint):
         self.package = "cgp.physmod._cellml2py." + self.hash
         self.packagedir = _cellml2py_dir + self.hash
         if purge:
+            # Won't work if this model has already been loaded
+            # because files in self.packagedir will be in use.
             try:
                 shutil.rmtree(self.packagedir)
             except WindowsError:
@@ -628,8 +630,9 @@ class Cellmlmodel(Namedcvodeint):
             from cgp.physmod.cellmlmodel import Cellmlmodel
             bond = Cellmlmodel(
                 "bondarenko_szigeti_bett_kim_rasmusson_2004_apical", t=[0, 20])
-            bond.yr.V = 100  # simulate stimulus
-            t, y, flag = bond.integrate()
+            with bond.autorestore():
+                bond.yr.V = 100  # simulate stimulus
+                t, y, flag = bond.integrate()
             ydot, alg = bond.rates_and_algebraic(t, y)
             plt.plot(t, alg.J_xfer, '.-', t, y.Cai, '.-')
         """

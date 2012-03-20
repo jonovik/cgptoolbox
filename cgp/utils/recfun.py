@@ -33,7 +33,7 @@ def restruct(a, axes=0):
     
     >>> restruct(np.array([(0, 1), (2, 3), (4, 5)], 
     ...     dtype=[("a", "|i1"), ("b", "|i1")]))
-    array(([0, 2, 4], [1, 3, 5]), dtype=[('a', '|i1', 3), ('b', '|i1', 3)])
+    array(([0, 2, 4], [1, 3, 5]), dtype=[('a', '|i1', (3,)), ('b', '|i1', (3,))])
     
     This is an array of shape (2, 3) with two scalar fields.
     
@@ -47,7 +47,7 @@ def restruct(a, axes=0):
     >>> restruct(a)
     array([([0, 6], [1, 7]), 
            ([2, 8], [3, 9]),
-           ([4, 10], [5, 11])], dtype=[('a', '|i1', 2), ('b', '|i1', 2)])    
+           ([4, 10], [5, 11])], dtype=[('a', '|i1', (2,)), ('b', '|i1', (2,))])
     """
     axes = np.atleast_1d(axes)
     u = unstruct(a)

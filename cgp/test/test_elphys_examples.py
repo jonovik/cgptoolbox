@@ -142,18 +142,20 @@ from ..virtexp.elphys.examples import Bond
 def test_set_y_before_ap():
     """Test setting of state before simulating action potential."""
     bond = Bond()
-    for V0 in bond.y0r.V + [-5, 0, 5]:
-        bond.y[:] = bond.model.y0
-        bond.yr.V = V0
-        _t, y, _stats = bond.ap()
-        assert_equal(y.V[0], V0)
+    with bond.autorestore():
+        for V0 in bond.y0r.V + [-5, 0, 5]:
+            bond.y[:] = bond.model.y0
+            bond.yr.V = V0
+            _t, y, _stats = bond.ap()
+            assert_equal(y.V[0], V0)
 
 def test_not_overwrite_y0r():
     """Check that bond.y0r is not overwritten when the model is integrated."""
     bond = Bond()
-    bond.y[:] = bond.model.y0
-    _t, y, _stats = bond.ap()
-    assert_not_equal(y.V[-1], bond.y0r.V)
+    with bond.autorestore():
+        bond.y[:] = bond.model.y0
+        _t, y, _stats = bond.ap()
+        assert_not_equal(y.V[-1], bond.y0r.V)
 
 def test_tentusscher():
     """

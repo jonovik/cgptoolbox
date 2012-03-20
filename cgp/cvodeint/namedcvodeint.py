@@ -240,7 +240,7 @@ class Namedcvodeint(Cvodeint):
         >>> bool(vdp.pr.epsilon == before[1])
         True
         """
-        oldt, oldy, oldpar = self.t, np.copy(self.y), np.copy(self.pr)
+        oldt, oldy, oldpar = np.copy(self.t), np.copy(self.y), np.copy(self.pr)
         if _p is not None:
             self.pr[:] = _p
         if _y is not None:
@@ -266,7 +266,7 @@ class Namedcvodeint(Cvodeint):
                 raise TypeError("Key %s not in parameter or rate vectors" % k)
             raise TypeError(
                 "Key %s occurs in both parameter and state vectors" % k)
-        self._ReInit_if_required(self.tret.value, self.y)
+        self._ReInit_if_required(y=self.y)
         
         try:
             yield

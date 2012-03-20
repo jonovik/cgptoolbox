@@ -102,8 +102,9 @@ def rates_and_algebraic(np.ndarray[dtype_t, ndim=1] t, y):
     >>> from cgp.physmod.cellmlmodel import Cellmlmodel
     >>> workspace = "bondarenko_szigeti_bett_kim_rasmusson_2004"
     >>> bond = Cellmlmodel(workspace, t=[0, 20])
-    >>> bond.yr.V = 100 # simulate stimulus
-    >>> t, y, flag = bond.integrate()
+    >>> with bond.autorestore():
+    ...     bond.yr.V = 100 # simulate stimulus
+    ...     t, y, flag = bond.integrate()
     >>> ydot, alg = bond.model.rates_and_algebraic(t, y)
     >>> from pylab import * # doctest: +SKIP
     >>> plot(t, alg.view(bond.dtype.a)["J_xfer"], '.-', t, y.Cai, '.-') # doctest: +SKIP

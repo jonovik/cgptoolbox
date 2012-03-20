@@ -104,7 +104,7 @@ class Paceable(object):
          'caistats': {'amp': 0.525...},
          'decayrate': array([ 0.0911...
          'peak': 33.021572...,
-         't_repol': array([  3.31012...,   5.125...,  14.282...,  22.78...]),
+         't_repol': array([  3.31012...,   5.125...,  14.282...,  22.7...]),
          'ttp': 1.844189...}
         
         Module-level variables are shared between instances!
@@ -325,7 +325,7 @@ class Paceable(object):
          'caistats': {'amp': 0.525...},
          'decayrate': array([ 0.0911...
          'peak': 33.021572...,
-         't_repol': array([  3.31012...,   5.125...,  14.282...,  22.78...]),
+         't_repol': array([  3.31012...,   5.125...,  14.282...,  22.7...]),
          'ttp': 1.844189...}
         """
         
