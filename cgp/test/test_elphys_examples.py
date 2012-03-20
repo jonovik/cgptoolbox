@@ -38,23 +38,25 @@ def test_scenario():
     Test .scenario() feature.
     
     >>> bond = Bond()
-    >>> with bond.scenario("septum"):
+    >>> with bond.scenario("septal"):
     ...     t0, y0, stats0 = bond.ap()
     
     The two scenarios are available as separate models at cellml.org.
     Verify that switching scenarios is equivalent to using the other version.
     
-    >>> septum = Bond(bond.workspace, bond.exposure, bond.variant.replace("apical", "septal"))
-    >>> with septum.autorestore():
-    ...     t1, y1, stats1 = septum.ap()
+    >>> septal = Bond(workspace=bond.workspace, exposure=bond.exposure, 
+    ...     changeset=bond.changeset, 
+    ...     variant=bond.variant.replace("apical", "septal"))
+    >>> with septal.autorestore():
+    ...     t1, y1, stats1 = septal.ap()
     
     Compare string representations to allow for machine imprecision.
     
     >>> str(ap_stats_array(stats0)) == str(ap_stats_array(stats1))
     True
     
-    >>> with septum.scenario("apex"):
-    ...     t2, y2, stats2 = septum.ap()
+    >>> with septal.scenario("apical"):
+    ...     t2, y2, stats2 = septal.ap()
     >>> with bond.autorestore():
     ...     t3, y3, stats3 = bond.ap()
     >>> str(ap_stats_array(stats2)) == str(ap_stats_array(stats3))
@@ -110,12 +112,11 @@ def test_bond_uhc():
     
     >>> for k in a.dtype.names:
     ...     try:
-    ...         np.testing.assert_almost_equal(a[k], au[k], decimal=4)
+    ...         np.testing.assert_almost_equal(a[k], au[k], decimal=3)
     ...     except AssertionError:
     ...         print k, a[k], au[k]
-    ctttp [ 15.6...] [ 15.7...]
-    ctd25 [ 32.176...] [ 32.17...]
-    ctd50 [ 56.5175...] [ 56.517...]
+    ctttp [ 15.69...] [ 15.61...]
+    ctd50 [ 56.517...] [ 56.519...]
     """
     pass
 
@@ -132,6 +133,7 @@ def test_li_uhc():
     ...     tol = 1.5e-3 if (k == "ctttp") else 1e-3
     ...     if abs(1 - a[k] / au[k]) > tol:
     ...         print k, a[k], au[k]
+    ctttp [ 28.28...] [ 28.35...]
     """
     pass
 
@@ -172,7 +174,7 @@ def test_tentusscher():
                   'peak': 0.0007032...,
                   't_repol': array([  40.42...,   74.47...,  122.7...,  167.3...]),
                   'ttp': 10...},
-     'decayrate': array([ 0.05060...]),
+     'decayrate': array([ 0.050...]),
      'i': array([...]),
      'p_repol': array([ 0.25,  0.5 ,  0.75,  0.9 ]),
      'peak': 34.90...,

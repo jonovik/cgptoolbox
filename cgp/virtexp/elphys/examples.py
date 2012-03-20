@@ -149,12 +149,15 @@ class Bond(Cellmlmodel, Paceable, Clampable):
         # Mapping None to an empty dict, and letting the scenario name default 
         # to None, makes self.scenario() equivalent to self.autorestore().
         self.scenarios = OrderedDict({None: {}})
+        kwargs = kwargs.copy()
+        kwargs.update(workspace=self.workspace, exposure=self.exposure)
         for variant in self.get_variants():
             name = variant.replace(self.workspace, "").replace("_", "")
             self.scenarios[name] = dict(workspace=self.workspace, 
-                exposure=self.exposure, variant=variant, 
-                y=self.y0r.copy(), p=self.pr.copy())
-            m = Cellmlmodel(self.workspace, self.exposure, variant, **kwargs)
+                exposure=self.exposure, changeset=self.changeset, 
+                variant=variant, y=self.y0r.copy(), p=self.pr.copy())
+            kwargs["variant"] = variant
+            m = Cellmlmodel(**kwargs)
             m.pr.stim_start = 0.0
             for k in set(m.dtype.p.names) & set(self.dtype.p.names):
                 self.scenarios[name]["p"][k] = m.pr[k]
@@ -191,16 +194,18 @@ class Bond(Cellmlmodel, Paceable, Clampable):
         >>> bond = Bond()
         >>> bond.scenarios
         OrderedDict([(None, {}), 
-        ('apical', {'y': rec.array([ (-82.4202, ...)], dtype=[('V', '<f8'), ...]), 
-                    'p': rec.array([ (1.0, ...)], dtype=[('Cm', '<f8'), ...)]), 
-                    'variant': 'bondarenko_szigeti_bett_kim_rasmusson_2004_apical', 
-                    'workspace': 'bondarenko_szigeti_bett_kim_rasmusson_2004', 
-                    'exposure': '11df840d0150d34c9716cd4cbdd164c8'}), 
-        ('septal', {'y': rec.array([ (-82.4202, ...)], dtype=[('V', '<f8'), ...]), 
-                    'p': rec.array([ (1.0, ...)], dtype=[('Cm', '<f8'), ...)]), 
-              'variant': 'bondarenko_szigeti_bett_kim_rasmusson_2004_septal', 
-              'workspace': 'bondarenko_szigeti_bett_kim_rasmusson_2004', 
-              'exposure': '11df840d0150d34c9716cd4cbdd164c8'})])
+        ('apical', {'changeset': '99f4fd6804311c571a7143515003691ab2e430fb', 
+            'workspace': 'bondarenko_szigeti_bett_kim_rasmusson_2004', 
+            'p': rec.array([ (1.0, ...)], dtype=[('Cm', '<f8'), ...)]), 
+            'y': rec.array([ (-82.4202, ...)], dtype=[('V', '<f8'), ...]), 
+            'variant': 'bondarenko_szigeti_bett_kim_rasmusson_2004_apical', 
+            'exposure': '11df840d0150d34c9716cd4cbdd164c8'}), 
+        ('septal', {'changeset': '99f4fd6804311c571a7143515003691ab2e430fb', 
+            'workspace': 'bondarenko_szigeti_bett_kim_rasmusson_2004', 
+            'p': rec.array([ (1.0, ...)], dtype=[('Cm', '<f8'), ...)]), 
+            'y': rec.array([ (-82.4202, ...)], dtype=[('V', '<f8'), ...]), 
+            'variant': 'bondarenko_szigeti_bett_kim_rasmusson_2004_septal', 
+            'exposure': '11df840d0150d34c9716cd4cbdd164c8'})])
         """
         return self.autorestore(_y=self.scenarios[name].get("y"), 
                                 _p=self.scenarios[name].get("p"), **kwargs)

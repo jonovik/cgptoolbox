@@ -49,9 +49,9 @@ _cellml2py_dir = cellmlmodels.__path__[0] + "/_cellml2py/"
 mem = joblib.Memory(os.path.join(gettempdir(), "cellmlmodel"), verbose=0)
 
 @mem.cache
-def urlcache(url):
+def urlcache(url, data=None):
     """Cache download from URL."""
-    with closing(urllib.urlopen(url)) as f:
+    with closing(urllib.urlopen(url, data)) as f:
         return f.read()
 
 # Ensure that cellmlmodels/_cellml2py/ is a valid package directory
@@ -311,7 +311,6 @@ def rates_and_algebraic(t, y):
     return ydot, alg
 '''
 
-@mem.cache
 def guess_url(self, urlpattern="exposure/{exposure}/{variant}.cellml/"):
     """
     >>> class Test(Cellmlmodel):
@@ -367,9 +366,7 @@ class Cellmlmodel(Namedcvodeint):
     cellml_home = cellml_home.rstrip("/") + "/"
     
     def __init__(self,  # pylint: disable=W0102,E1002,R
-        url="http://models.cellml.org/workspace/vanderpol_vandermark_1928/"
-        "@@rawfile/371151b156888430521cbf15a9cfa5e8d854cf37/"
-        "vanderpol_vandermark_1928.cellml",
+        url=None,
         workspace=None, exposure=None, changeset=None, variant=None,
         localfile=None,  
         t=[0, 1], y=None, p=None, rename={}, use_cython=True, purge=False, 
@@ -439,13 +436,21 @@ class Cellmlmodel(Namedcvodeint):
         
         See class docstring: ?Cellmlmodel for details.
         """
+        if not any([url, workspace, exposure, changeset, variant, localfile]):
+            url = ("http://models.cellml.org/workspace/"
+                "vanderpol_vandermark_1928/@@rawfile/"
+                "371151b156888430521cbf15a9cfa5e8d854cf37/"
+                "vanderpol_vandermark_1928.cellml")
         self.workspace = workspace
         self.exposure = exposure
         self.changeset = changeset
         self.variant = variant
         self.localfile = localfile
-        self.url = url or guess_url(self)
-        self.cellml = urlcache(url)
+        if localfile :
+            self.url = guess_url(self)
+        else:
+            self.url = url or guess_url(self)
+        self.cellml = urlcache(self.url)
         self.hash = "_" + hashlib.sha1(self.cellml).hexdigest()[:6]
         self.package = "cgp.physmod._cellml2py." + self.hash
         self.packagedir = _cellml2py_dir + self.hash
@@ -500,7 +505,12 @@ class Cellmlmodel(Namedcvodeint):
                 self.url.rsplit("/", 1)[-1])) as f:
                 f.write(urlcache(self.url))
             with write_if_not_exists(py_file) as f:
-                f.write(urlcache("http://bebiservice.umb.no/bottle/cellml2py/" + self.url))
+                if self.localfile:
+                    f.write(urlcache(
+                        "http://bebiservice.umb.no/bottle/cellml2py", 
+                        data=urllib.urlencode(dict(cellml=self.cellml))))
+                else:
+                    f.write(urlcache("http://bebiservice.umb.no/bottle/cellml2py/" + self.url))
             self.model = import_module(".py", self.package)
         try:
             with open(py_file, "rU") as f:
