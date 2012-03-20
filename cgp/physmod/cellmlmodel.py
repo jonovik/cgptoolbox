@@ -308,24 +308,24 @@ def rates_and_algebraic(t, y):
     return ydot, alg
 '''
 
-"""
 @mem.cache
-def guess_url(workspace=None, exposure=None, changeset=None, variant=None):
-    self.cellml_home = cellml_home.rstrip("/") + "/"
-    self.workspace = workspace
-    self.exposure = exposure or self.get_latest_exposure()
-    if variant:
-        self.variant = variant
-    else:
-        variants = self.get_variants()
-        if variants:
-            self.variant = variants[0]
-        else:
-            self.variant = ""
-    self.changeset = changeset or self.get_changeset()
-    self.name = urllib.quote(
-        self.workspace + self.exposure + self.variant, safe="")
-"""
+def guess_url(self, urlpattern="exposure/{exposure}/{variant}.cellml/"):
+    """
+    >>> class Test(Cellmlmodel):
+    ...     def __init__(self, **kwargs):
+    ...         self.__dict__.update(kwargs)
+    >>> guess_url(Test(workspace="bondarenko_szigeti_bett_kim_rasmusson_2004",
+    ...     exposure=None, changeset=None, variant=None))
+    'http://models.cellml.org/exposure/11df840d0150d34c9716cd4cbdd164c8/bondarenko_szigeti_bett_kim_rasmusson_2004_apical.cellml/'
+    """
+    if not self.exposure:
+        self.exposure = self.get_latest_exposure()
+    if not self.variant:
+        self.variants = self.get_variants()
+        self.variant = self.variants[0]
+    if not self.changeset:
+        self.changeset = self.get_changeset()
+    return self.cellml_home + urlpattern.format(**self.__dict__)
 
 class Cellmlmodel(Namedcvodeint):
     """
@@ -361,7 +361,8 @@ class Cellmlmodel(Namedcvodeint):
     def __init__(self,  # pylint: disable=W0102,E1002,R
         url="http://models.cellml.org/workspace/vanderpol_vandermark_1928/"
         "@@rawfile/371151b156888430521cbf15a9cfa5e8d854cf37/"
-        "vanderpol_vandermark_1928.cellml", 
+        "vanderpol_vandermark_1928.cellml",
+        workspace=None, exposure=None, changeset=None, variant=None,  
         t=[0, 1], y=None, p=None, rename={}, use_cython=True, purge=False, 
         **kwargs):
         """
@@ -429,7 +430,11 @@ class Cellmlmodel(Namedcvodeint):
         
         See class docstring: ?Cellmlmodel for details.
         """
-        self.url = url
+        self.workspace = workspace
+        self.exposure = exposure
+        self.changeset = changeset
+        self.variant = variant
+        self.url = url or guess_url(self)
         self.cellml = urlcache(url)
         self.hash = "_" + hashlib.sha1(self.cellml).hexdigest()[:6]
         self.package = "cgp.physmod._cellml2py." + self.hash
