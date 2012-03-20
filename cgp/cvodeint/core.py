@@ -449,8 +449,8 @@ class Cvodeint(object):
     def __new__(cls, *args, **kwargs):
         """Used for pickling."""
         instance = super(Cvodeint, cls).__new__(cls)
-        instance.__init__(*args, **kwargs)
         instance._init_args = args, kwargs
+        instance.__init__(*args, **kwargs)
         return instance
     
     def __reduce__(self):
