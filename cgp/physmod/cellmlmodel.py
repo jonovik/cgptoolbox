@@ -39,12 +39,19 @@ import subprocess
 import sys
 import urllib
 import warnings
-
+from lxml import etree
 
 
 __all__ = ["Cellmlmodel"]
 
 _cellml2py_dir = cellmlmodels.__path__[0] + "/_cellml2py/"
+
+# XML namespaces
+mml = "http://www.w3.org/1998/Math/MathML"
+cml = "http://www.cellml.org/cellml/1.0#"
+re = "http://exslt.org/regular-expressions"
+
+parser = etree.XMLParser(recover=True)
 
 mem = joblib.Memory(os.path.join(gettempdir(), "cellmlmodel"), verbose=0)
 
@@ -320,10 +327,11 @@ def guess_url(self, urlpattern="exposure/{exposure}/{variant}.cellml/"):
     ...     exposure=None, changeset=None, variant=None, localfile=None))
     'http://models.cellml.org/exposure/11df840d0150d34c9716cd4cbdd164c8/bondarenko_szigeti_bett_kim_rasmusson_2004_apical.cellml/'
     >>> guess_url(Test(localfile="test"))
-    'file:///.../cgp/physmod/_cellml2py/test.cellml'
+    'file:/.../cgp/physmod/_cellml/test.cellml'
     """
     if self.localfile:
-        pathname = os.path.join(_cellml2py_dir, self.localfile + ".cellml")
+        pathname = os.path.abspath(os.path.join(
+            _cellml2py_dir, "..", "_cellml", self.localfile + ".cellml"))
         return "file:" + urllib.pathname2url(pathname)
     if not self.exposure:
         self.exposure = self.get_latest_exposure()
@@ -451,6 +459,8 @@ class Cellmlmodel(Namedcvodeint):
         else:
             self.url = url or guess_url(self)
         self.cellml = urlcache(self.url)
+        self.tree = etree.parse(StringIO(self.cellml), parser)
+        self.name = etree.ETXPath("//{%s}model/@name" % cml)(self.tree)[0]
         self.hash = "_" + hashlib.sha1(self.cellml).hexdigest()[:6]
         self.package = "cgp.physmod._cellml2py." + self.hash
         self.packagedir = _cellml2py_dir + self.hash
@@ -459,7 +469,7 @@ class Cellmlmodel(Namedcvodeint):
             # because files in self.packagedir will be in use.
             try:
                 shutil.rmtree(self.packagedir)
-            except WindowsError:
+            except OSError:
                 pass
         if use_cython:
             self._import_cython()
@@ -772,9 +782,7 @@ print cap
         # Scan for "Latest Exposure" link.
         # The href is direct for the beeler_reuter_1977 model; 
         # others are prefixed with "exposure/"
-        from lxml import etree
         url = self.cellml_home + fmt.format(**self.__dict__)
-        parser = etree.XMLParser(recover=True)
         tree = etree.parse(StringIO(urlcache(url)), parser)
         query = ('//{http://www.w3.org/1999/xhtml}' +
             'a[text()="Latest Exposure"]/@href')
@@ -799,9 +807,7 @@ print cap
         >>> test.get_changeset()
         '371151b156888430521cbf15a9cfa5e8d854cf37'
         """
-        from lxml import etree
         url = self.cellml_home + fmt.format(**self.__dict__)
-        parser = etree.XMLParser(recover=True)
         tree = etree.parse(StringIO(urlcache(url)), parser)
         query = ('//{http://www.w3.org/1999/xhtml}' +
             'a[text()="Download This File"]/@href')
@@ -822,9 +828,7 @@ print cap
         ['bondarenko_szigeti_bett_kim_rasmusson_2004_apical',
          'bondarenko_szigeti_bett_kim_rasmusson_2004_septal']
         """
-        from lxml import etree
         url = self.cellml_home + fmt.format(**self.__dict__)
-        parser = etree.XMLParser(recover=True)
         tree = etree.parse(StringIO(urlcache(url)), parser)
         query = ('//{http://www.w3.org/1999/xhtml}' +
             'a[contains(@class, "contenttype-exposurefile")]')
@@ -833,11 +837,17 @@ print cap
 
 def test_cellmlmodel():
     """
-    >>> c = Cellmlmodel("http://models.cellml.org/workspace/tentusscher_noble_noble_panfilov_2004/@@rawfile/3e0eeae90b16221bb1ca327a5572de482990cacc/tentusscher_noble_noble_panfilov_2004_a.cellml", use_cython=False, purge=True)
+    >>> c = Cellmlmodel("http://models.cellml.org/workspace/"
+    ...     "tentusscher_noble_noble_panfilov_2004/@@rawfile/"
+    ...     "3e0eeae90b16221bb1ca327a5572de482990cacc/"
+    ...     "tentusscher_noble_noble_panfilov_2004_a.cellml", 
+    ...     use_cython=False, purge=True)
     >>> c
-    Cellmlmodel(url='http://models.cellml.org/workspace/tentusscher_noble_noble_panfilov_2004/@@rawfile/3e0eeae90b16221bb1ca327a5572de482990cacc/tentusscher_noble_noble_panfilov_2004_a.cellml', y=[-86.2, 138.3, 11.6, 0.0002, 0.0, 1.0, 0.0, 0.0, 0.75, 0.75, 0.0, 1.0, 1.0, 1.0, 0.0, 0.2, 1.0])
+    Cellmlmodel(url='http://...panfilov_2004_a.cellml', 
+    y=[-86.2, 138.3, 11.6, 0.0002, 0.0, 1.0, 0.0, 0.0, 0.75, 0.75, 
+    0.0, 1.0, 1.0, 1.0, 0.0, 0.2, 1.0])
     >>> c.model
-    <module 'cgp.physmod._cellml2py._f09947.py' from 'C:\git\cgptoolbox\cgp\physmod\_cellml2py\_f09947\py.py'>
+    <module 'cgp.physmod._cellml2py._f09947.py' from '...py.py'>
     """
     pass
 
