@@ -1052,7 +1052,7 @@ def decayfits(L, i, k, abs_=True):
     >>> b = Bond()
     >>> L = b.vecvclamp(protocol=[(1000, -140), (500, (-80, -50, 10))])
     >>> decayfits(L, 1, "i_Na")
-    ([-80, -50, 10], [nan, 58.5..., 0.482...])
+    ([-80, -50, 10], [nan, 58.5..., 0.48...])
     
     Idiot proofing to avoid cryptic error.
     
