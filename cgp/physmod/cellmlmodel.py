@@ -373,6 +373,10 @@ class Cellmlmodel(Namedcvodeint):
     # cellml_home = "http://184.169.251.126/"
     cellml_home = cellml_home.rstrip("/") + "/"
     
+    def __hash__(self):
+        """Hash for Cellmlmodel."""
+        return hash((self.cellml, repr(self._init_args)))
+    
     def __init__(self,  # pylint: disable=W0102,E1002,R
         url=None,
         workspace=None, exposure=None, changeset=None, variant=None,

@@ -16,6 +16,11 @@ vdp_uncompiled = Cellmlmodel(use_cython=False)
 def test_purge():
     c = Cellmlmodel(purge=True)
 
+def test_hash():
+    a, b, c = [Cellmlmodel(chunksize=i) for i in 1, 1, 2]
+    assert hash(a) == hash(b)
+    assert hash(b) != hash(c)
+
 def test_autorestore_reinit():
     """Guard against bug setting t=[0, 0] on autorestore."""
     c = Cellmlmodel()
