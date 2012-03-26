@@ -65,7 +65,7 @@ except ImportError:
         pass # just create an empty __init__.py file
 
 @mem.cache
-def generate_code(url_or_cellml):
+def generate_code(url_or_cellml, language="python"):
     """
     Generate Python code for CellML model at url. Wraps cellml-api/testCeLEDS.
     
@@ -95,7 +95,8 @@ def generate_code(url_or_cellml):
     """
     args = ["/home/jonvi/hg/cellml-api/testCeLEDS", 
             "-", 
-            "/home/jonvi/hg/cellml-api/CeLEDS/languages/Python.xml"]
+            "/home/jonvi/hg/cellml-api/CeLEDS/languages/{}.xml".format(
+                language.capitalize())]
     try:
         src = urlcache(url_or_cellml)
     except IOError:
@@ -663,6 +664,8 @@ class Cellmlmodel(Namedcvodeint):
             return sys.modules[modulename_cython]
         except ImportError:
             pyx, setup = cythonize_model(self.py_code, modelname)
+            pyx = urlcache("http://bebiservice.umb.no/bottle/cellml2cy", 
+                data=urllib.urlencode(dict(cellml=self.cellml)))
             pyxname = modelfilename.replace("%s.py" % modelname, 
                 "cython/%s/m.pyx" % modelname)
             dirname, _ = os.path.split(pyxname)

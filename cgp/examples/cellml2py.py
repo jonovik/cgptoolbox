@@ -25,6 +25,13 @@ with closing(urllib.urlopen(url)) as f:
     s = f.read()
 with closing(urllib.urlopen("http://bebiservice.umb.no/bottle/cellml2py", data=urllib.urlencode(dict(cellml=s)))) as f:
     print f.read()
+
+url = "file:///c:/git/cgptoolbox/cgp/physmod/_cellml2py/BL6WT_260710.cellml"
+with closing(urllib.urlopen(url)) as f:
+    s = f.read()
+with closing(urllib.urlopen("http://bebiservice.umb.no/bottle/cellml2py", data=urllib.urlencode(dict(cellml=s)))) as f:
+    print f.read()
+
 with closing(urllib.urlopen("http://bebiservice.umb.no/bottle/cellml2py/" + url)) as f:
     print f.read()
 
@@ -41,6 +48,14 @@ def get(url):
 @bottle.post("/cellml2py")
 def post():
     return generate_code(bottle.request.forms.cellml.strip())
+
+@bottle.get("/cellml2cy/<url:path>")
+def get(url):
+    return generate_code(url, "cython")
+
+@bottle.post("/cellml2cy")
+def post():
+    return generate_code(bottle.request.forms.cellml.strip(), "cython")
 
 if __name__ == "__main__":
     bottle.run(debug=True, reloader=True)
