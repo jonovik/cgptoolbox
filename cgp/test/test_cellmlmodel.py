@@ -42,7 +42,7 @@ def test_rates_and_algebraic():
             t, y, _flag = bond.integrate()
         ydot, alg = bond.rates_and_algebraic(t, y)
         actual = ydot.V[-1], ydot.Cai[-1], alg.i_Na[-1]
-        np.testing.assert_allclose(actual, desired, rtol=1e-5, atol=1e-5)
+        np.testing.assert_allclose(actual, desired, rtol=1e-4, atol=1e-4)
     
 def test_parse_legend():
     """Protect against empty legend entry, bug in CellML code generation."""
