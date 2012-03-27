@@ -115,8 +115,7 @@ def test_bond_uhc():
     ...         np.testing.assert_almost_equal(a[k], au[k], decimal=3)
     ...     except AssertionError:
     ...         print k, a[k], au[k]
-    ctttp [ 15.69...] [ 15.61...]
-    ctd50 [ 56.517...] [ 56.519...]
+    ctttp [ 15.69...] [ 15.71...]
     """
     pass
 
@@ -133,7 +132,6 @@ def test_li_uhc():
     ...     tol = 1.5e-3 if (k == "ctttp") else 1e-3
     ...     if abs(1 - a[k] / au[k]) > tol:
     ...         print k, a[k], au[k]
-    ctttp [ 28.28...] [ 28.35...]
     """
     pass
 
