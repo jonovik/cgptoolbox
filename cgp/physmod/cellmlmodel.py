@@ -651,14 +651,10 @@ class Cellmlmodel(Namedcvodeint):
             ydot, alg = bond.rates_and_algebraic(t, y)
             plt.plot(t, alg.J_xfer, '.-', t, y.Cai, '.-')
         """
-        m = self.model
         t = np.atleast_1d(t).astype(float)
         y = np.atleast_2d(y)
-        # y = y.view(ftype) # done already in rates_and_algebraic
         with self.autorestore(_p=par):
-            ydot, alg = m.rates_and_algebraic(t, y)
-        # ydot = ydot.view(self.dtype.y, np.recarray).squeeze()
-        # alg = alg.view(self.dtype.a, np.recarray).squeeze()
+            ydot, alg = self.model.rates_and_algebraic(t, y)
         ydot = ydot.squeeze().view(self.dtype.y, np.recarray)
         alg = alg.squeeze().view(self.dtype.a, np.recarray)
         return ydot, alg
