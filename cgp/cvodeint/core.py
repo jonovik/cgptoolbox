@@ -889,6 +889,8 @@ class Cvodeint(object):
             msg = "%s %s\ngetargspec(__init__) is not available"
             msg += " when running under Cython"
             return msg % (self.__class__, self.f_ode)
+        if defaults is None:
+            defaults = ()
         del args[0] # remove self from argument list
         # pad list of defaults to same length as args
         defaults = [None] * (len(args) - len(defaults)) + list(defaults)
