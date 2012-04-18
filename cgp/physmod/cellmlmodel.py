@@ -104,10 +104,11 @@ def generate_code(url_or_cellml, language="python"):
             "-", 
             "/home/jonvi/hg/cellml-api/CeLEDS/languages/{}.xml".format(
                 language.capitalize())]
-    try:
-        src = urlcache(url_or_cellml)
-    except IOError:
+    url_or_cellml = url_or_cellml.strip()
+    if url_or_cellml.startswith("<"):
         src = url_or_cellml
+    else:
+        src = urlcache(url_or_cellml)
     with Tempfile() as cellml, Tempfile() as pycode:
         cellml.write(src)
         cellml.seek(0)
@@ -465,7 +466,11 @@ class Cellmlmodel(Namedcvodeint):
             self.url = url or guess_url(self)
         self.cellml = urlcache(self.url)
         self.tree = etree.parse(StringIO(self.cellml), parser)
-        self.name = etree.ETXPath("//{%s}model/@name" % cml)(self.tree)[0]
+        try:
+            self.name = etree.ETXPath("//{%s}model/@name" % cml)(self.tree)[0]
+        except IndexError:
+            self.name = etree.ETXPath("//{%s}model/@name" % cml.replace(
+                "1.0", "1.1"))(self.tree)[0]
         self.hash = "_" + hashlib.sha1(self.cellml).hexdigest()[:6]
         self.package = "cgp.physmod._cellml2py." + self.hash
         self.packagedir = _cellml2py_dir + self.hash
@@ -476,6 +481,9 @@ class Cellmlmodel(Namedcvodeint):
                 shutil.rmtree(self.packagedir)
             except OSError:
                 pass
+        _head, tail = os.path.split(self.url.strip("/"))
+        with write_if_not_exists(os.path.join(self.packagedir, tail)) as f:
+            f.write(self.cellml)
         if use_cython:
             self._import_cython()
         else:
