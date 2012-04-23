@@ -139,6 +139,7 @@ import matplotlib.pyplot as plt
 from matplotlib import _pylab_helpers
 
 __version__ = 2
+__test__ = False  # Keep nosetests from treating setup() as a test
 
 _debug = None
 def debug():
