@@ -16,7 +16,10 @@ def setup():
 
 def teardown():
     import shutil
-    shutil.rmtree(dtemp)
+    try:
+        shutil.rmtree(dtemp)
+    except OSError:
+        pass
 
 def test_hdfcache():
     filename = os.path.join(dtemp, 'cachetest.h5')
