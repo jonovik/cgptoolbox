@@ -58,7 +58,7 @@ def test_compiled_behaviour():
 def test_source():
     """Alert if code generation changes format."""
     assert_equal(hashlib.sha1(vdp.py_code).hexdigest(),
-        '925c4dff98fc9a192e0129946f93cc223fd0841d')
+        '24bceba4077b7fcf53bf0198b32ffaf47585bb29')
 
 def test_Sundials_convention():    
     """
