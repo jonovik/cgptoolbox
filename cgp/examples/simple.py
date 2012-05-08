@@ -54,8 +54,14 @@ possibilities each gives
 aa bb cc, aa bb Cc, aa bb CC, aa Bb cc, ..., AA BB CC). In higher-dimensional 
 cases, the genotype space must be sampled according to some experimental 
 design, possibly constrained by pedigree information.
+
+Large-scale computations will benefit from caching and parallelization.
+Examples are given in  
+:mod:`~cgp.examples.simple.simple_joblib`, 
+:mod:`~cgp.examples.simple.simple_ipython_parallel`, 
+:mod:`~cgp.examples.simple.simple_hdfcache`.
 """
-# pylint: disable=R0913, R0914, W0142, C0111
+# pylint: disable=R0913, R0914, W0142, C0111, W0621
 
 import numpy as np
 
@@ -299,44 +305,38 @@ def recovery_time(v, t=None, p=0.90):
         ti = ti[::-1] # so reverse vi and ti
     return np.interp(vp, vi, ti) # interpolate t as function of v [sic]
 
-# Putting it all together: APD90 for all genotypes
-from cgp.utils.hdfcache import Hdfcache
-hdfcache = Hdfcache("cgpdemo.h5")
-def cgpstudy():
-    """A simple causally cohesive genotype-phenotype model study"""
-    # Define baseline parameters
-    baseline = [("a", 0.7), ("b", 0.8), ("theta", 0.08), ("I", 0.0)]
-    names, rec = zip(*baseline)
-    hetpar = np.rec.fromrecords([rec], names=names)
-    # Enumerate all possible genotypes
-    nloci = len(baseline)
-    gts = np.broadcast_arrays(*np.ix_(*([[0, 1, 2]] * nloci)))
-    gts = np.column_stack([gt.flatten() for gt in gts])
-    
-    # Iterate over genotypes:
-    @hdfcache.cache
-    def ph(gt, dtype=[("apd90", float)]):  # pylint: disable=W0102
-        """Ad hoc function to compute the phenotype of a single genotype"""
-        par = monogenicpar(gt, hetpar)
-        # Must cast par[k] to float for fitzhugh() to work properly
-        d = dict((k, float(par[k])) for k in par.dtype.names)
-        # Make a new ODE function with overridden defaults
-        f = functools.partial(fitzhugh, **d)
-        # Keep only the last action potential for statistics
-        t, Y = aps(f, Y0=eq(f, [0, 0]))[-1]
-        # Aggregating to simpler phenotypes
-        apd90 = recovery_time(Y[:, 1], t - t[0])
-        return np.array((apd90,), dtype=dtype)
-    
-    result = np.concatenate([ph(gt) for gt in gts]).view(np.recarray)
-    # Visualization (example intended for interactive use, e.g. under IPython)
+# Define baseline parameters
+baseline = [("a", 0.7), ("b", 0.8), ("theta", 0.08), ("I", 0.0)]
+names, rec = zip(*baseline)
+hetpar = np.rec.fromrecords([rec], names=names)
+
+# Enumerate all possible genotypes
+nloci = len(baseline)
+gts = np.broadcast_arrays(*np.ix_(*([[0, 1, 2]] * nloci)))
+gts = np.column_stack([gt.flatten() for gt in gts])
+
+def ph(gt):
+    """Ad hoc function to compute the phenotype of a single genotype"""
+    par = monogenicpar(gt, hetpar)
+    # Must cast par[k] to float for fitzhugh() to work properly
+    d = dict((k, float(par[k])) for k in par.dtype.names)
+    # Make a new ODE function with overridden defaults
+    f = functools.partial(fitzhugh, **d)
+    # Keep only the last action potential for statistics
+    t, Y = aps(f, Y0=eq(f, [0, 0]))[-1]
+    # Aggregating to simpler phenotypes
+    apd90 = recovery_time(Y[:, 1], t - t[0])
+    return np.rec.fromrecords([(apd90,)], names=["apd90"])
+
+def visualize(result):
+    """Trivial example of visualization."""
     import matplotlib.pyplot as plt
     plt.plot(np.sort(result.apd90))
     plt.xlabel("Genotype #")
     plt.ylabel("APD90")
     plt.show()
-    return result
 
 if __name__ == "__main__":
-    with hdfcache:
-        PH = cgpstudy()
+    # Putting it all together: APD90 for all genotypes
+    result = np.concatenate([ph(gt) for gt in gts]).view(np.recarray)
+    visualize(result)
