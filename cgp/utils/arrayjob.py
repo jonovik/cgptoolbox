@@ -63,19 +63,20 @@ that we have called :func:`set_NID`.)
 
 >>> reset_NID()
 """
+# pylint: disable=W0621
 
 import sys # sys.argv[0] to get name of jobscript
 import os # file and directory manipulation, and PBS_O_WORKDIR
 from os import environ as e
 from commands import getstatusoutput # calling qsub
 import logging # diagnostics
-from itertools import izip_longest
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 
 import numpy as np
 
 from ..utils.ordereddict import OrderedDict
 from ..utils.rec2dict import dict2rec
+from ..utils.dotdict import Dotdict
 
 __all__ = """arun presub par ID get_NID set_NID reset_NID
              qopt alog wait memmap_chunk Mmapdict Timing""".split()
@@ -527,7 +528,7 @@ def memmap_chunk(filename, mode="r+", **kwargs):
     else:
         return np.empty(0, r.dtype)
 
-class Mmapdict(dict):
+class Mmapdict(Dotdict):
     """
     Dictionary that memory-maps an existing {key}.npy on first lookup of d[key].
     
@@ -554,18 +555,20 @@ class Mmapdict(dict):
     """
     def __init__(self, pardir=os.curdir, **kwargs):
         """
-        Mmapdict constructor.
+        Mmapdict constructor. Create pardir if not exists.
         
         :param str pardir: parent directory of preexisting .npy files to be memory-mapped.
         :param: ``**kwargs`` : passed to :func:`open_memmap`.
         """
+        if not os.path.exists(pardir):
+            os.makedirs(pardir)
         self.pardir = pardir
         self.kwargs = kwargs
     
     def __missing__(self, key):
         """Memory-map existing {key}.npy on first lookup of key."""
         # deferred import so arrayjob can be used without load_memmap_offset
-        from load_memmap_offset import open_memmap, memmap_chunk_ind
+        from load_memmap_offset import open_memmap
         return open_memmap("%s/%s.npy" % (self.pardir, key), **self.kwargs)
 
 class Timing(OrderedDict):
