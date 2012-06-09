@@ -2,12 +2,14 @@
 # pylint: disable=W0212
 
 import os
-import logging # diagnostics
+import logging  # diagnostics
+import ast  # convert str(dtype) to list of tuples
 
 import numpy as np
 import tables as pt
 
 from cgp.utils.load_memmap_offset import load
+from cgp.utils.unstruct import unstruct
 
 # Initialize logging. Keys refer to the dict made available by the logger.
 keys = "asctime levelname name lineno process message"
@@ -130,6 +132,8 @@ def numpy2hdf(src, dst, where="/", ext=".npy", recursive=True):
                     if (a.dtype == object) and a.shape==():
                         dict2hdf(a.item(), f, dictgroup)
                     elif a.dtype.names:
+                        if a.ndim > 1:
+                            a = shoehorn_recarray(a)
                         f.createTable(group, name, np.atleast_1d(a), 
                                       createparents=True)
                     elif a.dtype == object:
@@ -203,9 +207,41 @@ class Example(object):
         filename = os.path.join(subdir, "b.npy")
         np.save(filename, a)
         return self.src
+    
     def __exit__(self, exc_type, exc_value, traceback):
         import shutil
         shutil.rmtree(self.src)
+
+def shoehorn_recarray(x):
+    """
+    Shoehorn multi-dimensional record array into HDF-compatible form.
+    
+    >>> x = np.arange(24.0).view([("a", float), ("b", float)]).reshape(4, 3)
+    >>> y = shoehorn_recarray(x)
+    >>> np.testing.assert_equal(x["a"], y["a"])
+    
+    >>> x.shape
+    (4, 3)
+    >>> x.dtype
+    dtype([('a', '<f8'), ('b', '<f8')])
+    >>> y.shape
+    (4,)
+    >>> y.dtype
+    dtype([('a', '<f8', (3,)), ('b', '<f8', (3,))])
+    """
+    u = unstruct(x)
+    r = np.rollaxis(u, len(x.shape), 1)
+    dtype = [i[:2] + r.shape[2:] for i in ast.literal_eval(str(x.dtype))]
+    return r.flatten().view(dtype)
+
+def test_shoehorn_recarray():
+    """Shoehorn multi-dimensional record array into HDF table."""
+    x = np.arange(24.0).view([("a", float), ("b", float)]).reshape(4, 3)
+    with Example() as src:
+        np.save(os.path.join(src, "x.npy"), x)
+        numpy2hdf(src, os.path.join(src, "dst.h5"))
+        with pt.openFile(os.path.join(src, "dst.h5")) as f:
+            np.testing.assert_equal(x["a"], f.root.x.cols.a[:])
 
 if __name__ == "__main__":
     import doctest
