@@ -22,6 +22,20 @@ array([ 0,  1,  2, 42, 42, 42, 42,  7,  8,  9])
 >>> del mmap
 >>> np.load(filename)
 array([  0,   1,   2,  42,  42,  42,  42, 123,   8,   9])
+
+For loading memmaps, shape and offset apply to the first dimension only;
+the remaining dimensions are read from the file.
+
+>>> x = np.arange(24.0).view([("a", float), ("b", float)]).reshape(4, 3)
+>>> np.save(filename, x)
+
+Each sub-array has three items. This skips sub-array 0, 
+then extracts sub-arrays 1 and 2.
+
+>>> load(filename, mmap_mode="r+", offset=1, shape=2)
+memmap([[(6.0, 7.0), (8.0, 9.0), (10.0, 11.0)],
+        [(12.0, 13.0), (14.0, 15.0), (16.0, 17.0)]], 
+        dtype=[('a', '<f8'), ('b', '<f8')])
 >>> shutil.rmtree(dtemp)
 """
 import numpy as np
@@ -173,19 +187,23 @@ def open_memmap(filename, mode='r+', dtype=None, shape=None,
                 msg = "only support version (1,0) of file format, not %r"
                 raise ValueError(msg % (version,))
             fullshape, fortran_order, dtype = read_array_header_1_0(fp)
-            if shape is None:
-                shape = fullshape
-                if offset:
-                    shape = list(fullshape)
-                    shape[0] = shape[0] - offset
-                    shape = tuple(shape)
+            
+            if shape:
+                length = np.atleast_1d(shape)
+                assert length.ndim == 1, "Specify shape along first dimension only"
+            else:
+                length = fullshape[0] - offset
+            shape = (length,) + fullshape[1:]
+            
             if dtype.hasobject:
                 msg = "Array can't be memory-mapped: Python objects in dtype."
                 raise ValueError(msg)
-            offset = fp.tell() + offset * dtype.itemsize
+            
+            offset_items = offset * np.prod(fullshape[1:], dtype=int)
+            offset_bytes = fp.tell() + offset_items * dtype.itemsize
         finally:
             fp.close()
-
+    
     if fortran_order:
         order = 'F'
     else:
@@ -197,7 +215,7 @@ def open_memmap(filename, mode='r+', dtype=None, shape=None,
         mode = 'r+'
 
     marray = np.memmap(filename, dtype=dtype, shape=shape, order=order,
-        mode=mode, offset=offset)
+        mode=mode, offset=offset_bytes)
 
     return marray
 
@@ -294,4 +312,4 @@ def load(file, mmap_mode=None, offset=0, shape=None): # pylint: disable=W0622
 
 if __name__ == "__main__":
     import doctest
-    doctest.testmod()
+    doctest.testmod(optionflags=doctest.NORMALIZE_WHITESPACE)
