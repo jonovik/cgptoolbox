@@ -135,7 +135,8 @@ def numpy2hdf(src, dst, where="/", ext=".npy", recursive=True):
                         if a.ndim > 1:
                             a = shoehorn_recarray(a)
                         f.createTable(group, name, np.atleast_1d(a), 
-                                      createparents=True)
+                                      createparents=True, 
+                                      expectedrows=len(np.atleast_1d(a)))
                     elif a.dtype == object:
                         # Hope that v is a list
                         d = dict(("k%s" % k, v) for k, v in enumerate(a))
@@ -181,7 +182,9 @@ def dict2hdf(d, f, where):
                 dict2hdf(d_, f, where + "/" + k)
             else:
                 if v.dtype.names:
-                    f.createTable(description=np.atleast_1d(v), **kw)
+                    f.createTable(description=np.atleast_1d(v), 
+                        expectedrows=len(np.atleast_1d(v)),
+                        **kw)
                 else:
                     f.createArray(object=v, **kw)
 
@@ -212,9 +215,18 @@ class Example(object):
         import shutil
         shutil.rmtree(self.src)
 
-def shoehorn_recarray(x):
+def shoehorn_recarray(x, ndim=1):
     """
     Shoehorn multi-dimensional record array into HDF-compatible form.
+    
+    Pytables does not allow table rows to be arrays. Thus, a record array with 
+    dimension > 1 cannot be converted to an HDF table. However, it will accept 
+    a 1-D record array whose *fields* are arrays. This function rearranges the 
+    dimensions of the entire array and it fields, retaining *ndim* dimensions 
+    and pushing the rest into the fields.
+    
+    One dimension is suitable for creating a table, whereas zero dimensions 
+    is suitable for a table row.
     
     >>> x = np.arange(24.0).view([("a", float), ("b", float)]).reshape(4, 3)
     >>> y = shoehorn_recarray(x)
@@ -228,6 +240,12 @@ def shoehorn_recarray(x):
     (4,)
     >>> y.dtype
     dtype([('a', '<f8', (3,)), ('b', '<f8', (3,))])
+    
+    >>> z = shoehorn_recarray(x, ndim=0)
+    >>> z.shape
+    ()
+    >>> z.dtype
+    dtype([('a', '<f8', (4, 3)), ('b', '<f8', (4, 3))])
     """
     u = unstruct(x)
     r = np.rollaxis(u, len(x.shape), 1)

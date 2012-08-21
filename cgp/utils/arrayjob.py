@@ -532,12 +532,15 @@ class Mmapdict(Dotdict):
     """
     Dictionary that memory-maps an existing {key}.npy on first lookup of d[key].
     
+    Attribute access ``d.key`` works too.
+    
     >>> import tempfile, shutil
     >>> dtemp = tempfile.mkdtemp()
     >>> try:
     ...     np.save("%s/a.npy" % dtemp, np.arange(3))
     ...     md = Mmapdict(pardir=dtemp, mode="r")
     ...     print repr(md["a"])
+    ...     print repr(md.a)
     ...     del md
     ...     # It can be useful to pass shape and offset to Mmapdict()
     ...     np.save("%s/b.npy" % dtemp, np.arange(4))
@@ -549,6 +552,7 @@ class Mmapdict(Dotdict):
     ...     np.load("%s/b.npy" % dtemp)
     ... finally:
     ...     shutil.rmtree(dtemp)
+    memmap([0, 1, 2])
     memmap([0, 1, 2])
     memmap([1, 2])
     array([ 0, 10, 11,  3])
