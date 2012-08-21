@@ -1,7 +1,8 @@
 """Action potential statistics."""
 import numpy as np
 
-def apd(time, voltage, p_repol = [0.25, 0.50, 0.75, 0.90], interpolate=True):
+def apd(time, voltage, p_repol = [0.25, 0.50, 0.75, 0.90], interpolate=True, 
+        decay_p=None):
     """
     Action potential duration: i, ti, Vi = apd(time, voltage, ...)
     
@@ -12,6 +13,7 @@ def apd(time, voltage, p_repol = [0.25, 0.50, 0.75, 0.90], interpolate=True):
     * p_repol: array of "proportion repolarization" for calculating a.p.d.
     * interpolate: boolean, whether to linearly interpolate between the provided 
       points in time
+    * decay_p: argument p_repol to `apd_decayrate()`.
 
     Output: dict with fields:
     
@@ -122,15 +124,17 @@ def apd(time, voltage, p_repol = [0.25, 0.50, 0.75, 0.90], interpolate=True):
     
     result = dict(i=np.r_[peak_i, repol_i], base=base_v, ttp=peak_t, peak=peak_v, 
         amp=peak_v - base_v, p_repol=p_repol, t_repol=t_repol)
-    result["decayrate"] = apd_decayrate(result)
+    result["decayrate"] = apd_decayrate(result, decay_p)
     return result
 
-def apd_decayrate(stats, p=(0.5, 0.9)):
+def apd_decayrate(stats, p=None):
     """
     Compute decay rate of recovery phase, from statistics of action potential.
     
     The decay rate is computed as (diff log (v - base)) / (diff t).
     The difference is taken between p[0] * 100% and p[1] * 100% recovery.
+    If p is None, it defaults to the first and last elements of 
+    stats["p_repol"].
     
     >>> t = np.linspace(0, 1, 10)
     >>> v = 1 + 2 * np.exp(-3 * t)
@@ -146,7 +150,11 @@ def apd_decayrate(stats, p=(0.5, 0.9)):
     array([ 1.734...])
     """
     v0, v1 = stats["base"], stats["peak"]
-    p2, p3 = p
+    if p is None:
+        p2 = stats["p_repol"][0]
+        p3 = stats["p_repol"][-1]
+    else:
+        p2, p3 = p
     t2, t3 = [stats["t_repol"][stats["p_repol"] == pi] for pi in p2, p3]
     v2, v3 = [v1 - pi * (v1 - v0) for pi in p2, p3]
     with np.errstate(all="ignore"):  # silence NaN-related errors

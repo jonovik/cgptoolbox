@@ -259,7 +259,7 @@ class Paceable(object):
             stats["t_repol"] = []
             stats["p_repol"] = []
         try:
-            stats["decayrate"] = ap_stats.apd_decayrate(stats)
+            stats["decayrate"] = ap_stats.apd_decayrate(stats, p=[0.25, 0.9])
         except (ValueError, IndexError):
             stats["decayrate"] = np.nan
         stats["amp"] = stats["peak"] - stats["base"]
@@ -274,6 +274,8 @@ class Paceable(object):
             # don't bother to report Ca decay rate for very small oscillations 
             if (sc["amp"] / sc["peak"]) < 1e-3:
                 sc["decayrate"] = np.nan
+            else:
+                sc["decayrate"] = ap_stats.apd_decayrate(sc, p=[0.25, 0.9])
         except AttributeError: # model may not have a state variable called Cai
             pass
         return t, Y, stats
