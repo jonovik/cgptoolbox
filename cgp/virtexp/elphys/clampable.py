@@ -13,7 +13,10 @@ import numpy as np
 
 try:
     from rnumpy import r, RRuntimeError
+    have_rnumpy = True
 except ImportError:
+    have_rnumpy = False
+    
     import warnings
     warnings.warn("rnumpy not installed, some functions will not work.")
     
@@ -664,7 +667,7 @@ class Clampable(object):
 
     def vclamp(self, protocol, nthin=None):
         """
-        Iterator to yield t, y, dy, a, stats from a voltage clamp experiment.
+        Iterator to yield t, y, dy, a from a voltage clamp experiment.
         
         :param protocol: Sequence of (duration, voltage) for each pulse
         :param nthin: number of time-points for each pulse (default: no thinning)
@@ -1118,18 +1121,30 @@ def decayfit(t, y, p=(0.05, 0.9), prepend_zero=False, rse=False, lm=False):
         tau = rse_slope = np.nan
         rlm = None
     else:
-        with roptions(show_error_messages=False, deparse_max_lines=0):
+        if have_rnumpy:
+            with roptions(show_error_messages=False, deparse_max_lines=0):
+                try:
+                    rlm = r.lm("log(y)~t", data=dict(t=t[i0:i1], 
+                                                     y=y[i0:i1].squeeze()))
+                    coef = r2rec(r.as_data_frame(r.coef(r.summary(rlm))))
+                    _intercept, slope = coef.Estimate
+                    _rse_intercept, rse_slope = (coef["Std. Error"] / 
+                                                 abs(coef.Estimate))
+                    tau = - 1.0 / slope
+                except RRuntimeError:
+                    tau = rse_slope = np.nan
+                    rlm = None
+        else:
+            from scipy.stats.stats import linregress
             try:
-                rlm = r.lm("log(y)~t", data=dict(t=t[i0:i1], 
-                                                 y=y[i0:i1].squeeze()))
-                coef = r2rec(r.as_data_frame(r.coef(r.summary(rlm))))
-                _intercept, slope = coef.Estimate
-                _rse_intercept, rse_slope = (coef["Std. Error"] / 
-                                             abs(coef.Estimate))
+                slope, _intercept, _r_value, _p_value, std_err = linregress(
+                    t[i0:i1], np.log(y[i0:i1]).squeeze())
+                rse_slope = std_err / np.abs(slope)
                 tau = - 1.0 / slope
-            except RRuntimeError:
+            except ZeroDivisionError:
                 tau = rse_slope = np.nan
                 rlm = None
+    
     result = (tau,)
     if rse:
         result += (rse_slope,)
