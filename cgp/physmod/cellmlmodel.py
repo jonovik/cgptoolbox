@@ -723,7 +723,7 @@ print cap
         ...     def __init__(self):
         ...         self.workspace = "beeler_reuter_1977"
         >>> Test().get_latest_exposure()
-        'e/9a'
+        'e/c1'
         """
         # Scan for "Latest Exposure" link.
         # The href is direct for the beeler_reuter_1977 model; 
