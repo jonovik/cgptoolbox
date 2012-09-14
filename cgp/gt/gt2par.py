@@ -11,9 +11,9 @@ def monogenicpar(genotype, hetpar, relvar=0.5, absvar=None):
     """
     Monogenic genotype-to-phenotype map.
     
-    :param array_like genotype: Array with one item for each locus. 
-        Item values of 0, 1, 2 indicate the low homozygote, the heterozygote, 
-        and the high heterozygote, respectively.
+    :param array_like genotype: (Sequence of) array(s) with one item for each 
+        locus. Item values of 0, 1, 2 indicate the low homozygote, the 
+        heterozygote, and the high heterozygote, respectively.
     :param array_like hetpar: Baseline parameter values corresponding to an 
         individual that is heterozygous at all loci.
     :param float relvar: Proportion of relative variation.
@@ -31,9 +31,18 @@ def monogenicpar(genotype, hetpar, relvar=0.5, absvar=None):
     rec.array([(0, 11, 24)], dtype=[('a', '|i1'), ('b', '|i1'), ('c', '|i1')])
     >>> monogenicpar(genotype, hetpar, absvar=hetpar)
     rec.array([(0, 11, 24)], dtype=[('a', '|i1'), ('b', '|i1'), ('c', '|i1')])
+    
+    >>> genotype = [[0, 1, 2], [2, 1, 0]]
+    >>> monogenicpar(genotype, hetpar)
+    rec.array([(5, 11, 18), (15, 11, 6)], dtype=[('a', '|i1'), ...])
     """
+    genotype = np.asanyarray(genotype)
+    hetpar = np.asanyarray(hetpar)
+    if np.ndim(genotype) == 2:
+        result = [monogenicpar(i, hetpar, relvar, absvar) for i in genotype]
+        return np.concatenate(result, axis=0).view(hetpar.dtype, type(hetpar))
     result = hetpar.copy()
-    par = unstruct(result)
+    par = unstruct(result)  # pylint: disable=W0612
     genotype, hetpar, relvar = [unstruct(i) for i in genotype, hetpar, relvar]
     if absvar is None:
         absvar = relvar * hetpar
