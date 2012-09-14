@@ -35,15 +35,25 @@ def monogenicpar(genotype, hetpar, relvar=0.5, absvar=None):
     >>> genotype = [[0, 1, 2], [2, 1, 0]]
     >>> monogenicpar(genotype, hetpar)
     rec.array([(5, 11, 18), (15, 11, 6)], dtype=[('a', '|i1'), ...])
+    
+    A recarray genotype is `unstructure`d before use, and its field names are 
+    ignored.
+    
+    >>> genotype =  np.rec.array([(0, 1, 2), (2, 1, 0)], 
+    ...     dtype=[('a', '|i1'), ('b', '|i1'), ('c', '|i1')])
+    >>> monogenicpar(genotype, hetpar)
+    rec.array([(5, 11, 18), (15, 11, 6)], 
+          dtype=[('a', '|i1'), ('b', '|i1'), ('c', '|i1')])
     """
-    genotype = np.asanyarray(genotype)
+    genotype = np.atleast_2d(unstruct(genotype))
     hetpar = np.asanyarray(hetpar)
-    if np.ndim(genotype) == 2:
-        result = [monogenicpar(i, hetpar, relvar, absvar) for i in genotype]
-        return np.concatenate(result, axis=0).view(hetpar.dtype, type(hetpar))
-    result = hetpar.copy()
+    # Initialize results array with parameter values for the heterozygote
+    result = np.tile(hetpar.copy(), len(genotype))
+    result = result.view(hetpar.dtype, type(hetpar))
+    # Make unstructured view because arithmetic is not defined on recarrays
     par = unstruct(result)  # pylint: disable=W0612
-    genotype, hetpar, relvar = [unstruct(i) for i in genotype, hetpar, relvar]
+    hetpar = unstruct(hetpar)
+    relvar = unstruct(relvar)
     if absvar is None:
         absvar = relvar * hetpar
     else:
