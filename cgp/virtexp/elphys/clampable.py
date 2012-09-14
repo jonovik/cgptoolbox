@@ -12,7 +12,7 @@ from itertools import chain
 import numpy as np
 
 try:
-    from rnumpy import r, RRuntimeError
+    from cgp.rnumpy.rnumpy import r, RRuntimeError
     have_rnumpy = True
 except ImportError:
     have_rnumpy = False
@@ -1001,7 +1001,7 @@ def mmfit(x, y, rse=False):
     
     Verify fix for excessive output on error (unwanted dump of source code).
     
-    >>> import rnumpy
+    >>> from cgp.rnumpy import rnumpy
     >>> rnumpy.RRuntimeError.max_lines = 0
     >>> mmfit(range(5), range(5))
     (nan, nan)
@@ -1261,7 +1261,7 @@ def markovplots(t, y, a=None, model=None):
     
     >>> print "Text output ignored:"; L = markovplots(t[i], y[i], model=bond)
     Text output ignored:...
-    >>> from rnumpy import r
+    >>> from cgp.rnumpy.rnumpy import r
     >>> r.windows(record=True) # doctest: +SKIP
     >>> print L # doctest: +SKIP    
     """

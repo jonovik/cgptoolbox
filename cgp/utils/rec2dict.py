@@ -45,7 +45,7 @@ def rec2dict(x):
     
     Passing a record array (possibly nested) to R:
     
-    >>> from rnumpy import *                                    # doctest: +SKIP
+    >>> from cgp.rnumpy.rnumpy import *                                    # doctest: +SKIP
     >>> rcopy(rec2dict(A))                                      # doctest: +SKIP
     $x
     [1] 1 2
