@@ -7,6 +7,7 @@ import numpy as np
 
 from .core import Cvodeint
 from ..utils.dotdict import Dotdict
+from cgp.utils.rec2dict import rec2dict
 
 class Namedcvodeint(Cvodeint):
     """
@@ -214,8 +215,9 @@ class Namedcvodeint(Cvodeint):
            on exiting the .autorestore() context manager
         
         Optionally, you can specify initial parameters and state as _p and _y. 
-        Any key=value pairs are used to update parameters or state if the key 
-        exists in exactly one of them, otherwise an error is raised.
+        Further key=value pairs passed as arguments are used to update 
+        parameters or state if the key exists in exactly one of them, 
+        otherwise an error is raised.
         
         >>> pr = np.copy(vdp.pr).view(np.recarray)
         >>> y0 = np.copy(vdp.y).view(vdp.dtype.y, np.recarray)
@@ -226,6 +228,13 @@ class Namedcvodeint(Cvodeint):
         (array([ 123.]), array([ 456.]), array([ 789.]))
         >>> vdp.pr.epsilon, vdp.yr.x, vdp.yr.y
         (array([ 1.]), array([-2.]), array([ 0.]))
+        
+        The _p and _y variables can be record arrays or dict-like objects, 
+        and do not need to specify all parameter fields.
+        
+        >>> with vdp.autorestore(_p=dict(epsilon=42)):
+        ...     vdp.pr.epsilon
+        array([ 42.])
         
         .. todo:: Refactor pr and y into properties/OrderedDict objects with 
            update() methods.
@@ -242,7 +251,10 @@ class Namedcvodeint(Cvodeint):
         """
         oldt, oldy, oldpar = np.copy(self.t), np.copy(self.y), np.copy(self.pr)
         if _p is not None:
-            self.pr[:] = _p
+            if np.asarray(_p).dtype.names:
+                _p = rec2dict(_p)
+            for k, v in _p.items():
+                self.pr[k] = v
         if _y is not None:
             try:
                 self.y[:] = _y
