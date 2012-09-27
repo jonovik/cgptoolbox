@@ -321,6 +321,26 @@ class Namedcvodeint(Cvodeint):
         ...     clamped.pr.epsilon = 2
         >>> vdp.pr.epsilon
         array([ 2.])
+        
+        Any hardcoded stimulus protocol is suppressed while clamped, 
+        and restored afterwards.
+        
+        >>> t= [0, 1]
+        >>> y = np.rec.fromrecords([(-2.0, 0.0)], names="x y".split())
+        >>> p = np.rec.array([(1.0, 2.0)], names=["epsilon", "stim_amplitude"])
+        >>> def test(t, y, ydot, f_data):
+        ...     ydot[0] = y[1]
+        ...     ydot[1] = p.epsilon * (1 - y[0] * y[0]) * y[1] - y[0]
+        >>> model = Namedcvodeint(test, t, y, p)
+        >>> model.pr.stim_amplitude
+        array([ 2.])
+        >>> with model.clamp(x=0) as clamped:
+        ...     model.pr.stim_amplitude
+        ...     clamped.pr.stim_amplitude
+        array([ 0.])
+        array([ 0.])
+        >>> model.pr.stim_amplitude
+        array([ 2.])
         """
         # Indices to state variables whose rate-of-change will be set to zero
         i = np.array([self.dtype.y.names.index(k) for k in kwargs.keys()])
@@ -348,7 +368,9 @@ class Namedcvodeint(Cvodeint):
         clamped = Namedcvodeint(clamped, self.t, y, self.pr, **oldkwargs)
         
         # Disable any hard-coded stimulus protocol
-        if "stim_amplitude" in clamped.dtype.p.names:
+        if "stim_amplitude" in self.dtype.p.names:
+            # self.pr.stim_amplitude is mutable, so cast to float
+            old_stim_amplitude = float(self.pr.stim_amplitude)
             clamped.pr.stim_amplitude = 0
         
         try:
@@ -358,6 +380,9 @@ class Namedcvodeint(Cvodeint):
             for k in clamped.dtype.y.names:
                 if k in self.dtype.y.names:
                     setattr(self.yr, k, getattr(clamped.yr, k))
+            # Restore any hard-coded stimulus protocol
+            if "stim_amplitude" in self.dtype.p.names:
+                self.pr.stim_amplitude = old_stim_amplitude 
     
     def rates(self, t, y, par=None):
         """
