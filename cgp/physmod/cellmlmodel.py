@@ -320,14 +320,14 @@ def rates_and_algebraic(t, y):
     return ydot, alg
 '''
 
-def guess_url(self, urlpattern="exposure/{exposure}/{variant}.cellml/"):
+def guess_url(self, urlpattern="exposure/{exposure}/{variant}.cellml"):
     """
     >>> class Test(Cellmlmodel):
     ...     def __init__(self, **kwargs):
     ...         self.__dict__.update(kwargs)
     >>> guess_url(Test(workspace="bondarenko_szigeti_bett_kim_rasmusson_2004",
     ...     exposure=None, changeset=None, variant=None, localfile=None))
-    'http://models.cellml.org/exposure/11df840d0150d34c9716cd4cbdd164c8/bondarenko_szigeti_bett_kim_rasmusson_2004_apical.cellml/'
+    'http://models.cellml.org/exposure/11df840d0150d34c9716cd4cbdd164c8/bondarenko_szigeti_bett_kim_rasmusson_2004_apical.cellml'
     >>> guess_url(Test(localfile="test"))
     'file:/.../cgp/physmod/_cellml/test.cellml'
     """
@@ -793,7 +793,7 @@ def test_cellmlmodel():
     y=[-86.2, 138.3, 11.6, 0.0002, 0.0, 1.0, 0.0, 0.0, 0.75, 0.75, 
     0.0, 1.0, 1.0, 1.0, 0.0, 0.2, 1.0])
     >>> c.model
-    <module 'cgp.physmod._cellml2py._f09947.py' from '...py.py'>
+    <module 'cgp.physmod._cellml2py._f09947.py' from '...py.py...'>
     """
     pass
 
