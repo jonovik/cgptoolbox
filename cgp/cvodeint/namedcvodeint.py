@@ -341,6 +341,17 @@ class Namedcvodeint(Cvodeint):
         array([ 0.])
         >>> model.pr.stim_amplitude
         array([ 2.])
+        
+        The clamped model gets the same class as the original.
+        
+        >>> class Subclass(Namedcvodeint):
+        ...    pass
+        >>> model = Subclass()
+        >>> with model.clamp(x=0) as clamped:
+        ...     print model
+        ...     print clamped
+        Subclass(f_ode=vanderpol, t=array([ 0.,  1.]), y=[-2.0, 0.0])
+        Subclass(f_ode=clamped, t=array([ 0.,  1.]), y=[0.0, 0.0])
         """
         # Indices to state variables whose rate-of-change will be set to zero
         i = np.array([self.dtype.y.names.index(k) for k in kwargs.keys()])
@@ -365,7 +376,7 @@ class Namedcvodeint(Cvodeint):
         oldkwargs = dict((k, getattr(self, k)) 
             for k in "chunksize maxsteps reltol abstol".split())
         
-        clamped = Namedcvodeint(clamped, self.t, y, self.pr, **oldkwargs)
+        clamped = self.__class__(clamped, self.t, y, self.pr, **oldkwargs)
         
         # Disable any hard-coded stimulus protocol
         if "stim_amplitude" in self.dtype.p.names:
