@@ -1,8 +1,8 @@
 """Action potential statistics."""
 import numpy as np
 
-def apd(time, voltage, p_repol = [0.25, 0.50, 0.75, 0.90], interpolate=True, 
-        decay_p=None):
+def apd(time, voltage, p_repol = (0.25, 0.50, 0.75, 0.90),
+        interpolate=True, decay_p=None):
     """
     Action potential duration: i, ti, Vi = apd(time, voltage, ...)
     
@@ -131,12 +131,13 @@ def apd_decayrate(stats, p=None):
     """
     Compute decay rate of recovery phase, from statistics of action potential.
     
-    The decay rate is computed as (diff log (v - base)) / (diff t).
+    The decay rate is computed as - (diff log (v - base)) / (diff t) 
+    = - (diff log (1-p)) / (diff t).
     The difference is taken between p[0] * 100% and p[1] * 100% recovery.
     If p is None, it defaults to the first and last elements of 
     stats["p_repol"].
     
-    >>> t = np.linspace(0, 1, 10)
+    >>> t = np.linspace(0, 1, 101)
     >>> v = 1 + 2 * np.exp(-3 * t)
     >>> v[0] = 1
     >>> stats = apd(t, v)
@@ -146,20 +147,18 @@ def apd_decayrate(stats, p=None):
     >>> time = np.linspace(-np.pi,np.pi,101)
     >>> voltage = np.cos(time)
     >>> stats = apd(time, voltage)
-    >>> apd_decayrate(stats) # doctest: +ELLIPSIS
-    array([ 1.734...])
+    >>> apd_decayrate(stats)
+    array([ 1.388...])
     """
-    v0, v1 = stats["base"], stats["peak"]
     if p is None:
         p2 = stats["p_repol"][0]
         p3 = stats["p_repol"][-1]
     else:
         p2, p3 = p
     t2, t3 = [stats["t_repol"][stats["p_repol"] == pi] for pi in p2, p3]
-    v2, v3 = [v1 - pi * (v1 - v0) for pi in p2, p3]
     with np.errstate(all="ignore"):  # silence NaN-related errors
-        difflnv = np.log(v2 - v0) - np.log(v3 - v0)
-        result = difflnv / (t3 - t2)
+        difflnv = np.log(1 - p3) - np.log(1 - p2)
+        result = - difflnv / (t3 - t2)
         return result if (result > 0) else np.nan
 
 def _test():
