@@ -16,7 +16,7 @@ def unstruct(x):
     >>> x = np.array([(0, 1), (2, 3), (4, 5)], dtype=[('a', '<i4'), ('b', '<i4')])
     >>> u = unstruct(x)
     >>> u
-    array([[0, 1], [2, 3], [4, 5]])
+    array([[0, 1], [2, 3], [4, 5]]...)
     
     The unstructured array has an extra dimension appended, with a length 
     equal to the number of fields in *x*.
@@ -52,7 +52,7 @@ def unstruct(x):
       dtype=[('a', '<i4', (4,)),  ('b', '<i4', (4,)),  ('c', '<i4', (4,))])
     >>> unstruct(a)
     array([[[ 0,  1,  2,  3], [ 4,  5,  6,  7], [ 8,  9, 10, 11]],
-           [[12, 13, 14, 15], [16, 17, 18, 19], [20, 21, 22, 23]]])
+           [[12, 13, 14, 15], [16, 17, 18, 19], [20, 21, 22, 23]]]...)
     >>> unstruct(a).shape
     (2, 3, 4)
     

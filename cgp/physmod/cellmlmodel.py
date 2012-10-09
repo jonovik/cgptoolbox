@@ -15,12 +15,12 @@ Shorter naming scheme, e.g. __main__.py in package.
     plt.plot(t, y.x, t, y.y)
 """
 # pylint: disable=W0621, W0142
-from ..cvodeint.namedcvodeint import Namedcvodeint
-from ..utils.commands import getstatusoutput
-from ..utils.dotdict import Dotdict
-from ..utils.ordereddict import OrderedDict
-from ..utils.rec2dict import dict2rec
-from ..utils.write_if_not_exists import write_if_not_exists
+from cgp.cvodeint.namedcvodeint import Namedcvodeint
+from cgp.utils.commands import getstatusoutput
+from cgp.utils.dotdict import Dotdict
+from cgp.utils.ordereddict import OrderedDict
+from cgp.utils.rec2dict import dict2rec
+from cgp.utils.write_if_not_exists import write_if_not_exists
 from StringIO import StringIO
 from cgp import physmod as cellmlmodels
 from cgp.physmod.cythonize import cythonize_model
