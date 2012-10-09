@@ -222,7 +222,7 @@ def shoehorn_recarray(x, ndim=1):
     Pytables does not allow table rows to be arrays. Thus, a record array with 
     dimension > 1 cannot be converted to an HDF table. However, it will accept 
     a 1-D record array whose *fields* are arrays. This function rearranges the 
-    dimensions of the entire array and it fields, retaining *ndim* dimensions 
+    dimensions of the entire array and its fields, retaining *ndim* dimensions 
     and pushing the rest into the fields.
     
     One dimension is suitable for creating a table, whereas zero dimensions 
@@ -248,8 +248,10 @@ def shoehorn_recarray(x, ndim=1):
     dtype([('a', '<f8', (4, 3)), ('b', '<f8', (4, 3))])
     """
     u = unstruct(x)
-    r = np.rollaxis(u, len(x.shape), 1)
-    dtype = [i[:2] + r.shape[2:] for i in ast.literal_eval(str(x.dtype))]
+    # The shape of u is x.shape + (#fields,) + fieldshape
+    # Roll the #fields dimension to position ndim (note zero-based indexing)
+    r = np.rollaxis(u, len(x.shape), ndim)
+    dtype = [i[:2] + r.shape[1 + ndim:] for i in ast.literal_eval(str(x.dtype))]
     return r.flatten().view(dtype)
 
 def test_shoehorn_recarray():
