@@ -242,6 +242,7 @@ def shoehorn_recarray(x, ndim=1):
     dtype([('a', '<f8', (3,)), ('b', '<f8', (3,))])
     
     >>> z = shoehorn_recarray(x, ndim=0)
+    >>> np.testing.assert_equal(x["a"], z["a"])
     >>> z.shape
     ()
     >>> z.dtype
@@ -251,8 +252,8 @@ def shoehorn_recarray(x, ndim=1):
     # The shape of u is x.shape + (#fields,) + fieldshape
     # Roll the #fields dimension to position ndim (note zero-based indexing)
     r = np.rollaxis(u, len(x.shape), ndim)
-    dtype = [i[:2] + r.shape[1 + ndim:] for i in ast.literal_eval(str(x.dtype))]
-    return r.flatten().view(dtype)
+    dtype = [i[:2] + (r.shape[1 + ndim:],) for i in ast.literal_eval(str(x.dtype))]
+    return r.flatten().view(dtype).squeeze()
 
 def test_shoehorn_recarray():
     """Shoehorn multi-dimensional record array into HDF table."""
