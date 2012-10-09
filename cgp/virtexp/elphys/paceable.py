@@ -31,13 +31,13 @@ has a
 """  # pylint: disable=C0301
 
 from __future__ import division # 7 / 4 = 1.75 rather than 1
-from collections import namedtuple, deque
-import ctypes
-
-import numpy as np
-from pysundials import cvode
-
 from . import ap_stats
+from collections import namedtuple, deque
+from pysundials import cvode
+import ctypes
+import numpy as np
+
+
 
 class Paceable(object):
     """
@@ -73,7 +73,7 @@ class Paceable(object):
         
         >>> from cgp.virtexp.elphys.examples import Bond
         >>> cell = Bond()
-        >>> t, y, stats = cell.ap()
+        >>> t, y, stats = cell.ap(p_repol=(0.25, 0.5))
         
         Stimulation starts at time 0.0, overriding any default in the CellML:
         
@@ -83,7 +83,7 @@ class Paceable(object):
         Calling :meth:`ap` again resumes from the previous state, resetting 
         time to 0:
         
-        >>> t1, Y1, stats1 = cell.ap()
+        >>> t1, Y1, stats1 = cell.ap(p_repol=(0.25, 0.5))
         >>> t1[0]
         0.0
         
@@ -102,9 +102,9 @@ class Paceable(object):
         {'amp': 115.44...,
          'base': -82.4201999...,
          'caistats': {'amp': 0.525...},
-         'decayrate': array([ 0.0911...
+         'decayrate': array([ 0.223...
          'peak': 33.021572...,
-         't_repol': array([  3.31012...,   5.125...,  14.282...,  22.7...]),
+         't_repol': array([  3.31012...,   5.125...]),
          'ttp': 1.844189...}
         
         Module-level variables are shared between instances!
@@ -129,16 +129,16 @@ class Paceable(object):
         :meth:`~cvodeint.namedcvodeint.Namedcvodeint.autorestore`.
         
         >>> with cell.autorestore(V=-60, stim_period=50):
-        ...     t, y, stats = cell.ap()
+        ...     t, y, stats = cell.ap(p_repol=(0.25, 0.5))
         >>> t[-1]
         50.0
         >>> pprint(stats)
         {'amp': 87.74...,
          'base': -60.0,
          'caistats': {'amp': 0.182...},
-         'decayrate': array([ 0.205...
+         'decayrate': array([ 0.369...
          'peak': 27.74...,
-         't_repol': array([  2.550...,   3.648...,   7.047...,  11.497...]),
+         't_repol': array([  2.550...,   3.648...]),
          'ttp': 1.327...}
         """
         if rootfinding:
@@ -319,15 +319,15 @@ class Paceable(object):
         
         >>> from cgp.virtexp.elphys.examples import Bond
         >>> cell = Bond()
-        >>> t, y, stats = cell.ap()
+        >>> t, y, stats = cell.ap(p_repol=(0.25, 0.5))
         >>> from pprint import pprint # platform-independent order of dict items
         >>> pprint(stats)
         {'amp': 115.44...,
          'base': -82.4201999...,
          'caistats': {'amp': 0.525...},
-         'decayrate': array([ 0.0911...
+         'decayrate': array([ 0.223...
          'peak': 33.021572...,
-         't_repol': array([  3.31012...,   5.125...,  14.282...,  22.7...]),
+         't_repol': array([  3.31012...,   5.125...]),
          'ttp': 1.844189...}
         """
         
@@ -383,7 +383,7 @@ class Paceable(object):
         
         >>> from cgp.virtexp.elphys.examples import Bond
         >>> bond = Bond()
-        >>> aps = list(bond.aps(n=2))
+        >>> aps = list(bond.aps(n=2, p_repol=(0.25, 0.5)))
         
         You can iterate over the list of tuples like so:
         
@@ -394,11 +394,11 @@ class Paceable(object):
         71.43 [-84.000...]
         {'amp': 115.44...,
          'caistats': {'amp': 0.525...},
-         'decayrate': array([ 0.0911...}
+         'decayrate': array([ 0.223...}
         142.86 [-84.072...]
         {'amp': 110.86...,
          'caistats': {'amp': 0.208...},
-         'decayrate': array([ 0.0932...}
+         'decayrate': array([ 0.193...}
         
         Separate lists for time, states, stats:
         
@@ -426,7 +426,7 @@ class Paceable(object):
         
         >>> ix = np.r_[0:2, -2:0]
         >>> t[1][ix]
-        array([  71.43      ,   71.43012...,  142.85999...,  142.86      ])
+        array([  71.43      ,   71.43012...,  142...,  142.86      ])
         >>> y[1].V[ix]
         array([[-84.000...], [-83.99...], [-84.07...], [-84.07...]])
         """
@@ -690,9 +690,9 @@ def ap_stats_array(stats):
     >>> tt = Tentusscher()
     >>> t, y, stats = tt.ap()
     >>> ap_stats_array(stats)
-    rec.array([ (121.10..., -86.2..., 34.90..., 1.35..., 0.050..., 220.0..., 
+    rec.array([ (121.10..., -86.2..., 34.90..., 1.35..., 0.0183..., 220.0..., 
     298.3..., 321.9..., 330.1..., 0.00050..., 0.0002..., 0.00070..., 10.2..., 
-    0.017..., 40.42..., 74.47..., 122.7..., 167.3...)], 
+    0.0158..., 40.42..., 74.47..., 122.7..., 167.3...)], 
     dtype=[('apamp', '<f8'), ('apbase', '<f8'), ('appeak', '<f8'), 
     ('apttp', '<f8'), ('apdecayrate', '<f8'), ('apd25', '<f8'), 
     ('apd50', '<f8'), ('apd75', '<f8'), ('apd90', '<f8'), ('ctamp', '<f8'), 

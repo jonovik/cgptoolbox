@@ -14,7 +14,7 @@ def test_hodgkin():
     >>> t, y, stats = hh.ap()
     >>> ap_stats_array(stats)
     rec.array([ (107.3..., -75.0, 32.3..., 
-    2.20..., 1.281..., 3.241..., 
+    2.20..., 0.993..., 3.241..., 
     4.013..., 4.843..., 5.269...)],
     dtype=[('apamp', '<f8'), ('apbase', '<f8'), ('appeak', '<f8'), 
     ('apttp', '<f8'), ('apdecayrate', '<f8'), ('apd25', '<f8'), 
@@ -115,7 +115,7 @@ def test_bond_uhc():
     ...         np.testing.assert_almost_equal(a[k], au[k], decimal=3)
     ...     except AssertionError:
     ...         print k, a[k], au[k]
-    ctttp [ 15.69...] [ 15.71...]
+    ctttp [ 15.68...] [ 15.69...]
     """
     pass
 
@@ -168,13 +168,13 @@ def test_tentusscher():
      'base': -86.2...,
      'caistats': {'amp': 0.0005032...,
                   'base': 0.0002000...,
-                  'decayrate': array([ 0.0173...]),
+                  'decayrate': array([ 0.0158...]),
                   'i': array([...]),
                   'p_repol': array([ 0.25,  0.5 ,  0.75,  0.9 ]),
                   'peak': 0.0007032...,
                   't_repol': array([  40.42...,   74.47...,  122.7...,  167.3...]),
                   'ttp': 10...},
-     'decayrate': array([ 0.050...]),
+     'decayrate': array([ 0.0183...]),
      'i': array([...]),
      'p_repol': array([ 0.25,  0.5 ,  0.75,  0.9 ]),
      'peak': 34.90...,

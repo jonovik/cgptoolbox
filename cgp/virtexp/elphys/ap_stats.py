@@ -42,26 +42,37 @@ def apd(time, voltage, p_repol = (0.25, 0.50, 0.75, 0.90),
     >>> p_repol = np.r_[0.25, 0.5, 0.75, 0.9]
     >>> time = np.linspace(-np.pi,np.pi,101)
     >>> voltage = np.cos(time)
-    >>> pprint(apd(time, voltage, p_repol, interpolate=False)) # slight underestimate
+    
+    Without interpolation.
+    
+    >>> pprint(apd(time, voltage, p_repol, interpolate=False))
     {'amp': 2.0,
      'base': -1.0,
-     'decayrate': array([ 1.82964285]),
+     'decayrate': array([ 1.394...]),
      'i': array([50, 66, 75, 83, 89]),
      'p_repol': array([ 0.25,  0.5 ,  0.75,  0.9 ]),
      'peak': 1.0,
      't_repol': array([ 1.00530965,  1.57079633,  2.07345115,  2.45044227]),
      'ttp': 4.4408920985006262e-16}
-    >>> pprint(apd(time, voltage, p_repol)) # linear interpolation (default)
+    
+    Linear interpolation is the default.
+    
+    >>> pprint(apd(time, voltage, p_repol))
     {'amp': 2.0,
      'base': -1.0,
-     'decayrate': array([ 1.73475014]),
+     'decayrate': array([ 1.388...]),
      'i': array([50, 66, 75, 83, 89]),
      'p_repol': array([ 0.25,  0.5 ,  0.75,  0.9 ]),
      'peak': 1.0,
      't_repol': array([ 1.04693965,  1.57079633,  2.09465301,  2.49855986]),
      'ttp': 4.4408920985006262e-16}
-    >>> np.arccos(1 - 2 * p_repol) # exact solution for this example
-    array([ 1.04719755,  1.57079633,  2.0943951 ,  2.49809154])
+    
+    Compare to exact solution for t_repol.
+    
+    >>> np.testing.assert_allclose(
+    ...     np.arccos(1 - 2 * p_repol),
+    ...     apd(time, voltage, p_repol)["t_repol"], 
+    ...     rtol=1e-3)
     
     Interpolation of t_repol may go haywire on aberrant trajectories.
     If any t_repol does not satisfy
