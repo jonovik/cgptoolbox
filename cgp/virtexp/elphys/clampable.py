@@ -651,19 +651,23 @@ class Clampable(object):
             for k in "chunksize maxsteps reltol abstol".split())
         
         pr_old = self.pr.copy()
-        clamped = Namedcvodeint(dynclamped, self.t, y, self.pr, **oldkwargs)
+        
+        args, kwargs = self._init_args
+        clamped_model = self.__class__(*args, **kwargs)
+        Namedcvodeint.__init__(clamped_model, 
+            dynclamped, self.t, y, self.pr, **oldkwargs)
         
         # Disable any hard-coded stimulus protocol
-        if "stim_amplitude" in clamped.dtype.p.names:
-            clamped.pr.stim_amplitude = 0
+        if "stim_amplitude" in clamped_model.dtype.p.names:
+            clamped_model.pr.stim_amplitude = 0
         
         try:
-            yield clamped # enter "with" block
+            yield clamped_model # enter "with" block
         finally:
             self.pr[:] = pr_old
-            for k in clamped.dtype.y.names:
+            for k in clamped_model.dtype.y.names:
                 if k in self.dtype.y.names:
-                    setattr(self.yr, k, getattr(clamped.yr, k))
+                    setattr(self.yr, k, getattr(clamped_model.yr, k))
 
     def vclamp(self, protocol, nthin=None):
         """

@@ -376,21 +376,24 @@ class Namedcvodeint(Cvodeint):
         oldkwargs = dict((k, getattr(self, k)) 
             for k in "chunksize maxsteps reltol abstol".split())
         
-        clamped = self.__class__(clamped, self.t, y, self.pr, **oldkwargs)
+        args, kwargs = self._init_args
+        clamped_model = self.__class__(*args, **kwargs)
+        Namedcvodeint.__init__(clamped_model, 
+            clamped, self.t, y, self.pr, **oldkwargs)
         
         # Disable any hard-coded stimulus protocol
         if "stim_amplitude" in self.dtype.p.names:
             # self.pr.stim_amplitude is mutable, so cast to float
             old_stim_amplitude = float(self.pr.stim_amplitude)
-            clamped.pr.stim_amplitude = 0
+            clamped_model.pr.stim_amplitude = 0
         
         try:
-            yield clamped # enter "with" block
+            yield clamped_model  # enter "with" block
         finally:
             # Copy values of state variables from clamped to original model
-            for k in clamped.dtype.y.names:
+            for k in clamped_model.dtype.y.names:
                 if k in self.dtype.y.names:
-                    setattr(self.yr, k, getattr(clamped.yr, k))
+                    setattr(self.yr, k, getattr(clamped_model.yr, k))
             # Restore any hard-coded stimulus protocol
             if "stim_amplitude" in self.dtype.p.names:
                 self.pr.stim_amplitude = old_stim_amplitude 
