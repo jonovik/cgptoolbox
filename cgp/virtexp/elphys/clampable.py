@@ -149,12 +149,32 @@ def pairbcast(*pairs):
      [(2, 3), (5, 6), (7, 8)], [(2, 3), (5, 6), (7, 9)], 
      [(2, 4), (5, 6), (7, 8)], [(2, 4), (5, 6), (7, 9)]]
     """
-    flat = [np.atleast_1d(i) for p in pairs for i in p] # d0 v0 d1 v1 ...
-    pb = np.broadcast_arrays(*np.ix_(*flat)) # Cartesian product of d0 v0 ...
-    # Zip up corresponding items of the broadcasted, flattened d0 v0 ...
-    flatb = zip(*(np.ravel(i) for i in pb))
-    # Unflatten into pairs within each item of the Cartesian product
-    return [zip(i[::2], i[1::2]) for i in flatb]
+    # flat = d0 v0 d1 v1 ..., where each item can be scalar or vector
+    flat = np.array([i for p in pairs for i in p], dtype=object)
+    
+    # Will np.broadcast_arrays() only the vector-valued items of `flat`
+    need_bc = np.array([len(np.atleast_1d(i)) > 1 for i in flat], dtype=bool)
+    if not any(need_bc):
+        # Standardize to a sequence (here, of length 1) of sequences of pairs
+        return [[tuple(pair) for pair in pairs]]
+    else:
+        # bc = Cartesian product of the vector-valued items of `flat`
+        bc = np.broadcast_arrays(*np.ix_(*flat[need_bc]))
+        # Element number "i" of bc is a vector along the i-th dimension.
+        # The limit of np.ndarray.ndim <= 32 means that we can have at most 32 
+        # vector-valued items of `flat`.
+        
+        # Zip up corresponding items of the broadcasted, flattened vectors
+        flatbc = zip(*(np.ravel(i) for i in bc))
+        
+        result = []
+        for bc in flatbc:
+            # Place the broadcasted items among copies of the scalar ones
+            item = np.copy(flat)
+            item[need_bc] = bc
+            # Zip back into pairs
+            result.append(zip(item[::2], item[1::2]))
+        return result
 
 def ndbcast(*tuples):
     """
