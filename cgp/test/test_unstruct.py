@@ -52,9 +52,9 @@ def test_zero_rank():
     Unstructuring them was tricky, but finally works.
     
     >>> unstruct(x0)
-    array([0, 1])
+    array([0, 1]...)
     >>> unstruct(x1)
-    array([0, 1])
+    array([0, 1]...)
     """
     fieldtype = np.int32   # ensure same result on 32- and 64-bit platforms
     dtype = [("a", fieldtype), ("b", fieldtype)]

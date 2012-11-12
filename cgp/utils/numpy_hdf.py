@@ -127,7 +127,7 @@ def numpy2hdf(src, dst, where="/", ext=".npy", recursive=True):
                     dictgroup = "/" + (group + "/" + name).strip("/")
                     try:
                         a = load(filename, mmap_mode="r")
-                    except ValueError: # cannot memmap array with Python objects
+                    except (IndexError, ValueError): # cannot memmap array with Python objects
                         a = np.load(filename)
                     if (a.dtype == object) and a.shape==():
                         dict2hdf(a.item(), f, dictgroup)

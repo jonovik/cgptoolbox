@@ -335,9 +335,11 @@ class DictHdfcache(object):
         
         Here's the dictionary with the two caches.
         
-        >>> sorted(dicthdfcache.d.items(), key=lambda x: x[0].__name__)
-        [(<function f at 0x...>, {...: 4, ...: 9}), 
-         (<function g at 0x...>, {...: 27})]
+        >>> srt = sorted(dicthdfcache.d.items(), key=lambda x: x[0].__name__)
+        >>> for k, v in srt:
+        ...     print k, sorted(v.items(), key=lambda x: x[-1])
+        <function f at 0x...> [(..., 4), (..., 9)]
+        <function g at 0x...> [(..., 27)]
         
         A function with both required, default, and variable-length unnamed and 
         keyword arguments.
