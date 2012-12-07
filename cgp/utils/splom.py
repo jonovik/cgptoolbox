@@ -183,7 +183,7 @@ def insax(ax, i, j, h, w, **kwargs):
     >>> ax = np.array([subplot(4, 4, i) for i in range(1, 17)], 
     ...     object).reshape(4, 4)
     >>> getp(insax(ax, 1, 1, 2, 2), "position")
-    Bbox('array([[ 0.32717391,  0.30869565],...[ 0.69782609,  0.69130435]])')
+    Bbox(array([[ 0.32717391,  0.30869565],...[ 0.69782609,  0.69130435]]))
     """
     (left, _), (_, top) = getp(ax[i, j], "position").get_points()
     (_, bottom), (right, _) = getp(ax[i+h-1, j+w-1], "position").get_points()

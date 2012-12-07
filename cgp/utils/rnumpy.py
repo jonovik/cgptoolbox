@@ -90,10 +90,10 @@ def rwrap(func):
     
     >>> funfun = r("function(callback, x) callback(x)")
     >>> funfun(rwrapped, x)
-    array([ 3, 12])
+    array([ 3, 12]...)
     (R-style, sealed)
     >>> r.do_call(rwrapped, r.list(x))
-    array([ 3, 12])
+    array([ 3, 12]...)
     (R-style, sealed)
     
     However, an rwrapped function cannot be called from Python.
