@@ -1025,7 +1025,7 @@ def mmfit(x, y, rse=False):
     
     Verify fix for excessive output on error (unwanted dump of source code).
     
-    >>> from cgp.rnumpy import rnumpy
+    >>> from cgp.utils import rnumpy
     >>> rnumpy.RRuntimeError.max_lines = 0
     >>> mmfit(range(5), range(5))
     (nan, nan)
