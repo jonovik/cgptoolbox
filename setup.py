@@ -7,7 +7,7 @@ setup(name='cgptoolbox',
       description='A toolbox for causally cohesive genotype-phenotype modeling',
       maintainer='Jon Olav Vik',
       maintainer_email='jonovik@gmail.com',
-      url='http://arken.umb.no/~jonvi/cgptoolbox/'
+      url='http://arken.umb.no/~jonvi/cgptoolbox/',
       download_url='https://github.com/jonovik/cgptoolbox',
       packages = find_packages(),
      )
