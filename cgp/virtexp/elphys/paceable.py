@@ -621,7 +621,7 @@ class Paceable(object):
             # # Fit dynamic restitution curve
             # # APD = a - b exp(-DI/tau) for all R*
             # # ln(APD-a) = ln b - (1/tau) DI
-            # from cgp.rnumpy.rnumpy import r
+            # from cgp.utils.rnumpy import r
             # Rs, = [step.R for step in yld if step.name == "R*"]
             # a, b = np.linalg.lstsq(
             #     np.c_[np.ones_like(Rs.di), Rs.di], Rs.apd)[0]

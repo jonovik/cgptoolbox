@@ -3,7 +3,7 @@
 import numpy as np
 import rpy2.rinterface as ri
 
-from cgp.rnumpy.rnumpy import r, py2ri
+from cgp.utils.rnumpy import r, py2ri
 from cgp.virtexp.elphys.examples import Bond
 
 r("funfun <- function(callback, x) callback(x)")

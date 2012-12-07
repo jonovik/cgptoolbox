@@ -8,7 +8,7 @@ from IPython.parallel import Client
 import rpy2.rinterface as ri
 from joblib import Memory
 
-from cgp.rnumpy.rnumpy import r, RRuntimeError, rcopy, py2ri
+from cgp.utils.rnumpy import r, RRuntimeError, rcopy, py2ri
 import cgp.virtexp.elphys.examples as ex
 from cgp.phenotyping.attractor import AttractorMixin
 from cgp.virtexp.elphys.paceable import ap_stats_array

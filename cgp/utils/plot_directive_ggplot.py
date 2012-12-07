@@ -289,7 +289,7 @@ def setup(app):
                }
 
     app.add_directive('ggplot', plot_directive, True, (0, 2, False), **options)
-    app.add_config_value('ggplot_pre_code', 'from cgp.rnumpy.rnumpy import *\nr.library("ggplot2")', True)
+    app.add_config_value('ggplot_pre_code', 'from cgp.utils.rnumpy import *\nr.library("ggplot2")', True)
     app.add_config_value('ggplot_include_source', False, True)
     app.add_config_value('ggplot_formats', ['png', 'hires.png', 'pdf'], True)
     app.add_config_value('ggplot_basedir', None, True)

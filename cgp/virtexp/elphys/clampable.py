@@ -12,7 +12,7 @@ from itertools import chain
 import numpy as np
 
 try:
-    from cgp.rnumpy.rnumpy import r, RRuntimeError
+    from cgp.utils.rnumpy import r, RRuntimeError
     have_rnumpy = True
 except ImportError:
     have_rnumpy = False
@@ -1285,7 +1285,7 @@ def markovplots(t, y, a=None, model=None):
     
     >>> print "Text output ignored:"; L = markovplots(t[i], y[i], model=bond)
     Text output ignored:...
-    >>> from cgp.rnumpy.rnumpy import r
+    >>> from cgp.utils.rnumpy import r
     >>> r.windows(record=True) # doctest: +SKIP
     >>> print L # doctest: +SKIP    
     """

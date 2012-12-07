@@ -6,7 +6,7 @@ matplotlib.use("agg")
 from matplotlib.pyplot import (plot, subplots_adjust, subplot, axes, xlabel, 
     ylabel, figure, setp, getp, gcf, hist)
 try:
-    from cgp.rnumpy.rnumpy import r
+    from cgp.utils.rnumpy import r
 except ImportError:
     import warnings
     warnings.warn("rnumpy not installed, some functions will not work.")
@@ -26,7 +26,7 @@ def rlist2pydict(x):
     
     Example:
     
-    >>> from cgp.rnumpy.rnumpy import *
+    >>> from cgp.utils.rnumpy import *
     >>> d = dict(i=123, x=0.25, s="test", nested=dict(j=456, t="nested list"))
     >>> r["y"] = rcopy(d)
     

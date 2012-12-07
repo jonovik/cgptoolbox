@@ -5,7 +5,7 @@
 import numpy as np
 # Bridge to the R statistical software
 import rpy2.rinterface as ri
-from cgp.rnumpy.rnumpy import r, py2ri
+from cgp.utils.rnumpy import r, py2ri
 # Caching and on-demand recomputing
 from joblib import Memory
 
