@@ -54,7 +54,7 @@ from cgp.utils.rnumpy import r, py2ri, rwrap
 from joblib import Memory
 
 # Wrapping ODE solver for CellML so it knows about variable names, etc.
-from cgp.physmod.cellmlmodel import Cellmlmodel, get_latest_exposure
+from cgp.physmod.cellmlmodel import Cellmlmodel
 # Virtual experiments
 from cgp.phenotyping.attractor import AttractorMixin
 from cgp.virtexp.elphys.clampable import Clampable
@@ -98,8 +98,6 @@ class Model(Cellmlmodel, Paceable, AttractorMixin):
     """CellML model wrapper with virtual experiments mixed in."""
     pass
 
-@route
-def sensitivity(protocol, statistic, workspace, exposure="", changeset="", variant=""):
 @failwithnanlikefirst
 @mem.cache()
 def phenotypes(m, par=None):
