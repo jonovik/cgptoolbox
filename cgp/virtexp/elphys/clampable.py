@@ -1237,12 +1237,11 @@ def markovplot(t, y, a=None, names=None, model=None, comp=None, col="bgrcmyk",
         # r["df"] = r("df[c('" + "','".join(["t"] + names) + "')]")
         r.library("ggplot2")
         r.library("reshape")
-        r.library("jov")
         # r.plot(r.df)
         r["xm"] = r.melt(r.df, id_var="t")
         cmd = ("qplot(t, value, fill=variable, geom='area', position='stack', "
             "data=xm) + scale_fill_brewer('State', palette='Set3') + "
-            "theme_bw() + blankopt")
+            "theme_bw()")
         if comp:
             cmd += "+ opts(title='%s')" % comp
         return r(cmd)
