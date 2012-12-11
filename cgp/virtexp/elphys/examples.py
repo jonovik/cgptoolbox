@@ -170,7 +170,7 @@ class Bond(Cellmlmodel, Paceable, Clampable):
         
         This is just a wrapper for 
         :meth:`~cvodeint.namedcvodeint.Namedcvodeint.autorestore`, 
-        and defaults to a plain :meth:`autorestore` if *name*=None. 
+        and defaults to a plain :meth:`autorestore` if *name* = None. 
         A Bond object has scenarios representing "apex" and "septum" cells, 
         with apex as the default. The two scenarios are available as separate 
         models at cellml.org.
@@ -185,7 +185,7 @@ class Bond(Cellmlmodel, Paceable, Clampable):
         
             from cgp.virtexp.elphys.examples import Bond
             bond = Bond()
-            for k in "apex", "septum":
+            for k in "apical", "septal":
                 with bond.scenario(k):
                     t, y, stats = bond.ap()
                 plt.plot(t, y.V, label=k)

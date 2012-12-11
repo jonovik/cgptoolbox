@@ -5,9 +5,11 @@ Using IPython.parallel to parallelize the computations in simple.py.
 
 Parallelization can be conveniently applied using decorator syntax:
 
-@lv.parallel()
-def f(x):
-    ...
+.. code-block:: none
+   
+   @lv.parallel()
+   def f(x):
+       ...
 
 However, cgp.examples.simple.ph is left undecorated so we can illustrate 
 different tools for caching and parallelization. 
