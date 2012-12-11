@@ -16,11 +16,42 @@ Installing the cgptoolbox
 
 .. todo::
 
-   Document successful installation as root user using 
-   `Ubuntu <http://www.ubuntu.com/download/ubuntu/download>`_'s
-   package system. Ubuntu also works well under 
-   `VirtualBox <http://www.virtualbox.org/>`_
-   on 64-bit Windows 7 and probably other platforms.
+   Describe installation process in a typical HPC environment, non-python dependencies (R, hdf5,
+   zeromq,) and file of required/recommended python packages for pip installation.
+   
+Installing on `Ubuntu <http://www.ubuntu.com/download/ubuntu/download>`_ 12.10 with root access
+-----------------------------------------------------------------------------------------------
+Installing cgptoolbox on the latest version of Ubuntu is relatively easy and Ubuntu also
+works well under `VirtualBox <http://www.virtualbox.org/>`_ on 64-bit Windows 7 and other platforms. 
+Most dependencies such as `hdf5 <http://www.hdfgroup.org/HDF5/>`_, `R <http://r-project.org>`_
+and various `Python <http://python.org>`_ packages are in the Ubuntu repositories an can 
+be installed with apt-get. The code line will install all dependencies.
+
+.. code-block:: bash
+
+   sudo apt-get install python-tables python-networkx python-pip python-rpy2 python-joblib cython
+
+For solving differential equations the cgptoolbox utilizes the `SUNDIALS <http://www.llnl.gov/CASC/sundials>`_ 
+library and the python bindings provided by the Python package `pysundials <http://pysundials.sourceforge.net>`_.
+Ubuntu 12.10 offer SUNDIALS v.2.5.0, but the stable release of `pysundials <http://pysundials.sourceforge.net>`_ is for
+v.2.3.0. The following lines of code adds the repository and signing key for Debian stable, installs libraries and header 
+files for the 2.3.0 version of SUNDIALS and protect the packages from upgrading.
+
+.. code-block:: bash
+
+   sudo add-apt-repository 'deb http://ftp.de.debian.org/debian squeeze main'
+   sudo apt-get install debian-archive-keyring					#not tested properly yet
+   sudo apt-get install libsundials-serial=2.3.0-2 libsundials-serial-dev=2.3.0-2
+   echo "libsundials-serial hold" | sudo dpkg --set-selections
+   echo "libsundials-serial-dev hold" | sudo dpkg --set-selections
+
+Once the right version of SUNDIALS is installed, pysundials and cgptoolbox can be installed 
+with `pip <http://www.pip-installer.org/>`_ directly from their code repositories.
+
+.. code-block:: bash
+
+   sudo pip install svn+https://pysundials.svn.sourceforge.net/svnroot/pysundials/branches/2.3.0/@74
+   sudo pip install git+https://github.com/jonvi/cgptoolbox.git
 
 Building the documentation
 --------------------------
