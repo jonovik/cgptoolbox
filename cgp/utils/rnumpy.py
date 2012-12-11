@@ -17,7 +17,6 @@ from cStringIO import StringIO
 
 import numpy as np
 import rpy2.rinterface as ri
-from rpy2.robjects.conversion import py2ri
 
 __all__ = ("r", "rcopy", "rarray", "rzeros", "rones", "rwrap", "rcapture", 
     "rstr")
@@ -48,7 +47,7 @@ def rcapture():
     """
     Context manager to capture R output.
     
-    This is useful to capture output made with cat().
+    This is useful to capture output made e.g. with cat().
     
     >>> with rcapture() as s:
     ...     output = r.cat("hello")
@@ -56,15 +55,6 @@ def rcapture():
     NULL
     >>> s.getvalue()
     'hello'
-    >>> with rcapture() as s:
-    ...     r.str(r.iris)
-    >>> print s.getvalue()
-    'data.frame':    150 obs. of  5 variables:
-     $ Sepal.Length: num  5.1 4.9 4.7 4.6 5 5.4 4.6 5 4.4 4.9 ...
-     $ Sepal.Width : num  3.5 3 3.2 3.1 3.6 3.9 3.4 3.4 2.9 3.1 ...
-     $ Petal.Length: num  1.4 1.4 1.3 1.5 1.4 1.7 1.4 1.5 1.4 1.5 ...
-     $ Petal.Width : num  0.2 0.2 0.2 0.2 0.2 0.4 0.3 0.2 0.2 0.1 ...
-     $ Species     : Factor w/ 3 levels "setosa","versicolor",..: 1 1 1 1 ...
     """
     capture = r.textConnection(".capture", "w")
     try:        
@@ -211,31 +201,13 @@ def test_rcopy():
     assert isinstance(rcopy("foo"), RWrapper)
     assert rcopy(1)[0] == 1
 
-def _capture_r_output(f, *args, **kwargs):
-    if hasattr(ri, "get_writeconsole"):
-        prev = ri.get_writeconsole()
-    else:
-        import sys
-        prev = sys.stdout.write
-    buf = []
-    def capture(s):
-        buf.append(s)
-    try:
-        ri.set_writeconsole(capture)
-        f(*args, **kwargs)
-    finally:
-        ri.set_writeconsole(prev)
-    return "".join(buf)
-    
-def test__capture_r_output():
-    assert _capture_r_output(r.print_, 1) == "[1] 1\n"
-
 # For interactive front-ends:
 def is_complete_expression(string):
     try:
         # Don't actually want the output, but this suppresses any
         # direct-to-console printing of errors:
-        _capture_r_output(r.parse, text=string)
+        with rcapture():
+            r.parse(text=string)
     except RRuntimeError, e:
         # XX FIXME: Surely there is a better way to do this...
         if "unexpected end of input" in e.exc.message:
@@ -272,8 +244,9 @@ class RRuntimeError(ri.RRuntimeError):
             self.tb = ""
         else:
             try:
-                self.tb = _capture_r_output(
-                    r.traceback, max_lines=self.max_lines)
+                with rcapture() as s:
+                    r.traceback(max_lines=self.max_lines)
+                self.tb = s.getvalue()
             except ri.RRuntimeError:
                 self.tb = "<error generating R traceback>"
 
@@ -287,17 +260,17 @@ class RRuntimeError(ri.RRuntimeError):
         return s.strip()
 
 def _r_repr(sexp):
-    # Fixme: hack to avoid the side effect of _capture_r_output()
-    # dumping function definitions to screen.
+    """
+    Text representation of R object.
+    
+    >>> _r_repr(ri.SexpVector([1, 2, 3], ri.INTSXP))
+    '[1] 1 2 3'
+    """
     if r.is_function(sexp):
         return "<R function>"
-    output = _capture_r_output(r["show"], sexp)
-    while output.endswith("\n"):
-        output = output[:-1]
-    return output
-
-def test__r_repr():
-    assert _r_repr(ri.SexpVector([1, 2, 3], ri.INTSXP)) == "[1] 1 2 3"
+    with rcapture() as s:
+        r.show(sexp)
+    return s.getvalue().rstrip("\n")
 
 class RWrapper(object):
     def __init__(self, sexp):
