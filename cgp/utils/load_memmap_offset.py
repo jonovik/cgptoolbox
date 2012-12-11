@@ -107,46 +107,31 @@ def open_memmap(filename, mode='r+', dtype=None, shape=None,
     Open a .npy file as a memory-mapped array, with offset argument.
 
     This may be used to read an existing file or create a new one.
+    
+    :param str filename: The name of the file on disk. This may not be a 
+        file-like object.
+    :param str mode: The mode to open the file with. In addition to the 
+        standard file modes, 'c' is also accepted to mean "copy on write". 
+        See `numpy.memmap` for the available mode strings.
+    :param dtype dtype: The data type of the array if we are creating a 
+        new file in "write" mode.
+    :param tuple shape: The shape of the array if we are creating a new 
+        file in "write" mode. Shape of (contiguous) slice if opening an 
+        existing file.
+    :param bool fortran_order: Whether the array should be Fortran-contiguous 
+        (True) or C-contiguous (False) if we are creating a new file in 
+        "write" mode.
+    :param tuple version: If the mode is a "write" mode, then this is the 
+        version (major, minor) of the file format used to create the file.
+    :param int offset: Number of elements to skip along the first dimension.
+    :return numpy.memmap: The memory-mapped array.
 
-    Parameters
-    ----------
-    filename : str
-        The name of the file on disk. This may not be a file-like object.
-    mode : str, optional
-        The mode to open the file with. In addition to the standard file modes,
-        'c' is also accepted to mean "copy on write". See `numpy.memmap` for
-        the available mode strings.
-    dtype : dtype, optional
-        The data type of the array if we are creating a new file in "write"
-        mode.
-    shape : tuple of int, optional
-        The shape of the array if we are creating a new file in "write"
-        mode. Shape of (contiguous) slice if opening an existing file.
-    fortran_order : bool, optional
-        Whether the array should be Fortran-contiguous (True) or
-        C-contiguous (False) if we are creating a new file in "write" mode.
-    version : tuple of int (major, minor)
-        If the mode is a "write" mode, then this is the version of the file
-        format used to create the file.
-    offset : int, optional
-        Number of elements to skip along the first dimension.
-
-    Returns
-    -------
-    marray : numpy.memmap
-        The memory-mapped array.
-
-    Raises
-    ------
-    ValueError
-        If the data or the mode is invalid.
-    IOError
-        If the file is not found or cannot be opened correctly.
-
-    See Also
-    --------
-    numpy.memmap
-
+    Raises:
+    
+    * :exc:`ValueError` if the data or the mode is invalid
+    * :exc:`IOError` if the file is not found or cannot be opened correctly.
+    
+    .. seealso:: :func:`numpy.memmap`
     """
     if not isinstance(filename, basestring):
         raise ValueError("Filename must be a string.  Memmap cannot use" \
@@ -223,47 +208,37 @@ def load(file, mmap_mode=None, offset=0, shape=None): # pylint: disable=W0622
     """
     Load a pickled, ``.npy``, or ``.npz`` binary file.
 
-    Parameters
-    ----------
-    file : file-like object or string
-        The file to read.  It must support ``seek()`` and ``read()`` methods.
-        If the filename extension is ``.gz``, the file is first decompressed.
-    mmap_mode: {None, 'r+', 'r', 'w+', 'c'}, optional
+    :param file file: The file to read. It must support ``seek()`` and 
+        ``read()`` methods. If the filename extension is ``.gz``, the file is 
+        first decompressed.
+    :param str mmap_mode: {None, 'r+', 'r', 'w+', 'c'}
         If not None, then memory-map the file, using the given mode
         (see `numpy.memmap`).  The mode has no effect for pickled or
         zipped files.
+        
         A memory-mapped array is stored on disk, and not directly loaded
         into memory.  However, it can be accessed and sliced like any
         ndarray.  Memory mapping is especially useful for accessing
         small fragments of large files without reading the entire file
         into memory.
+    :return: array, tuple, dict, etc. data stored in the file.
 
-    Returns
-    -------
-    result : array, tuple, dict, etc.
-        Data stored in the file.
+    .. seealso::
+       
+       save, savez, loadtxt
+       memmap : Create a memory-map to an array stored in a file on disk.
 
-    Raises
-    ------
-    IOError
-        If the input file does not exist or cannot be read.
-
-    See Also
-    --------
-    save, savez, loadtxt
-    memmap : Create a memory-map to an array stored in a file on disk.
-
-    Notes
-    -----
-    - If the file contains pickle data, then whatever is stored in the
-      pickle is returned.
-    - If the file is a ``.npy`` file, then an array is returned.
-    - If the file is a ``.npz`` file, then a dictionary-like object is
-      returned, containing ``{filename: array}`` key-value pairs, one for
-      each file in the archive.
-
-    Examples
-    --------
+    .. note::
+    
+       * If the file contains pickle data, then whatever is stored in the
+         pickle is returned.
+       * If the file is a ``.npy`` file, then an array is returned.
+       * If the file is a ``.npz`` file, then a dictionary-like object is
+         returned, containing ``{filename: array}`` key-value pairs, one for
+         each file in the archive.
+    
+    Examples:
+    
     Store data to disk, and load it again:
 
     >>> np.save('/tmp/123', np.array([[1, 2, 3], [4, 5, 6]])) # doctest: +SKIP
@@ -277,7 +252,6 @@ def load(file, mmap_mode=None, offset=0, shape=None): # pylint: disable=W0622
     >>> X = np.load('/tmp/123.npy', mmap_mode='r') # doctest: +SKIP
     >>> X[1, :] # doctest: +SKIP
     memmap([4, 5, 6])
-
     """
     if (not mmap_mode) and (offset or shape):
         raise ValueError("Offset and shape should be used only with mmap_mode")

@@ -5,8 +5,7 @@ A Placevalue object can be indexed, iterated over, or converted to a list,
 returning vectors corresponding to successive integers.
 Conversely, vec2int() gives the integer corresponding to a given vector.
 
-Usage
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. rubric:: Usage
 
 Default is most significant digit first, so that the last digit changes fastest.
 
@@ -41,8 +40,7 @@ A single array is more compact.
 >>> np.array(p)
 array([[0, 0, 0], [0, 0, 1], ..., [1, 2, 3]])
 
-Named positions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. rubric:: Named positions
 
 Using a structured array with named fields to construct the Placevalue object.
 
@@ -53,8 +51,7 @@ array([(2, 1)], dtype=[('a', '<i2'), ('b', '<i2')])
 >>> np.concatenate(pr)
 array([(0, 0), (0, 1), ..., (1, 1), (1, 2)], dtype=[('a', '<i2'), ('b', '<i2')])
 
-Details
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. rubric:: Details
 
 The i-vectors correspond to a place-value system with prod(n) unique values.
 If i[0] is the least significant digit, position j has value prod(n[:j]).
@@ -86,8 +83,7 @@ class Placevalue(object):
     >>> Placevalue([3], names=["a"])
     Placevalue(rec.array([(3,)], dtype=[('a', '<i...
     
-    Named positions
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    .. rubric:: Named positions
     
     Passing a *names* argument makes the Placevalue object generate structured 
     ndarrays.
