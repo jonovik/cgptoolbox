@@ -77,7 +77,7 @@ from cgp.utils.rnumpy import r, py2ri
 
 r.library("sensitivity")
 
-def scalar_pheno(field):
+'''def scalar_pheno(field):
     """Make a function to return a named field of the phenotype array."""
     
     @ri.rternalize
@@ -87,7 +87,7 @@ def scalar_pheno(field):
         return py2ri(ph[field])
     
     return fun
-
+'''
 
 @route("/")
 def index():
@@ -106,14 +106,14 @@ def phenotypes(m, par=None):
     
     Wrap CellML model and adjust parameter names to conform with pacing protocol
     
-    >>> m = Model("/beeler_reuter_1977", rename=dict(
+    >>> m = Model(workspace="beeler_reuter_1977", rename=dict(
     ...     p=dict(IstimPeriod="stim_period", IstimAmplitude="stim_amplitude", 
     ...     IstimPulseDuration="stim_duration")), 
     ...     reltol=1e-10, maxsteps=1e6, chunksize=100000)
     >>> m.pr.IstimStart = 0
     >>> print "Result:"; phenotypes(m)
     Result:...
-    rec.array([ (115.79916504948676, -83.8571484860323, 31.94201656345446, 2.2874752384914316, 0.028670931254179646, 127.59944965660702, 217.00994846050892, 256.603569312542, 273.1447805720218, 0.006123691875574754, 0.00018323294813953113, 0.006306924823714285, 92.37382725716515, 0.048087845171091194, 242.27067937407378, 268.75796971825395, 285.9859823036512, 302.22667489121187)], 
+    rec.array([ (115.799..., -83.857..., 31.942..., 2.287..., 0.01384..., 127.599..., 217.0..., 256.603..., 273.144..., 0.00612..., 0.000183..., 0.00630..., 92.373..., 0.0336..., 242.2..., 268.75..., 285.98..., 302.226...)], 
           dtype=[('apamp', '<f8'), ('apbase', '<f8'), ('appeak', '<f8'), ('apttp', '<f8'), ('apdecayrate', '<f8'), ('apd25', '<f8'), ('apd50', '<f8'), ('apd75', '<f8'), ('apd90', '<f8'), ('ctamp', '<f8'), ('ctbase', '<f8'), ('ctpeak', '<f8'), ('ctttp', '<f8'), ('ctdecayrate', '<f8'), ('ctd25', '<f8'), ('ctd50', '<f8'), ('ctd75', '<f8'), ('ctd90', '<f8')])
     """
     with m.autorestore(_p=par):
@@ -125,7 +125,8 @@ def mat2par(mat, m, factors):
     """
     Make parameter recarray from R matrix.
     
-    >>> m = Model("11df840d0150d34c9716cd4cbdd164c8/bondarenko_szigeti_bett_kim_rasmusson_2004_apical")
+    >>> m = Model(workspace="bondarenko_szigeti_bett_kim_rasmusson_2004_apical",
+    ...     exposure="11df840d0150d34c9716cd4cbdd164c8")
     >>> mat2par(r.matrix(range(4), ncol=2), m, ["Cm", "Vmyo"])
     rec.array([ (0.0, 2.0, 1.2e-07, ... 
                 (1.0, 3.0, 1.2e-07, ...
@@ -144,7 +145,8 @@ def scalar_pheno(field, m, factors):
     The resulting function can only be called from R, not Python. 
     The input should be a matrix; each row will be passed to phenotypes().
     
-    >>> m = Model("11df840d0150d34c9716cd4cbdd164c8/bondarenko_szigeti_bett_kim_rasmusson_2004_apical")
+    >>> m = Model(workspace="bondarenko_szigeti_bett_kim_rasmusson_2004_apical",
+    ...     exposure="11df840d0150d34c9716cd4cbdd164c8")
     >>> factors = ["Cm", "Vmyo"]  # must be list, not tuple
     >>> caller = r("function(callback, x) callback(x)")
     >>> callback = scalar_pheno("apbase", m, factors)
@@ -162,7 +164,7 @@ def scalar_pheno(field, m, factors):
     
     return fun
 
-def do_sensitivity(exposure, workspace, protocol, statistic, par=None, seed=None, model=None):
+def do_sensitivity(exposure, workspace, protocol, statistic, par=None, seed=None, model=None, changeset=None, variant=None):
     """
     Sensitivity analysis.
     
@@ -175,7 +177,7 @@ def do_sensitivity(exposure, workspace, protocol, statistic, par=None, seed=None
     array([10])
     (R-style, sealed)
     
-    >>> m = Model("/beeler_reuter_1977", rename=dict(
+    >>> m = Model(workspace="beeler_reuter_1977", rename=dict(
     ...     p=dict(IstimPeriod="stim_period", IstimAmplitude="stim_amplitude", 
     ...     IstimPulseDuration="stim_duration", IstimStart="stim_start")), 
     ...     reltol=1e-10, maxsteps=1e6, chunksize=100000)
@@ -183,9 +185,9 @@ def do_sensitivity(exposure, workspace, protocol, statistic, par=None, seed=None
     >>> print "Result:", do_sensitivity("", "", "protocol", "apbase", ("C", "g_Na"), seed=1, model=m)
     Result:...
     Model runs: 6 
-                mu   mu.star      sigma
-    C    0.4906731 0.4906731 0.05627629
-    g_Na 0.9883321 0.9883321 0.01456468
+                  mu    mu.star      sigma
+    C     0.03672701 0.03672701 0.05130616
+    g_Na -0.41200934 0.41200934 0.04219007
 
     TODO: Make optional arguments of exposure, lower, upper, etc.
     TODO: Accept json dict of model_kwargs, morris_kwargs
@@ -215,7 +217,7 @@ def sensitivity(exposure, workspace, protocol, statistic):
     # par = json.loads(request.params.par)  # JSON or Python
     # par = request.params.getall("par")  # HTML multiple SELECT
     seed = request.params.seed
-    m = Model("/beeler_reuter_1977", rename=dict(
+    m = Model(workspace="beeler_reuter_1977", rename=dict(
         p=dict(IstimPeriod="stim_period", IstimAmplitude="stim_amplitude", 
         IstimPulseDuration="stim_duration", IstimStart="stim_start")), 
         reltol=1e-10, maxsteps=1e6, chunksize=100000)
