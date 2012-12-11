@@ -1,6 +1,8 @@
 A toolbox for causally cohesive genotype-phenotype modeling
 ===========================================================
 
+*For the impatient:* :doc:`Installation instructions <install>`.
+
 A comprehensive understanding of how genetic variation causes phenotypic 
 variation of a complex trait is a long-term disciplinary goal of genetics. The 
 basic premise is that in a well-validated model that is capable of accounting 
@@ -67,7 +69,7 @@ Integrating genetics, genomics, and multiscale models in a population context
 Aims of the toolbox
 ===================
 
-The cGPtoolbox aims to facilitate researchers' entry into cGP modeling by 
+The *cgptoolbox* aims to facilitate researchers' entry into cGP modeling by 
 providing a cGP modelling framework in a population context, integrating and 
 interfacing with existing VPH tools. The toolbox will provide the means for 
 extensive explorative *in silico* studies as well as integration of 
@@ -75,7 +77,7 @@ patient-specific information in multiscale models to account for the
 individual’s genotype in the model parameterisation process. It adds to the 
 VPH Toolkit by integrating genetic structure information, bioinformatic 
 information and infrastructure and multiscale and multiphysics models and 
-associated infrastructure. The strength of the cGP toolbox as a relevant 
+associated infrastructure. The strength of the *cgptoolbox* as a relevant 
 research tool will be illustrated by specific examples of use:
 
 * as an explorative tool for better understanding of key genetic concepts 
@@ -89,7 +91,7 @@ research tool will be illustrated by specific examples of use:
   statistical genetics aimed at exploiting high-dimensional phenotypic 
   information.
 
-The cgptoolbox is a step towards providing computational tools for 
+The *cgptoolbox* is a step towards providing computational tools for 
 attaching GP maps of parameters to a multiscale modelling framework in 
 order to handle patient-specific issues. We think this is an important 
 delivery preparing for a future situation where acquisition of 
@@ -101,8 +103,7 @@ spatial and temporal scales.
 Design philosophy
 =================
 
-
-The cGP toolbox will provide a streamlined interface from genomic 
+The *cgptoolbox* will provide a streamlined interface from genomic 
 databases to model parameter structures. At the population level, it 
 provides functions for mating and recombining genomes, keeping track of 
 chromosomal organization and genetic distances (map units) between genes, 
@@ -145,8 +146,8 @@ Design patterns for cGP studies
    system's response to external stimuli.
 
 
-About the cgptoolbox
-====================
+About the *cgptoolbox*
+======================
 
 Genetics is defined as the :wiki:`science of genes, heredity, and the 
 variation of organisms <genetics>`. Gaining a real understanding of the 
@@ -211,6 +212,7 @@ Contents
 .. toctree::
    :maxdepth: 5
    
+   install
    cgp-programme
    features
    tutorials

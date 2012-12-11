@@ -1,4 +1,4 @@
-"""cGPtoolbox documentation build configuration file."""
+"""cgptoolbox documentation build configuration file."""
 # -*- coding: utf-8 -*-
 #
 # Created by sphinx-quickstart on Wed Sep 07 17:12:09 2011.
@@ -57,7 +57,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'cGPtoolbox'
+project = u'cgptoolbox'
 copyright = u'2011, Jon Olav Vik, '  #@ReservedAssignment
 copyright += u'Arne Bjørke Gjuvsland, Yunpeng Wang'
 
@@ -195,7 +195,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'cGPtoolboxdoc'
+htmlhelp_basename = 'cgptoolboxdoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -214,7 +214,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'cGPtoolbox.tex', u'cGPtoolbox Documentation',
+  ('index', 'cgptoolbox.tex', u'cgptoolbox Documentation',
    u'Jon Olav Vik, Arne Bjørke Gjuvsland, Yunpeng Wang', 'manual'),
 ]
 
@@ -247,7 +247,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'cgptoolbox', u'cGPtoolbox Documentation',
+    ('index', 'cgptoolbox', u'cgptoolbox Documentation',
      [u'Jon Olav Vik, Arne Bjørke Gjuvsland, Yunpeng Wang'], 1)
 ]
 
