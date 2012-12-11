@@ -28,7 +28,7 @@ Building the documentation
 Make sure you have `Sphinx >= 1.1 <http://sphinx.pocoo.org/latest/>`_ installed, 
 then run the following from the ``cgptoolbox/doc`` directory::
 
-   sphinx-apidoc -H cgptoolbox -o source ..
+   sphinx-apidoc -T -H cgptoolbox -o source ..
    make html
 
 Documentation will end up in ``cgptoolbox/doc/build/html``.
@@ -39,18 +39,20 @@ Here's a one-liner to make both html and latex, ignoring any latex errors::
 
 .. rubric:: If a plain ``make html`` fails:
 
-.. warning:: This will remove all files in doc/ that are not under version 
-   control. Please make a dry run first, to see what ``git clean`` will remove::
+For a pristine build, you can try wiping all doc files that are 
+not under version control.
+
+.. warning::
+   
+   You will probably want a dry run first to see 
+   what will be removed. Run this from your ``cgptoolbox/doc`` directory::
    
       git clean -n -d -x
-
-For a pristine build, you may want to wipe out all doc files that are not under 
-version control. Run this from your cgptoolbox directory, and::
-
-   git clean -f -d -x doc/
-   sphinx-apidoc -H cgptoolbox -o doc/source .
-   cd doc
-   make html
-   cd ..
+   
+   Then, if you are certain that no important work will be lost::
+   
+      git clean -f -d -x
+      sphinx-apidoc -T -H cgptoolbox -o source ..
+      make html
 
 Please report errors or omissions to jonovik@gmail.com.
