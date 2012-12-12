@@ -29,11 +29,7 @@ def rlist2pydict(x):
     >>> from cgp.utils.rnumpy import *
     >>> d = dict(i=123, x=0.25, s="test", nested=dict(j=456, t="nested list"))
     >>> r["y"] = rcopy(d)
-    
-    The output of r.str cannot easily be captured, but is given below.
-    The "NULL" at the end is because str() returns nothing
-    
-    >>> r.str(r.y)
+    >>> print rstr(r.y)
     List of 4
      $ i     : int 123
      $ x     : num 0.25
@@ -41,14 +37,10 @@ def rlist2pydict(x):
      $ nested:List of 2
       ..$ j: int 456
       ..$ t: chr "nested list"
-    NULL
     >>> rlist2pydict(r.y) == d
     True
     
-    >>> # rlist2pydict(r("invisible(iris[1:2,])")))
-    
     >>> rlist2pydict(r("iris[1:2,]"))
-    ... # doctest: +NORMALIZE_WHITESPACE
     OrderedDict([('Sepal.Length', array([ 5.1,  4.9])), 
     ('Sepal.Width', array([ 3.5,  3. ])), ('Petal.Length', array([ 1.4,  1.4])), 
     ('Petal.Width', array([ 0.2,  0.2])), ('Species', array(['setosa', 'setosa'], 
@@ -79,7 +71,7 @@ def r2rec(x):
     """
     Convert R list to Numpy record array.
     
-    >>> r2rec(r.iris)[0:1] # doctest: +NORMALIZE_WHITESPACE
+    >>> r2rec(r.iris)[0:1]
     rec.array([(5.1, 3.5, 1.4, 0.2, 'setosa')], 
     dtype=[('Sepal.Length', '<f8'), ('Sepal.Width', '<f8'), 
     ('Petal.Length', '<f8'), ('Petal.Width', '<f8'), ('Species', '|S10')])
