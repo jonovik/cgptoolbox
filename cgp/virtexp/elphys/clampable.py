@@ -1243,7 +1243,7 @@ def markovplot(t, y, a=None, names=None, model=None, comp=None, col="bgrcmyk",
             "data=xm) + scale_fill_brewer('State', palette='Set3') + "
             "theme_bw()")
         if comp:
-            cmd += "+ opts(title='%s')" % comp
+            cmd += "+ labs(title='%s')" % comp
         return r(cmd)
     if plotpy:
         from pylab import figure, fill_between, legend, axis, Rectangle
