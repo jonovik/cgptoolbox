@@ -587,7 +587,8 @@ class Cellmlmodel(Namedcvodeint):
             
             from cgp.physmod.cellmlmodel import Cellmlmodel
             bond = Cellmlmodel(
-                "bondarenko_szigeti_bett_kim_rasmusson_2004_apical", t=[0, 20])
+                workspace="bondarenko_szigeti_bett_kim_rasmusson_2004",
+                t=[0, 20])
             with bond.autorestore():
                 bond.yr.V = 100  # simulate stimulus
                 t, y, flag = bond.integrate()

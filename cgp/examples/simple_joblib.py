@@ -3,9 +3,11 @@ Using joblib to cache and parallelize the computations in simple.py.
 
 Caching can be conveniently applied using decorator syntax:
 
-@mem.cache
-def f(x):
-    ...
+.. code-block:: none
+   
+   @mem.cache
+   def f(x):
+       ...
 
 However, parallelization won't work with this syntax as of joblib 0.6.3.
 """

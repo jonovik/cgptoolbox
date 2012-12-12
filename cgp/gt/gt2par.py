@@ -36,7 +36,7 @@ def monogenicpar(genotype, hetpar, relvar=0.5, absvar=None):
     >>> monogenicpar(genotype, hetpar)
     rec.array([(5, 11, 18), (15, 11, 6)], dtype=[('a', '|i1'), ...])
     
-    A recarray genotype is `unstructure`d before use, and its field names are 
+    A recarray genotype is `unstructure`\ d before use, and its field names are 
     ignored.
     
     >>> genotype =  np.rec.array([(0, 1, 2), (2, 1, 0)], 

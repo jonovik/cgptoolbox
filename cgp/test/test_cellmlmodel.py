@@ -14,7 +14,7 @@ vdp_compiled = Cellmlmodel(use_cython=True)
 vdp_uncompiled = Cellmlmodel(use_cython=False)
 
 def test_purge():
-    c = Cellmlmodel(purge=True)
+    Cellmlmodel(purge=True)
 
 def test_hash():
     a, b, c = [Cellmlmodel(chunksize=i) for i in 1, 1, 2]
@@ -29,14 +29,11 @@ def test_autorestore_reinit():
         np.testing.assert_equal(c.t, old)
 
 def test_rates_and_algebraic():
-    url = ("http://models.cellml.org/workspace/"
-           "bondarenko_szigeti_bett_kim_rasmusson_2004/@@rawfile/"
-           "99f4fd6804311c571a7143515003691ab2e430fb/"
-           "bondarenko_szigeti_bett_kim_rasmusson_2004_apical.cellml")
     desired = [-3.67839219], [ 0.06717483], [-2.21334685]
     for use_cython in False, True:
-        bond = Cellmlmodel(url, t=[0, 5], 
-                           use_cython=use_cython, reltol=1e-5)
+        bond = Cellmlmodel(
+            workspace="bondarenko_szigeti_bett_kim_rasmusson_2004", 
+            t=[0, 5], use_cython=use_cython, reltol=1e-5)
         with bond.autorestore():
             bond.yr.V = 100 # simulate stimulus
             t, y, _flag = bond.integrate()

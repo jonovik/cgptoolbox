@@ -3,9 +3,11 @@ Cache computations to HDF file for simple genotype-phenotype example.
 
 Here, the line "ph = hdfcache.cache(ph)" is equivalent to the decorator syntax:
 
-@hdfcache.cache
-def ph(...):
-    ...
+.. code-block:: none
+   
+   @hdfcache.cache
+   def ph(...):
+       ...
 
 However, cgp.examples.simple.ph is left undecorated so we can illustrate 
 different tools for caching and parallelization. 
