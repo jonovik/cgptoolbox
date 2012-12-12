@@ -7,6 +7,8 @@ from contextlib import contextmanager
 import numpy as np
 
 class NullHandler(logging.Handler):
+    """Null handler to use as default."""
+    
     def emit(self, record):
         pass
 
@@ -14,10 +16,13 @@ logger = logging.getLogger("failwith")
 logger.addHandler(NullHandler())
 
 @contextmanager
-def silenced(logger, level=logging.CRITICAL):
+def silenced(logger, level=logging.CRITICAL):  # pylint: disable=W0621
     """
     Silence a logger for the duration of the 'with' block.
     
+    >>> import sys
+    >>> logger = logging.Logger("test_silenced")
+    >>> logger.addHandler(logging.StreamHandler(sys.stdout))
     >>> logger.error("Error as usual.")
     Error as usual.
     >>> with silenced(logger):
@@ -103,6 +108,7 @@ def nans_like(x):
         except TypeError:
             return [nans_like(i) for i in x]
 
+# pylint:disable=C0111
 def failwith(default=None):
     """
     Modify a function to return a default value in case of error.
@@ -131,7 +137,7 @@ def failwith(default=None):
         def wrapper(*args, **kwargs):
             try:
                 result = func(*args, **kwargs)
-            except Exception, exc:
+            except Exception:  # pylint:disable=W0703
                 msg = "Failure in %s. Default: %s. args = %s, kwargs = %s"
                 logger.exception(msg, func, default, args, kwargs)
                 result = default
@@ -185,7 +191,7 @@ def failwithnanlikefirst(func):
             try:
                 result = func(*args, **kwargs)
                 d["default"] = nans_like(result)
-            except Exception, exc:
+            except Exception:  # pylint:disable=W0703
                 msg = "%s failed on first evaluation, "
                 msg += "or result could not be interpreted as array of float. "
                 msg += "args = %s, kwargs = %s"
@@ -195,7 +201,7 @@ def failwithnanlikefirst(func):
             # Not first evaluation, so default is defined
             try:
                 result = func(*args, **kwargs)
-            except Exception, exc:
+            except Exception:  # pylint:disable=W0703
                 msg = "Failure in %s. Default: %s. args = %s, kwargs = %s"
                 logger.exception(msg, func, d["default"], args, kwargs)
                 result = d["default"]
