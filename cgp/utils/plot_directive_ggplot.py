@@ -775,7 +775,8 @@ def run(arguments, content, options, state_machine, state, lineno):
     if source_file_name == rst_file:
         if u"\x00" in source_ext:  # hack for strange string corruption issue
             source_ext = ".py"
-            target_name = os.path.join(dest_dir, output_base + source_ext)
+        target_name = os.path.join(dest_dir, output_base + source_ext)
+        ## Diagnostics:
         # with open("test.txt", "w") as f:
         #     f.write("\n===\n".join([target_name, dest_dir, output_base, source_ext]))
         # import numpy as np
