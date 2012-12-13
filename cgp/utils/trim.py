@@ -1,3 +1,5 @@
+"""Functions for trimming invalid or extreme values from a vector."""
+
 import numpy as np
 
 def trimlim(x, low=0, high=0):
@@ -76,9 +78,9 @@ def trimpair(x, low=0, high=0):
     
     """
     x = np.array(x)
-    x = x[np.isfinite(x).all(axis=1),:]
+    x = x[np.isfinite(x).all(axis=1), :]
     xlow, xhigh = np.transpose([trimlim(col, low, high) for col in x.T])
-    return x[(xlow <= x).all(axis=1) & (x <= xhigh).all(axis=1),:]
+    return x[(xlow <= x).all(axis=1) & (x <= xhigh).all(axis=1), :]
 
 if __name__ == "__main__":
     import doctest

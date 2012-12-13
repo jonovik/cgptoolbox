@@ -7,7 +7,7 @@ with additions and modifications by Jon Olav Vik.
 For an alternative, see the IPython rmagic extension.
 http://ipython.org/ipython-doc/dev/config/extensions/rmagic.html
 """
-# pylint: disable=E1101,C0111,W0212,W0141,W0142,R,W0603
+# pylint: disable=E1101,C0111,W0212,W0141,W0142,R,W0603,C0302,W0710
 
 import atexit
 import functools

@@ -1,5 +1,7 @@
 """Scatterplot matrix helper functions."""
 
+from collections import OrderedDict
+
 import numpy as np
 import matplotlib
 matplotlib.use("agg")
@@ -11,10 +13,6 @@ except ImportError:
     import warnings
     warnings.warn("rnumpy not installed, some functions will not work.")
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from utils.ordereddict import OrderedDict
 from .thinrange import thin
 from .trim import trimpair # we use "trim" as argument name below
 

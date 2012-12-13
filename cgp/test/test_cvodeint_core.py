@@ -29,7 +29,7 @@ def test_CvodeException():
     ...     cvodeint.integrate()
     ... except CvodeException, exc:
     ...     print exc.result
-    ...     print exc # str(exc) supersedes exc.message, see http://docs.python.org/tutorial/errors.html
+    ...     print exc
     ...     print failsoon.traceback
     (array([ 0.]), array([[ 1.]]), -8)
     CVode returned CV_RHSFUNC_FAIL
@@ -91,6 +91,7 @@ def test_integrate_adaptive_steps():
     np.testing.assert_equal(flag, cvode.CV_TSTOP_RETURN)
 
 def test_integrate():
+    """Verify that integration works correctly."""
     c = Cvodeint(example_ode.logistic_growth, t=[0, 2], y=[0.1])
     t, y, _flag = c.integrate()
     ys = example_ode.logistic_growth_sol(t, [0.1])
@@ -104,6 +105,7 @@ def test_integrate_end():
     np.testing.assert_allclose(y.squeeze(), ys)
 
 def test_integrate_nonsmooth():
+    """Verify that nonsmooth equation gets integrated correctly."""
     c = Cvodeint(example_ode.nonsmooth_growth, t=[0, 2], y=[1], reltol=1e-10)
     t, y, _flag = c.integrate()
     ys = example_ode.nonsmooth_growth_sol(t, y[0])
@@ -204,12 +206,15 @@ def test_simple_example():
     pass
 
 def test_y_dtype():
+    """Verify that y can be float or int (coerced to float)."""
     Cvodeint(example_ode.vdp, t=[0, 2], y=[1.0, 2.0])
     Cvodeint(example_ode.vdp, t=[0, 2], y=[1, 2])
 
 @raises(ValueError, IndexError)
 def test_y_dtype_rec():
-    Cvodeint(example_ode.vdp, t=[0, 2], y=np.rec.fromrecords([(1.0, 2.0)], dtype=[("u", float), ("v", float)]))
+    """Verify that y can be a record array (coerced to float)."""
+    Cvodeint(example_ode.vdp, t=[0, 2], y=np.rec.fromrecords([(1.0, 2.0)], 
+        dtype=[("u", float), ("v", float)]))
 
 def test_pickling():
     """Verify that Cvodeint objects can be serialized."""

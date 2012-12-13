@@ -5,7 +5,7 @@ This module was motivated by the need to export recarrays to R via rnumpy.
 Using an OrderedDict preserves the order of lists.
 """
 
-from ordereddict import OrderedDict
+from collections import OrderedDict
 
 import numpy as np
 

@@ -1,5 +1,6 @@
 """Drop-in replacement for old commands.getstatusoutput()."""
 
+# pylint: disable=C0103
 def getstatusoutput(cmd, **kwargs):
     """
     Return (status, output) of executing cmd in a shell. Output includes errors.
@@ -22,10 +23,13 @@ def getstatusoutput(cmd, **kwargs):
     'test'
     """
     import subprocess
-    pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, universal_newlines=True, **kwargs)  
+    pipe = subprocess.Popen(cmd, 
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
+        shell=True, universal_newlines=True, **kwargs)  
     output = "".join(pipe.stdout.readlines()) 
     sts = pipe.returncode
-    if sts is None: sts = 0
+    if sts is None:
+        sts = 0
     return sts, output
 
 if __name__ == "__main__":

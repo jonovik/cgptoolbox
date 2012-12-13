@@ -137,7 +137,8 @@ class AttractorMixin(object):
         while True:
             t, y, (te, ye) = tup = self.next_extremum(tmax, index)
             extrema.appendleft(tup)
-            for lag, (t_, y_, (te_, ye_)) in enumerate(extrema):
+            # pylint:disable=W0612,C0301
+            for lag, (t_, y_, (te_, ye_)) in enumerate(extrema): #@UnusedVariable
                 if lag == 0:
                     continue
                 diff = unstruct(ye_) - unstruct(ye)

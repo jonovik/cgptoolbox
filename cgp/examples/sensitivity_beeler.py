@@ -54,10 +54,11 @@ def mat2par(mat):
     """Make parameter recarray from R matrix."""
     mat = np.copy(mat)
     par = np.tile(m.pr, len(mat))
-    for i, k in enumerate(factors):
-        par[k] = mat[:, i]
+    for i, factor in enumerate(factors):
+        par[factor] = mat[:, i]
     return par
 
+# pylint: disable=W0621
 def scalar_pheno(field):
     """Make a function to return a named field of the phenotype array."""
     

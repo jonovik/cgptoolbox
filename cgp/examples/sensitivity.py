@@ -1,4 +1,5 @@
 """Sensitivity analysis of action potential duration, bridging R and Python."""
+# pylint: disable-all
 
 import logging
 

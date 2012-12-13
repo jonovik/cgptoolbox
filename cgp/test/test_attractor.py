@@ -14,7 +14,7 @@ def ode(t, y, ydot, g_data):
     ydot[:] = -y
 
 def test_exponential_decay():
-    """
+    r"""
     :math:`y(t) = e^{-t}`, so that :math:`|y|=tol \Leftrightarrow t=\ln tol`.
     """
     test = Test(ode, t=[0, 1500], y=[1])

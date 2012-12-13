@@ -8,7 +8,7 @@ from ..utils.unstruct import unstruct
 from ..utils.flatten import flatten
 
 def monogenicpar(genotype, hetpar, relvar=0.5, absvar=None):
-    """
+    r"""
     Monogenic genotype-to-phenotype map.
     
     :param array_like genotype: (Sequence of) array(s) with one item for each 

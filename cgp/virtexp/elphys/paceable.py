@@ -308,7 +308,7 @@ class Paceable(object):
     
     def _ap_without_rootfinding(self, p_repol=(0.25, 0.5, 0.75, 0.9), 
         ignore_flags=False):
-        """
+        r"""
         Simulate action potential triggered by stimulus current.
         
         :param array_like y: initial state

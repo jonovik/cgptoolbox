@@ -7,6 +7,7 @@ import numpy as np
 from ..cvodeint.namedcvodeint import Namedcvodeint
 
 def test_autorestore():
+    """Verify that time and state get restored when exiting context manager."""
     n = Namedcvodeint()
     tlist = []
     ylist = []

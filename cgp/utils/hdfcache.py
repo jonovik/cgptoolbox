@@ -388,6 +388,7 @@ class DictHdfcache(object):
 
 
 class HdfcacheException(Exception):
+    """Class for :class:`Hdfcache` exceptions."""
     pass
 
 class Hdfcache(object):

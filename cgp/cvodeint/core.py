@@ -385,7 +385,8 @@ class Cvodeint(object):
         try:
             y = np.array(y, dtype=float, ndmin=1)
         except ValueError:
-            raise ValueError("State vector y not interpretable as float: %s" % y)
+            msg = "State vector y not interpretable as float: {}"
+            raise ValueError(msg.format(y))
         assert len(y) > 0, "Empty state vector"
         # Ensure that f_ode assigns a value to all elements of the rate vector
         assert_assigns_all(f_ode, y, f_data)
@@ -446,6 +447,7 @@ class Cvodeint(object):
             cvode.CVBand(self.cvode_mem, self.n, mupper, mlower)        
         self.RootInit(nrtfn, g_rtfn, g_data)
     
+    # pylint: disable=W0212
     def __new__(cls, *args, **kwargs):
         """Used for pickling."""
         instance = super(Cvodeint, cls).__new__(cls)

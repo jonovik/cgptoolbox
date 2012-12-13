@@ -1,3 +1,4 @@
+# pylint: disable=R,C0301
 """
 Web service for sensitivity analysis of CellML models.
 
@@ -37,19 +38,16 @@ TODO:
 6. Allow tweaking of options to Morris or virtual experiment.
 7. AJAX instead of re-submitting on every input.
 """
-# pylint: disable=C0301, R
 
 # Web
 import cgi
-import json
 import bottle
-from bottle import route, run, view, request
+from bottle import route, request
 
 # Numerics
 import numpy as np
 # Bridge to the R statistical software
-import rpy2.rinterface as ri
-from cgp.utils.rnumpy import r, py2ri, rwrap
+from cgp.utils.rnumpy import r, rwrap
 # Caching and on-demand recomputing
 from joblib import Memory
 
@@ -57,7 +55,6 @@ from joblib import Memory
 from cgp.physmod.cellmlmodel import Cellmlmodel
 # Virtual experiments
 from cgp.phenotyping.attractor import AttractorMixin
-from cgp.virtexp.elphys.clampable import Clampable
 from cgp.virtexp.elphys.paceable import Paceable
 # Utilities
 from cgp.virtexp.elphys.paceable import ap_stats_array
@@ -69,14 +66,9 @@ r.library("sensitivity")
 # Initialize caching
 mem = Memory("/tmp/sensitivity_service")
 
-# Numerics
-import numpy as np
-# Bridge to the R statistical software
-import rpy2.rinterface as ri
-from cgp.utils.rnumpy import r, py2ri
-
 r.library("sensitivity")
 
+# pylint: disable=W0105
 '''def scalar_pheno(field):
     """Make a function to return a named field of the phenotype array."""
     
@@ -113,8 +105,16 @@ def phenotypes(m, par=None):
     >>> m.pr.IstimStart = 0
     >>> print "Result:"; phenotypes(m)
     Result:...
-    rec.array([ (115.799..., -83.857..., 31.942..., 2.287..., 0.01384..., 127.599..., 217.0..., 256.603..., 273.144..., 0.00612..., 0.000183..., 0.00630..., 92.373..., 0.0336..., 242.2..., 268.75..., 285.98..., 302.226...)], 
-          dtype=[('apamp', '<f8'), ('apbase', '<f8'), ('appeak', '<f8'), ('apttp', '<f8'), ('apdecayrate', '<f8'), ('apd25', '<f8'), ('apd50', '<f8'), ('apd75', '<f8'), ('apd90', '<f8'), ('ctamp', '<f8'), ('ctbase', '<f8'), ('ctpeak', '<f8'), ('ctttp', '<f8'), ('ctdecayrate', '<f8'), ('ctd25', '<f8'), ('ctd50', '<f8'), ('ctd75', '<f8'), ('ctd90', '<f8')])
+    rec.array([ (115.799..., -83.857..., 31.942..., 2.287..., 0.01384..., 
+    127.599..., 217.0..., 256.603..., 273.144..., 0.00612..., 0.000183..., 
+    0.00630..., 92.373..., 0.0336..., 242.2..., 268.75..., 285.98..., 
+    302.226...)], 
+    dtype=[('apamp', '<f8'), ('apbase', '<f8'), ('appeak', '<f8'), 
+    ('apttp', '<f8'), ('apdecayrate', '<f8'), ('apd25', '<f8'), 
+    ('apd50', '<f8'), ('apd75', '<f8'), ('apd90', '<f8'), ('ctamp', '<f8'), 
+    ('ctbase', '<f8'), ('ctpeak', '<f8'), ('ctttp', '<f8'), 
+    ('ctdecayrate', '<f8'), ('ctd25', '<f8'), ('ctd50', '<f8'), 
+    ('ctd75', '<f8'), ('ctd90', '<f8')])
     """
     with m.autorestore(_p=par):
         m.eq(tmax=1e4, tol=1e-3)
@@ -164,7 +164,8 @@ def scalar_pheno(field, m, factors):
     
     return fun
 
-def do_sensitivity(exposure, workspace, protocol, statistic, par=None, seed=None, model=None, changeset=None, variant=None):
+def do_sensitivity(exposure, workspace, protocol, statistic, par=None, 
+    seed=None, model=None, changeset=None, variant=None):
     """
     Sensitivity analysis.
     
@@ -193,7 +194,8 @@ def do_sensitivity(exposure, workspace, protocol, statistic, par=None, seed=None
     TODO: Accept json dict of model_kwargs, morris_kwargs
     """
     if model is None:
-        m = Model(workspace, exposure, changeset, variant, maxsteps=1e6, chunksize=1e5, reltol=1e-8)
+        m = Model(workspace, exposure, changeset, variant, 
+            maxsteps=1e6, chunksize=1e5, reltol=1e-8)
         m.pr.stim_start = 0
     else:
         m = model
@@ -208,7 +210,9 @@ def do_sensitivity(exposure, workspace, protocol, statistic, par=None, seed=None
     if seed is not None:
         r.set_seed(seed)
     fun = scalar_pheno(statistic, m, factors)
-    return r.morris(fun, factors=factors, r=2, design={"type": "oat", "levels": 10, "grid.jump": 5}, binf=lower, bsup=upper)
+    design = {"type": "oat", "levels": 10, "grid.jump": 5}
+    return r.morris(fun, factors=factors, r=2, design=design, 
+        binf=lower, bsup=upper)
 
 @route("/sensitivity/<exposure>/<workspace>/<protocol>/<statistic>")
 def sensitivity(exposure, workspace, protocol, statistic):
@@ -216,13 +220,14 @@ def sensitivity(exposure, workspace, protocol, statistic):
     par = request.params.par.split()  # space-delimited string
     # par = json.loads(request.params.par)  # JSON or Python
     # par = request.params.getall("par")  # HTML multiple SELECT
-    seed = request.params.seed
+    # seed = request.params.seed  # Specify random seed for repeatability
     m = Model(workspace="beeler_reuter_1977", rename=dict(
         p=dict(IstimPeriod="stim_period", IstimAmplitude="stim_amplitude", 
         IstimPulseDuration="stim_duration", IstimStart="stim_start")), 
         reltol=1e-10, maxsteps=1e6, chunksize=100000)
     m.pr.IstimStart = 0
-    return "<pre>%s</pre>" % do_sensitivity(exposure, workspace, protocol, statistic, par=par, seed=None, model=m)
+    return "<pre>%s</pre>" % do_sensitivity(exposure, workspace, protocol, 
+        statistic, par=par, seed=None, model=m)
 
 if __name__ == "__main__":
     bottle.run(host='localhost', port=8080, debug=True, reloader=True)

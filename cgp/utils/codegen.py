@@ -8,6 +8,7 @@
     :copyright: Copyright 2008 by Armin Ronacher.
     :license: BSD.
 """
+# pylint: disable-all
 from ast import *
 
 

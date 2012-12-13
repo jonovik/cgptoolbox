@@ -133,8 +133,8 @@ def apd(time, voltage, p_repol = (0.25, 0.50, 0.75, 0.90),
             break
         prev = t
     
-    result = dict(i=np.r_[peak_i, repol_i], base=base_v, ttp=peak_t, peak=peak_v, 
-        amp=peak_v - base_v, p_repol=p_repol, t_repol=t_repol)
+    result = dict(i=np.r_[peak_i, repol_i], base=base_v, ttp=peak_t, 
+        peak=peak_v, amp=peak_v - base_v, p_repol=p_repol, t_repol=t_repol)
     result["decayrate"] = apd_decayrate(result, decay_p)
     return result
 
@@ -171,10 +171,3 @@ def apd_decayrate(stats, p=None):
         difflnv = np.log(1 - p3) - np.log(1 - p2)
         result = - difflnv / (t3 - t2)
         return result if (result > 0) else np.nan
-
-def _test():
-    import doctest
-    doctest.testmod()
-
-if __name__ == "__main__":
-    _test()

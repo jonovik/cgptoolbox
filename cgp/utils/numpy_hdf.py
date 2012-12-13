@@ -114,8 +114,6 @@ def numpy2hdf(src, dst, where="/", ext=".npy", recursive=True):
     with pt.openFile(dst, "a") as f:
         for root, _dirs, files in os.walk(src):
             hdflog.debug("root: %s, files: %s", root, files)
-            # FIXME: os.path.relpath problem with root directory
-            # http://bugs.python.org/issue5117
             relpath = os.path.relpath(root, src)
             relpath = relpath.replace("\\", "/")
             group = where if relpath == "." else where + "/" + relpath
@@ -127,7 +125,8 @@ def numpy2hdf(src, dst, where="/", ext=".npy", recursive=True):
                     dictgroup = "/" + (group + "/" + name).strip("/")
                     try:
                         a = load(filename, mmap_mode="r")
-                    except (IndexError, ValueError): # cannot memmap array with Python objects
+                    except (IndexError, ValueError):
+                        # Cannot memmap array with Python objects
                         a = np.load(filename)
                     if (a.dtype == object) and a.shape==():
                         dict2hdf(a.item(), f, dictgroup)
@@ -252,7 +251,8 @@ def shoehorn_recarray(x, ndim=1):
     # The shape of u is x.shape + (#fields,) + fieldshape
     # Roll the #fields dimension to position ndim (note zero-based indexing)
     r = np.rollaxis(u, len(x.shape), ndim)
-    dtype = [i[:2] + (r.shape[1 + ndim:],) for i in ast.literal_eval(str(x.dtype))]
+    dtype = [i[:2] + (r.shape[1 + ndim:],) 
+        for i in ast.literal_eval(str(x.dtype))]
     return r.flatten().view(dtype).squeeze()
 
 def test_shoehorn_recarray():
