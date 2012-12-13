@@ -35,6 +35,8 @@ import numpy as np
 class Sigmoidmodel(Namedcvodeint):
     """
     Class to solve sigmoid ode model equations.
+    
+    FIXME: Inherits from Namedcvodeint, but the default y is not a recarray.
     """
     
     #: Adjacency matrix defining network connectivity
@@ -76,9 +78,11 @@ class Sigmoidmodel(Namedcvodeint):
     def __init__(self, t=(0, 1), y=(0.0, 0.0, 0.0, 0.0, 0.0, 0.0), 
         p=p, adjmotif=adjmotif):
         """Constructor."""
+        t = np.array(t)
+        y = np.asanyarray(y)
         self.adjmotif = adjmotif
         super(Sigmoidmodel, self).__init__(self.equations_diploid_adjacency, 
-            t, y.view(float), p=p)
+            t, y, p=p)
     
     def equations_diploid_adjacency(self, t, y, ydot, fdata):
         """
