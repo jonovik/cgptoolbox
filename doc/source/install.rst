@@ -51,7 +51,89 @@ with `pip <http://www.pip-installer.org/>`_ directly from their code repositorie
 .. code-block:: bash
 
    sudo pip install svn+https://pysundials.svn.sourceforge.net/svnroot/pysundials/branches/2.3.0/@74
-   sudo pip install git+https://github.com/jonvi/cgptoolbox.git
+   sudo pip install git+https://github.com/jonovik/cgptoolbox.git
+   
+Installing on Linux witout root access 
+--------------------------------------
+On a typipcal HPC cluster the cgptoobox must be installed without root access. Before the installing the required Python 
+packages you should check the following software dependencies and install (or ask the system administratir to install)  
+missing pieces, version numbers refer to version that we have tested, other version could also work:
+
+* `Python <http://python.org>`_  versions 2.7.3, 2.7.2. 
+* `virtualenv <http://www.virtualenv.org>`_ version 1.8.2
+* `R <http://www.r-project.org/>`_ , version 2.15.1. R must be built as a library (instructions below).
+* `hdf5 <http://www.hdfgroup.org/HDF5/>`_ , version 1.8.7, 1.8.9.
+* `SUNDIALS <http://www.llnl.gov/CASC/sundials>`_ 2.3.0 built as shared library (instructions below)
+
+SUNDIALS 
+^^^^^^^^
+Download version 2.3.0 of the `SUNDIALS <http://www.llnl.gov/CASC/sundials>`_ library not the newest 2.5.0, 
+since `pysundials <http://pysundials.sourceforge.net>`_ does not work for the latest version yet. 
+
+.. code-block:: bash
+
+   export INSTALLDIR=$HOME/usr	 
+   tar -xzf sundials-2.3.0.tar.gz
+   cd sundials-2.3.0
+   ./configure --prefix=$INSTALLDIR --enable-shared --with-ldflags=-no-undefined
+   make
+   make install
+   cd ~
+   export CPATH=$INSTALLDIR/include:$CPATH
+
+R - build as library
+^^^^^^^^^^^^^^^^^^^^
+.. code-block:: bash
+
+   #download tarball from mirror and extract
+   wget http://cran.uib.no/src/base/R-2/R-2.15.2.tar.gz
+   tar xzf R-2.15.2.tar.gz						
+
+   #configure, compile and install
+   cd R-2.15.2
+   export INSTALLDIR=$HOME/usr
+   ./configure --prefix=$INSTALLDIR --enable-R-shlib
+   make
+   make install
+   cd ~
+
+   #set up environment variables
+   export LD_LIBRARY_PATH=$INSTALLDIR/lib64/R/lib:$LD_LIBRARY_PATH
+   export CPATH=$INSTALLDIR/lib64/R/include:$CPATH
+   export PATH=$INSTALLDIR/bin:$PATH
+
+
+   
+Virtualenv with required python packages
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+   #create and activate virtual Python environment
+   virtualenv cgp			
+   source cgp/bin/activate
+   
+   #install dependencies and cgptoolbox
+   pip install "ipython>=0.12.1"
+   pip install "numpy>=1.6.1"
+   pip install "scipy>=0.10.1"
+   pip install "matplotlib>=1.1.1"
+   pip install "numexpr>=2.0.1"
+   pip install "Cython>=0.16"
+   pip install "tables>=2.3.1"		#requires hdf5 library
+   pip install "joblib>=0.6.4"
+   pip install "bottle>=0.11.4"
+   pip install "pyzmq>=2.2.0"		
+   pip install "rpy2>=2.2.6"		#requires R built as library
+   pip install "networkx>=1.7"
+   pip install svn+https://pysundials.svn.sourceforge.net/svnroot/pysundials/branches/2.3.0/@74
+   pip install git+https://github.com/jonovik/cgptoolbox.git
+   
+   #packages for unittests and building documentation
+   pip install "Sphinx>=1.1.3"
+   pip install "nose>=1.2.1"
+   
+
 
 Building the documentation
 --------------------------
