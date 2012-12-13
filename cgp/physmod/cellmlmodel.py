@@ -14,7 +14,7 @@ Shorter naming scheme, e.g. __main__.py in package.
     t, y, flag = vdp.integrate(t=[0, 20])
     plt.plot(t, y.x, t, y.y)
 """
-# pylint: disable=W0621, W0142
+# pylint: disable=W0621, W0142, W0201
 from cgp.cvodeint.namedcvodeint import Namedcvodeint
 from cgp.utils.commands import getstatusoutput
 from cgp.utils.dotdict import Dotdict
@@ -64,7 +64,7 @@ def urlcache(url, data=None):
 # Ensure that cellmlmodels/_cellml2py/ is a valid package directory
 # This makes it easy to force re-generation of code by renaming _cellml2py/
 try:
-    import _cellml2py  # @UnusedImport pylint: disable=W0611
+    import cgp.physmod._cellml2py  # @UnusedImport pylint: disable=W0611
 except ImportError:
     dirname, _ = os.path.split(__file__)
     with write_if_not_exists(
@@ -109,10 +109,11 @@ def generate_code(url_or_cellml, language="python"):
         src = url_or_cellml
     else:
         src = urlcache(url_or_cellml)
-    with Tempfile() as cellml, Tempfile() as pycode:
+    with Tempfile() as cellml, Tempfile() as pycode:  # pylint:disable=C0321
         cellml.write(src)
         cellml.seek(0)
-        subprocess.call(args, stdin=cellml, stdout=pycode, stderr=subprocess.STDOUT)
+        subprocess.call(args, stdin=cellml, stdout=pycode, 
+            stderr=subprocess.STDOUT)
         pycode.seek(0)
         return pycode.read()
 
@@ -241,7 +242,6 @@ py_addendum = '''
 #        It might be better to wrap them in a class, allowing each instance of 
 #        the same model to have its own parameter vector.
 
-import sys
 import numpy as np
 
 ftype = np.float64 # explicit type declaration, can be used with cython
@@ -286,7 +286,6 @@ def ode(t, y, ydot, f_data):
         ydot[:] = computeRates(t, y, p)
         return 0
     except StandardError:
-        import sys
         exc_info = sys.exc_info()
         return -1
 
@@ -519,6 +518,7 @@ class Cellmlmodel(Namedcvodeint):
             self.model.p[:] = p
     
     def _import_python(self):
+        """Import Python module with right-hand-side for this model."""
         py_file = os.path.join(self.packagedir, "py.py")
         try:
             self.model = import_module(".py", self.package)
@@ -535,7 +535,9 @@ class Cellmlmodel(Namedcvodeint):
                         "http://bebiservice.umb.no/bottle/cellml2py", 
                         data=urllib.urlencode(dict(cellml=self.cellml))))
                 else:
-                    f.write(urlcache("http://bebiservice.umb.no/bottle/cellml2py/" + self.url))
+                    f.write(
+                        urlcache("http://bebiservice.umb.no/bottle/cellml2py/" 
+                        + self.url))
             self.model = import_module(".py", self.package)
         try:
             with open(py_file, "rU") as f:
@@ -544,6 +546,7 @@ class Cellmlmodel(Namedcvodeint):
             self.py_code = "Source file open failed"
     
     def _import_cython(self):
+        """Import Cython module with right-hand-side for this model."""
         self._import_python()
         try:
             self.model = import_module(".cy", self.package)
@@ -741,7 +744,8 @@ print cap
             else:
                 return href
         except IndexError:
-            raise IOError('Failed to extract "Latest Exposure" href at {}'.format(url))
+            msg = 'Failed to extract "Latest Exposure" href at {}'
+            raise IOError(msg.format(url))
     
     def get_changeset(self, fmt="exposure/{exposure}/{variant}.cellml/view"):
         """
@@ -761,7 +765,8 @@ print cap
         try:
             return etree.ETXPath(query)(tree)[0].rsplit("/", 2)[-2]
         except IndexError:
-            raise IOError('Found no "Download This File" link at {}'.format(url))
+            msg = 'Found no "Download This File" link at {}'
+            raise IOError(msg.format(url))
     
     def get_variants(self, fmt="exposure/{exposure}"):
         """
@@ -780,7 +785,8 @@ print cap
         query = ('//{http://www.w3.org/1999/xhtml}' +
             'a[contains(@class, "contenttype-exposurefile")]')
         el = etree.ETXPath(query)(tree)
-        return [e.attrib["href"].rsplit("/", 2)[-2][:-len(".cellml")] for e in el]
+        return [e.attrib["href"].rsplit("/", 2)[-2][:-len(".cellml")] 
+            for e in el]
 
 def test_cellmlmodel():
     """

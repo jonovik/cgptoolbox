@@ -6,6 +6,7 @@ The recipe has big-oh performance that matches regular dictionaries
 O(n) iteration/repr/copy/equality_testing).
 http://code.activestate.com/recipes/576693/
 """
+# pylint:disable=W0231,C0111,W0622,W0201
 from UserDict import DictMixin
 
 class OrderedDict(dict, DictMixin):
@@ -34,7 +35,7 @@ class OrderedDict(dict, DictMixin):
 
     def __delitem__(self, key):
         dict.__delitem__(self, key)
-        key, prev, next = self.__map.pop(key) # pylint: disable=W0622
+        key, prev, next = self.__map.pop(key)
         prev[2] = next
         next[1] = prev
 

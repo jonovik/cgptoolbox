@@ -1,3 +1,5 @@
+"""Tests for pickling Cellmlmodel objects."""
+
 import pickle
 
 import numpy as np
@@ -7,6 +9,7 @@ from cgp.virtexp.elphys.paceable import Paceable
 from nose.tools import raises
 
 class Model(Cellmlmodel, Paceable):
+    """Example model class."""
     pass
 
 def test_pickle():
@@ -29,6 +32,7 @@ def test_pickle_nested():
     """Pickling a nested class doesn't work."""
 
     class Nested(Cellmlmodel, Paceable):
+        """A nested class."""
         pass
     
     old = Nested(workspace="tentusscher_noble_noble_panfilov_2004",
@@ -39,4 +43,4 @@ def test_pickle_nested():
             "IstimPeriod": "stim_period", 
             "IstimPulseDuration": "stim_duration"
         }}, use_cython=True)
-    s = pickle.dumps(old)
+    _ = pickle.dumps(old)

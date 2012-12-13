@@ -11,6 +11,8 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+# pylint:disable=C
+
 import sys, os
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -58,7 +60,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'cgptoolbox'
-copyright = u'2011, Jon Olav Vik, '  #@ReservedAssignment
+copyright = u'2011, Jon Olav Vik, '  #@ReservedAssignment pylint:disable=W0622
 copyright += u'Arne Bjørke Gjuvsland, Yunpeng Wang'
 
 # The version info for the project you're documenting, acts as replacement for

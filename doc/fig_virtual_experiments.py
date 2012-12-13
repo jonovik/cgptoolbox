@@ -13,6 +13,8 @@ is easier to define as function than pass as arguments.
 Todo: Add illustration for models.
 """
 
+# pylint:disable=W0621,C0111,W0102,W0631,C0301
+
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import (plot, ylabel, title, 
@@ -20,7 +22,8 @@ from matplotlib.pyplot import (plot, ylabel, title,
 import os
 from joblib import Memory
 from cgp.virtexp.elphys.examples import Bond
-from cgp.virtexp.elphys.clampable import catrec, markovplot, listify, Bond_protocol
+from cgp.virtexp.elphys.clampable import catrec, markovplot, listify
+from cgp.virtexp.elphys.clampable import Bond_protocol
 from cgp.utils.splom import spij
 
 ### Options, model and protocols
@@ -43,10 +46,12 @@ vargap = Bond_protocol(varnames, protocol, limits, url)
 
 # Lineplot options
 lineplotopt = dict(linestyle="-", color="k", linewidth=2)
-markovopt = dict(model=cell, plotpy=True, plotr=False, newfig=False, loc="upper left")
+markovopt = dict(model=cell, plotpy=True, plotr=False, newfig=False, 
+    loc="upper left")
 
 
-mem = Memory(os.path.join(os.environ.get("TEMP", "/tmp"), "fig_virtual_experiments"))
+mem = Memory(os.path.join(os.environ.get("TEMP", "/tmp"), 
+    "fig_virtual_experiments"))
 
 @mem.cache
 def vecvclamp(*args, **kwargs):
@@ -115,7 +120,7 @@ t, y, dy, a = catrec(*traj)
 def exp_p1p2(L=L):
     h = []
     for proto, traj in L:
-        t, y, dy, a = catrec(*traj)
+        t, y, _dy, _a = catrec(*traj)
         h.extend(plot(t, y["V"], **lineplotopt))
     setp(h, color="gray")
     hi = h[len(h) // 2]
@@ -143,7 +148,7 @@ t, y, dy, a = catrec(*traj)
 def exp_vargap(L=L):
     h = []
     for proto, traj in L:
-        t, y, dy, a = catrec(*traj)
+        t, y, _dy, _a = catrec(*traj)
         h.extend(plot(t, y["V"], **lineplotopt))
     setp(h, color="gray")
     hi = h[len(h) // 2]

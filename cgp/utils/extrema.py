@@ -1,10 +1,12 @@
 """Find local maxima and minima of a 1-d array"""
 
-from numpy import squeeze, diff, sign, nonzero, r_, c_, recarray, rec, array
+import numpy as np
+from numpy import sign, diff
 
 __all__ = ["extrema"]
 
-def extrema(x, max=True, min=True, withend=True):
+# pylint:disable=W0622
+def extrema(x, max=True, min=True, withend=True):  #@ReservedAssignment
     """
     Return indexes, values, and sign of curvature of local extrema of 1-d array.
     
@@ -41,14 +43,18 @@ def extrema(x, max=True, min=True, withend=True):
     
     @todo: Add options on how to handle flat segments.
     """
-    x = squeeze(x) # ensure 1-d numpy array
-    xpad = r_[x[1], x, x[-2]] # pad x so endpoints become minima or maxima
+    x = np.squeeze(x) # ensure 1-d numpy array
+    xpad = np.r_[x[1], x, x[-2]] # pad x so endpoints become minima or maxima
     curv = sign(diff(sign(diff(xpad)))) # +1 at minima, -1 at maxima
     i = curv.nonzero()[0] # nonzero() wraps the indices in a 1-tuple
-    ext = rec.fromarrays([i, x[i], curv[i]], names=["index", "value", "curv"])
-    if not withend: ext = ext[(i > 0) & (i < len(x) - 1)]
-    if not max: ext = ext[ext.curv >= 0]
-    if not min: ext = ext[ext.curv <= 0]
+    ext = np.rec.fromarrays([i, x[i], curv[i]], 
+        names=["index", "value", "curv"])
+    if not withend:
+        ext = ext[(i > 0) & (i < len(x) - 1)]
+    if not max:
+        ext = ext[ext.curv >= 0]
+    if not min:
+        ext = ext[ext.curv <= 0]
     return ext
 
 if __name__ == "__main__":

@@ -36,7 +36,7 @@ class Test_cell(Namedcvodeint, Paceable, Clampable):
         super(Test_cell, self).__init__(
             self.f_ode, t=(0, 2), y=dict2rec(V=1.0), p=self.pr, reltol=1e-10)
     
-    def f_ode(self, t, y, ydot, f_data=None):
+    def f_ode(self, t, y, ydot, f_data=None):  # pylint: disable=E0202
         """ODE for Test_cell with linear upstroke and exponential decay."""
         if (t % self.pr.stim_period) < self.pr.stim_duration:
             ydot[:] = self.pr.stim_amplitude
@@ -70,13 +70,13 @@ class Test_cell(Namedcvodeint, Paceable, Clampable):
     def test_ap_reset(self):
         """Verify that time resets to 0 after calls to :meth:`ap`."""
         with self.autorestore():
-            t0, y0, stats0 = self.ap()
-            t1, y1, stats0 = self.ap()
+            t0, _y0, _stats0 = self.ap()
+            t1, _y1, _stats0 = self.ap()
         assert t0[0] == t1[0] == 0
     
     def test_aps(self):
         """Test the :meth:`aps` generator."""
         with self.autorestore():
-            (t0, y0, stats0), (t1, y1, stats1) = self.aps(n=2)
+            (t0, _y0, stats0), (t1, _y1, stats1) = self.aps(n=2)
         assert t0[-1] == t1[0] == self.pr.stim_period
         assert stats0["ttp"] == stats1["ttp"] == self.pr.stim_duration

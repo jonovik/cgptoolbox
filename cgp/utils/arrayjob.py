@@ -39,15 +39,19 @@ parallel (as an "array job").
 
 Importing ``* from arrayjob`` defines the following:
 
-* :func:`arun` : Run a multi-stage job, submitting parallel stages as array jobs.
-* :func:`presub` : Indicate that first stage should run on login node rather than batch.
+* :func:`arun` : Run a multi-stage job, 
+  submitting parallel stages as array jobs.
+* :func:`presub` : Indicate that first stage should run on login node 
+  rather than batch.
 * :func:`par` : Indicate that a stage should execute in parallel.
 * :data:`ID` : Array job index ID (in the sequence 0, 1, ..., NID-1).
-* :func:`get_NID` : Get the number of array jobs to submit, or that have been submitted.
-* :func:`set_NID` : Set number of array jobs to submit. You should call set_NID() exactly once.
+* :func:`get_NID` : Get the number of array jobs to submit, 
+  or that have been submitted.
+* :func:`set_NID` : Set number of array jobs to submit. 
+  You should call set_NID() exactly once.
 * :func:`qopt` : Decorator to pass job parameters for an individual stage
 * :data:`alog` : Logger object for the arrayjob module.
-* :func:`wait` : Do-nothing stage used to separate parallel stages if required. 
+* :func:`wait` : Do-nothing stage used to separate parallel stages if required.
 * :func:`memmap_chunk` : Read-write memmap to chunk ID out of NID.
 
 Calling ``set_NID(n+1)`` is equivalent to::
@@ -63,20 +67,20 @@ that we have called :func:`set_NID`.)
 
 >>> reset_NID()
 """
-# pylint: disable=W0621
+# pylint: disable=W0621,W0603
 
 import sys # sys.argv[0] to get name of jobscript
 import os # file and directory manipulation, and PBS_O_WORKDIR
 from os import environ as e
-from commands import getstatusoutput # calling qsub
+from cgp.utils.commands import getstatusoutput # calling qsub
 import logging # diagnostics
 from collections import defaultdict
 
 import numpy as np
 
-from ..utils.ordereddict import OrderedDict
-from ..utils.rec2dict import dict2rec
-from ..utils.dotdict import Dotdict
+from cgp.utils.ordereddict import OrderedDict
+from cgp.utils.rec2dict import dict2rec
+from cgp.utils.dotdict import Dotdict
 
 __all__ = """arun presub par ID get_NID set_NID reset_NID
              qopt alog wait memmap_chunk Mmapdict Timing""".split()
@@ -88,7 +92,7 @@ if "STAGE_ID" in e: # executing as batch job
 if "PBS_ARRAYID" in e: # executing as parallel batch job
     AID = int(e["PBS_ARRAYID"])
     if "OMPI_COMM_WORLD_RANK" in e: # running under MPI
-        from mpi4py import MPI
+        from mpi4py import MPI  #@UnresolvedImport
         size = MPI.COMM_WORLD.Get_size()
         rank = MPI.COMM_WORLD.Get_rank()
     else:
@@ -97,8 +101,8 @@ if "PBS_ARRAYID" in e: # executing as parallel batch job
 
 # Initialize logging. Keys refer to the dict made available by the logger.
 keys = "asctime levelname name lineno process message"
-format = "%(" + ")s\t%(".join(keys.split()) + ")s"
-logging.basicConfig(level=logging.INFO, format=format)
+fmt = "%(" + ")s\t%(".join(keys.split()) + ")s"
+logging.basicConfig(level=logging.INFO, format=fmt)
 alog = logging.getLogger('arrayjob')
 
 # Path to Python jobscript (the one initially invoked)
@@ -107,6 +111,7 @@ jobscript = os.path.realpath(sys.argv[0])
 class QsubException(Exception):
     """Exception in queue submission."""
     def __init__(self, status, output, cmd):
+        super(QsubException, self).__init__()
         self.status = status
         self.output = output
         self.cmd = cmd
@@ -142,7 +147,9 @@ def set_NID(i, n=8):
     NID = i
 
 def reset_NID():
-    """Reset NID to None, so ``assert NID is None`` does not fail when debugging."""
+    """
+    Reset NID to None, so ``assert NID is None`` does not fail when debugging.
+    """
     global NID
     NID = None
 
@@ -156,8 +163,10 @@ def get_NID():
 # option and returns the callable unchanged.
 
 class Qopt(defaultdict):
-    @classmethod
+    """Dict to record queue options."""
+    @staticmethod
     def key(func):
+        """Return func, or its wrapped function if decorated."""
         return func.__func__ if hasattr(func, "__func__") else func
     def __getitem__(self, func):
         return super(Qopt, self).__getitem__(key(func))
@@ -312,7 +321,7 @@ def qopt(*args):
     >>> opt["qopt"][g]
     ['-l walltime=00:01:00', '-j oe']
     """
-    def wrapper(func):
+    def wrapper(func):  # pylint:disable=C0111
         opt["qopt"][key(func)].extend(args)
         return func
     return wrapper
@@ -420,6 +429,7 @@ def arun(*stages, **kwargs):
     STAGE_ID = os.environ.get("STAGE_ID")
     
     def run_presub(stages):
+        """Execute any pre-submission stages."""
         if is_presub(stages[0]):
             # Pop the first stage
             stage, stages = stages[0], stages[1:]
@@ -432,7 +442,7 @@ def arun(*stages, **kwargs):
                 alog.info("Pre-submit stage done: %s", stage)
         return stages
     
-    global ID
+    global ID  # pylint:disable=W0603
     testID = kwargs.pop("testID", None)
     if testID is not None:
         alog.info("Calling arun() with testID=%s", testID)
@@ -452,12 +462,12 @@ def arun(*stages, **kwargs):
     if not stages:
         return
     if STAGE_ID is None: # not invoked as queue job, so submit jobs
-        for this, next in zip(stages, stages[1:]):
-            if is_par(this) and is_par(next):
+        for this, next_ in zip(stages, stages[1:]):
+            if is_par(this) and is_par(next_):
                 msg = "Consecutive stages %s and %s are both parallel."
                 msg += " qsub dependencies cannot handle this case."
                 msg += " Workaround: insert a serial arrayjob.wait."
-                raise AssertionError(msg % (this, next))
+                raise AssertionError(msg % (this, next_))
         on_opt = "-W depend=on:%s" % (NID / ppn)
         jobid = {} # storing receipts from qsub
         jobdep = defaultdict(list) # accumulating dependencies
@@ -517,7 +527,7 @@ def memmap_chunk(filename, mode="r+", **kwargs):
     myID = kwargs.get("ID", ID)
     myNID = kwargs.get("NID", NID)
     # deferred import so arrayjob can be used without load_memmap_offset
-    from load_memmap_offset import open_memmap, memmap_chunk_ind
+    from cgp.utils.load_memmap_offset import open_memmap, memmap_chunk_ind
     r = open_memmap(filename, "r")
     n = r.shape[0]
     i = np.array_split(range(n), myNID)[myID]
@@ -564,6 +574,7 @@ class Mmapdict(Dotdict):
         :param str pardir: parent directory of preexisting .npy files to be memory-mapped.
         :param: ``**kwargs`` : passed to :func:`open_memmap`.
         """
+        super(Mmapdict, self).__init__()
         if not os.path.exists(pardir):
             os.makedirs(pardir)
         self.pardir = pardir
@@ -572,7 +583,7 @@ class Mmapdict(Dotdict):
     def __missing__(self, key):
         """Memory-map existing {key}.npy on first lookup of key."""
         # deferred import so arrayjob can be used without load_memmap_offset
-        from load_memmap_offset import open_memmap
+        from cgp.utils.load_memmap_offset import open_memmap
         return open_memmap("%s/%s.npy" % (self.pardir, key), **self.kwargs)
 
 class Timing(OrderedDict):

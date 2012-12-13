@@ -175,7 +175,8 @@ def open_memmap(filename, mode='r+', dtype=None, shape=None,
             
             if shape:
                 length = np.atleast_1d(shape)
-                assert length.ndim == 1, "Specify shape along first dimension only"
+                msg = "Specify shape along first dimension only"
+                assert length.ndim == 1, msg
             else:
                 length = fullshape[0] - offset
             shape = (length,) + fullshape[1:]
@@ -204,7 +205,8 @@ def open_memmap(filename, mode='r+', dtype=None, shape=None,
 
     return marray
 
-def load(file, mmap_mode=None, offset=0, shape=None): # pylint: disable=W0622
+# pylint: disable=W0622
+def load(file, mmap_mode=None, offset=0, shape=None):  #@ReservedAssignment
     """
     Load a pickled, ``.npy``, or ``.npz`` binary file.
 

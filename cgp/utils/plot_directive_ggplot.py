@@ -105,13 +105,13 @@ The plot directive has the following configuration options:
 
 """
 
-import sys, os, glob, shutil, imp, warnings, cStringIO, re, textwrap, \
-       traceback, exceptions
+# pylint:disable=C,W,E0611
+
+import sys, os, shutil, cStringIO, re, textwrap, traceback
 
 from docutils.parsers.rst import directives
-from docutils import nodes
 from docutils.parsers.rst.directives.images import Image
-align = Image.align
+align = Image.align  #@UndefinedVariable
 import sphinx
 
 sphinx_version = sphinx.__version__.split(".")
@@ -144,7 +144,7 @@ def debug():
     global _debug
     if not _debug:
         try:
-            from IPython.Debugger import Tracer         # 0.10
+            from IPython.Debugger import Tracer         # 0.10 @UnresolvedImport
         except Exception:
             from IPython.core.debugger import Tracer    # 0.11
         _debug = Tracer()
@@ -586,7 +586,7 @@ def render_figures(code, code_path, output_dir, output_base, context,
             images.append(img)
             for format, dpi in formats:
                 try:
-		    ns["r"].ggsave(img.filename(format), ns["r"]["last_plot"](), dpi=dpi)
+                    ns["r"].ggsave(img.filename(format), ns["r"]["last_plot"](), dpi=dpi)
                     # figman.canvas.figure.savefig(img.filename(format), dpi=dpi)
                 except Exception,err:
                     raise PlotError(traceback.format_exc())
@@ -773,13 +773,13 @@ def run(arguments, content, options, state_machine, state, lineno):
 
     # copy script (if necessary)
     if source_file_name == rst_file:
-	if u"\x00" in source_ext:  # hack for strange string corruption issue
-	    source_ext = ".py"
-        target_name = os.path.join(dest_dir, output_base + source_ext)
+        if u"\x00" in source_ext:  # hack for strange string corruption issue
+            source_ext = ".py"
+            target_name = os.path.join(dest_dir, output_base + source_ext)
         # with open("test.txt", "w") as f:
-	#     f.write("\n===\n".join([target_name, dest_dir, output_base, source_ext]))
-	# import numpy as np
-	# np.save(os.path.expanduser("~/test/temp.npy"), dict(source_ext=source_ext))
+        #     f.write("\n===\n".join([target_name, dest_dir, output_base, source_ext]))
+        # import numpy as np
+        # np.save(os.path.expanduser("~/test/temp.npy"), dict(source_ext=source_ext))
         f = open(target_name, 'w')
         f.write(unescape_doctest(code))
         f.close()

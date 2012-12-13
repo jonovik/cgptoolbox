@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib
 matplotlib.use("agg")
 from matplotlib.pyplot import (plot, subplots_adjust, subplot, axes, xlabel, 
-    ylabel, figure, setp, getp, gcf, hist)
+    ylabel, setp, getp, gcf, hist)
 try:
     from cgp.utils.rnumpy import r
 except ImportError:
@@ -95,7 +95,7 @@ def thinp(h, k, n):
         setp(h, k, thin(hk, n))
 
 # pylint: disable=W0401
-def splom(a=None, fun=plot, ntick=3, trim=(0, 0), hkw={}, skw={},
+def splom(a=None, fun=plot, ntick=3, trim=(0, 0), hkw=(), skw=(),
     *args, **kwargs):
     """
     Scatterplot matrix.
@@ -171,7 +171,7 @@ def insax(ax, i, j, h, w, **kwargs):
     
     ax is a (nrow, ncol) array of Axes.
     
-    >>> fig = figure()
+    >>> fig = plt.figure()
     >>> ax = np.array([subplot(4, 4, i) for i in range(1, 17)], 
     ...     object).reshape(4, 4)
     >>> getp(insax(ax, 1, 1, 2, 2), "position")

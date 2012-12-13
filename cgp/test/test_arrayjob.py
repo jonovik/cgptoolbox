@@ -5,12 +5,15 @@
 #PBS -j oe
 """Usage demo of utils.arrayjob. Submit with: python -m utils.test_arrayjob."""
 
-from cgp.utils.arrayjob import *  # chdir to PBS_O_WORKDIR, where job was submitted
+# pylint: disable=W0614,W0612
+
+# This import will chdir to PBS_O_WORKDIR, where job was submitted 
+from cgp.utils.arrayjob import *  # @UnusedWildImport
 set_NID(16) # ID range will be 0, 1, ..., get_NID()-1 
 
 # No boilerplate code below this line! 
 
-import numpy as np
+import numpy as np  #@Reimport
 
 # Global variables
 infile = "input.npy"

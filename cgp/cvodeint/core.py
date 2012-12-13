@@ -903,10 +903,10 @@ class Cvodeint(object):
                 elif val != default:
                     arglist.append((arg, repr(val)))
             except ValueError:
-		try:                
-		    if any(val != default):
+                try:                
+                    if any(val != default):
                         arglist.append((arg, repr(val)))
-		except ValueError:
+                except ValueError:
                     if np.any(val != default):
                         arglist.append((arg, repr(val)))
             except AttributeError:

@@ -311,7 +311,7 @@ def rep(s, old, new):
     pattern = old + "(["
     while pattern in s:
         # find the first occurrence of pattern
-        before, sep, after = s.partition(pattern)
+        before, _sep, after = s.partition(pattern)
         # find the matching closing bracket
         nesting_level = 1
         for pos, char in enumerate(after):
@@ -323,7 +323,7 @@ def rep(s, old, new):
                 break
         assert nesting_level == 0, "Matching bracket not found in '%s'" % s
         # remove the matching closing bracket
-        after = after[:pos] + after[pos+1:]
+        after = after[:pos] + after[pos+1:]  # pylint:disable=W0631
         s = before + new + "(" + after
     return s
 
@@ -380,7 +380,7 @@ def repcp(s):
     pattern = "custom_piecewise(["
     while pattern in s:
         # find the first occurrence of pattern
-        before, sep, after = s.partition(pattern)
+        _before, sep, after = s.partition(pattern)
         # find the matching closing bracket
         nesting_level = 1
         for pos, char in enumerate(after):
@@ -392,7 +392,7 @@ def repcp(s):
                 break
         assert nesting_level == 0, "Matching bracket not found in '%s'" % s
         ibefore = s.index(pattern)
-        iafter = ibefore + len(sep) + pos + 2
+        iafter = ibefore + len(sep) + pos + 2  # pylint:disable=W0631
         s = s[:ibefore] + cp2cond(s[ibefore:iafter]) + s[iafter:]
     return s
 
