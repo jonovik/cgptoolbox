@@ -242,7 +242,7 @@ def prepare_geno2par_additive(genes, parnames, origpar, relchange, nloci=None):
 
     return genes, hetpar, relvar
 
-def geno2par_diploid(genotype, hetpar, relvar):
+def geno2par_diploid(genotype, hetpar, loc2par):
     """
     General (many:many) diploid genotype-to-parameter map for N biallelic (alleles 0/1) 
     loci affecting M parameters. With a diploid parameter genotype-to-parameter map we mean
@@ -260,15 +260,9 @@ def geno2par_diploid(genotype, hetpar, relvar):
     :param recarray hetpar: record array of  M (2,) tuples of parameter values 
         for the fully heterozygous genotype [[0,1],[0,1],..,[0,1],[0,1]]
     
-    :param float relvar: proportional change in parameter values associated 
-        with changing the genotype at a locus from heterozygous to either of 
-        the homozygotes.
-        
-        * scalar float: 1 locus: 1 parameter , same proportion for all loci
-        * NxM array: element i, j gives the proportional change in parameter j 
-          associated with genotype change at locus i.
-        * list of N dicts of (parameter name, proportional change): sparse 
-          version of the NxM array.
+    :param float loc2par: N*M binary matrix relating heritable parameters to loci.
+        If element loc2par[i,j] is 1 then the value of parameter j determined by then
+        genotype at locus i.
     
     Gene/parameter names are taken from the fieldnames of hetpar.
     Thus, the result has the same dtype (Numpy data type) as the genotype array.
@@ -284,17 +278,17 @@ def geno2par_diploid(genotype, hetpar, relvar):
     parameters c
     
     >>> loci = ["Locus A","Locus B"]
-    >>> relvar = np.array([[1, 1, 0], [0, 0, 1]])
+    >>> loc2par = np.array([[1, 1, 0], [0, 0, 1]])
 
     Parameter values for genotype aaBB
     
     >>> genotype = [[0, 0], [1, 1]]
-    >>> geno2par_diploid(genotype, hetpar, relvar)      #doctest: +NORMALIZE_WHITESPACE
+    >>> geno2par_diploid(genotype, hetpar, loc2par)      #doctest: +NORMALIZE_WHITESPACE
     rec.array([([0.25, 0.25], [0.5, 0.5], [1.25, 1.25])],
           dtype=[('a', '<f8', (2,)), ('b', '<f8', (2,)), ('c', '<f8', (2,))])
     """
-    N = relvar.shape[0] #number of genes
-    M = relvar.shape[1] #number of heritable parameters
+    N = loc2par.shape[0] #number of genes
+    M = loc2par.shape[1] #number of heritable parameters
 
     ##convert genotype to (1,N) np.array with elements in 0,1,2
     genotype = np.array(genotype)
@@ -308,7 +302,7 @@ def geno2par_diploid(genotype, hetpar, relvar):
     #modify parameter values for each single locus genotype
     for i in range(N):
         for j in range(M):
-            if relvar[i, j] == 1:
+            if loc2par[i, j] == 1:
                 if allelecount[i] == 0:
                     genopar[0][j][1] = hetpar[0][j][0]
                 if allelecount[i] == 2:
