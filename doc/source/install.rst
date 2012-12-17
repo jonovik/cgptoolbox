@@ -23,7 +23,7 @@ Installing on `Ubuntu <http://www.ubuntu.com/download/ubuntu/download>`_ 12.10 w
 -----------------------------------------------------------------------------------------------
 Installing cgptoolbox on the latest version of Ubuntu is relatively easy and Ubuntu also
 works well under `VirtualBox <http://www.virtualbox.org/>`_ on 64-bit Windows 7 and other platforms. 
-Most dependencies such as `hdf5 <http://www.hdfgroup.org/HDF5/>`_, `R <http://r-project.org>`_
+Most dependencies such as `hdf5 <http://www.hdfgroup.org/HDF5/>`_, R_
 and various `Python <http://python.org>`_ packages are in the Ubuntu repositories an can 
 be installed with apt-get. The code line will install all dependencies.
 
