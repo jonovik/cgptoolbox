@@ -14,27 +14,27 @@ def Hill(x, theta, p):
     :return: function value in the range [0,1].
 
     .. plot::
-	:width: 400
-	:include-source:
+        :width: 400
+        :include-source:
 
-	import numpy as np
-	from matplotlib import pyplot as plt
-	from cgp.sigmoidmodels.doseresponse import Hill
+        import numpy as np
+        from matplotlib import pyplot as plt
+        from cgp.sigmoidmodels.doseresponse import Hill
 
-	x = np.arange(0, 10, 0.1)
-	y1 = [Hill(X,5,2) for X in x]
-	y2 = [Hill(X,5,10) for X in x]
-	plt.plot(x,y1,x,y2)
-	plt.xlabel('x')
-	plt.ylabel('Hill(x,5,p)')
-	plt.legend(('p=2','p=10'))
+        x = np.arange(0, 10, 0.1)
+        y1 = [Hill(X,5,2) for X in x]
+        y2 = [Hill(X,5,10) for X in x]
+        plt.plot(x,y1,x,y2)
+        plt.xlabel('x')
+        plt.ylabel('Hill(x,5,p)')
+        plt.legend(('p=2','p=10'))
 
     Example usage::
 
-      >>> Hill(5,5,1)
-      0.5
-      >>> Hill(10, 5, 5)
-      0.96969...
+        >>> Hill(5,5,1)
+        0.5
+        >>> Hill(10, 5, 5)
+        0.96969...
 
     References:
 
@@ -87,26 +87,26 @@ def R_logic(Z1, Z2, index, name=False):
 
     Table of Boolean functions:
 
-    ===== =================================== 	====================================
-    index Boolean function			Algebraic function
-    ===== =================================== 	====================================
-    1     AND(X1,X2)				Z1Z2
-    2     AND(X1,NOT(X2))			Z1(1-Z2)
-    3     AND(NOT(X1),X2)			(1-Z1)Z2
-    4     AND(NOT(X1),NOT(X2))			(1-Z1)(1-Z2)
-    5 	  X1					Z1
-    6 	  X2					Z2
-    7 	  NOT(X1)				1-Z1
-    8 	  NOT(X2)				1-Z2
-    9     OR(X1,X2)				Z1+Z2-Z1Z2
-    10    OR(NOT(X1),NOT(X2))			1-Z1Z2
-    11    OR(AND(X1,X2),AND(NOT(X1),NOT(X2)))	1-Z1-Z2+Z1Z2+Z1^2Z2+Z1Z2^2-Z1^2Z2^2
+    ===== ===================================   ====================================
+    index Boolean function                      Algebraic function
+    ===== ===================================   ====================================
+    1     AND(X1,X2)                            Z1Z2
+    2     AND(X1,NOT(X2))                       Z1(1-Z2)
+    3     AND(NOT(X1),X2)                       (1-Z1)Z2
+    4     AND(NOT(X1),NOT(X2))                  (1-Z1)(1-Z2)
+    5     X1                                    Z1
+    6     X2                                    Z2
+    7     NOT(X1)                               1-Z1
+    8     NOT(X2)                               1-Z2
+    9     OR(X1,X2)                             Z1+Z2-Z1Z2
+    10    OR(NOT(X1),NOT(X2))                   1-Z1Z2
+    11    OR(AND(X1,X2),AND(NOT(X1),NOT(X2)))   1-Z1-Z2+Z1Z2+Z1^2Z2+Z1Z2^2-Z1^2Z2^2
     12    OR(AND(X1,NOT(X2)),AND(X1,NOT(X2)))   Z1+Z2-3Z1Z2+Z1^2Z2+Z1Z2^2-Z1^2Z2^2
-    13    OR(X1,NOT(X2))			1-Z2+Z1Z2
-    14    OR(NOT(X1),X2))			1-Z1+Z1Z2
-    15    0 (always off)                     	0
-    16    1 (always on)                      	1
-    ===== =================================== 	====================================
+    13    OR(X1,NOT(X2))                        1-Z2+Z1Z2
+    14    OR(NOT(X1),X2))                       1-Z1+Z1Z2
+    15    0 (always off)                        0
+    16    1 (always on)                         1
+    ===== ===================================   ====================================
 
     Example - Create boolean truth tables for all 16 boolean functions::
       

@@ -154,14 +154,14 @@ class Sigmoidmodel(Namedcvodeint):
         if boolfunc==None:
             self.boolfunc = self.adjacency_to_boolfunc(adjmatrix)
         else:
-	    self.check_adjacency_and_boolfunc(adjmatrix,boolfunc)
-	    self.boolfunc = boolfunc
+            self.check_adjacency_and_boolfunc(adjmatrix,boolfunc)
+            self.boolfunc = boolfunc
         self.adjmatrix = adjmatrix
         super(Sigmoidmodel, self).__init__(self.equations_diploid_adjacency, 
             t, y, p=p)
             
     def __str__(self):
-	
+        
         """
         Print method for a :class:`Sigmoidmodel` instance.
         Prints a textual description of the connectivity and mode of regulation.
@@ -291,18 +291,18 @@ class Sigmoidmodel(Namedcvodeint):
         Exception: Mismatch: admjotifs[0,:] indicates zero regulators, but boolfunc[0] does not
         
         Check passes when *adjmatrix* and *boolfunc* both indicate 0 regulators for gene 1
-	
-	>>> s.check_adjacency_and_boolfunc(adjmatrix,[15,5,5])
+        
+        >>> s.check_adjacency_and_boolfunc(adjmatrix,[15,5,5])
         """
         boolfunc = np.array(boolfunc)
         
         if not adjmatrix.shape==(3,3):
-	    raise Exception('adjmatrix.shape is not (3,3)')
-	if not boolfunc.shape==(3,):
-	    raise Exception('boolfunc does not have 3 elements')
+            raise Exception('adjmatrix.shape is not (3,3)')
+        if not boolfunc.shape==(3,):
+            raise Exception('boolfunc does not have 3 elements')
         
         for i in range(3):
-	    if np.shape(adjmatrix[i, :].nonzero()[0]) == (0,):
+            if np.shape(adjmatrix[i, :].nonzero()[0]) == (0,):
                 # adjmatrix indicates no regulators
                 if ~np.max(boolfunc[i]==[15,16]):
                     raise Exception('Mismatch: admjotifs['+str(i)+',:] indicates zero regulators, but boolfunc['+str(i)+'] does not')
@@ -314,7 +314,7 @@ class Sigmoidmodel(Namedcvodeint):
                 # adjmatrix inicates three regulators
                 if ~np.max(boolfunc[i]==[1,2,3,4,9,10,11,12,13,14]):
                     raise Exception('Mismatch: admjotifs['+str(i)+',:] indicates two regulators, but boolfunc['+str(i)+'] does not')
-	    elif np.shape(adjmatrix[i, :].nonzero()[0]) == (3,):
+            elif np.shape(adjmatrix[i, :].nonzero()[0]) == (3,):
                 raise Exception('Only 0,1 or 2 regulators allowed per gene')
 
 
@@ -327,14 +327,14 @@ class Sigmoidmodel(Namedcvodeint):
             a value of 3 means no regulator (see Y[3] in equations_diploid_adjacency)
         :return boolfunc: 3-element list of integers indicating the Boolean function 
             used in the gene regulation functions.
-	
-	>>> s = Sigmoidmodel()
-	>>> adjmatrix = np.array([[0, 0, 0], [1, 0, 0], [0, -1, 0]])
-	>>> s.adjacency_to_reglist(adjmatrix)
-	array([[3, 3], [0, 3], [1, 3]])
-	>>> adjmatrix = np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]])
-	>>> s.adjacency_to_reglist(adjmatrix)
-	Traceback (most recent call last):
+        
+        >>> s = Sigmoidmodel()
+        >>> adjmatrix = np.array([[0, 0, 0], [1, 0, 0], [0, -1, 0]])
+        >>> s.adjacency_to_reglist(adjmatrix)
+        array([[3, 3], [0, 3], [1, 3]])
+        >>> adjmatrix = np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]])
+        >>> s.adjacency_to_reglist(adjmatrix)
+        Traceback (most recent call last):
             ...
         Exception: Only 0,1 or 2 regulators allowed per gene
 
@@ -342,7 +342,7 @@ class Sigmoidmodel(Namedcvodeint):
         reglist = np.zeros((3, 2),dtype=int)
                 
         for i in range(3):
-	    if np.shape(adjmatrix[i, :].nonzero()[0]) == (0,):
+            if np.shape(adjmatrix[i, :].nonzero()[0]) == (0,):
                 # No regulators
                 reglist[i, :] = [3, 3]
             elif np.shape(adjmatrix[i, :].nonzero()[0]) == (1,):
@@ -373,15 +373,15 @@ class Sigmoidmodel(Namedcvodeint):
           (activation/repression) as for one regulator, and an AND function (indexes 1-4) 
           is used to combine the two regulators.
           
-	See also function R_logic. 
+        See also function R_logic. 
         
         :return boolfunc:  3-element list of integers indicating the Boolean function 
             used in the gene regulation functions.
             
-	>>> s = Sigmoidmodel()
-	>>> adjmatrix = np.array([[0, 0, 0], [1, 0, 0], [0, -1, 0]])
-	>>> s.adjacency_to_boolfunc(adjmatrix)
-	array([ 16., 5., 7.])
+        >>> s = Sigmoidmodel()
+        >>> adjmatrix = np.array([[0, 0, 0], [1, 0, 0], [0, -1, 0]])
+        >>> s.adjacency_to_boolfunc(adjmatrix)
+        array([ 16., 5., 7.])
         """
         
         boolfunc = np.nan * np.zeros(3,)
@@ -423,11 +423,11 @@ class Sigmoidmodel(Namedcvodeint):
         
         :return hetpar: numpy recarray like self.p with parameter values for 
             an all-loci heterozygote.
-	
-	>>> np.random.seed(0)
-	>>> s = Sigmoidmodel()
-	>>> s.sample_hetpar() # doctest: +ELLIPSIS
-	rec.array([ ([154.8813503927325, 171.51893663724195], ... [5.105352989948937, 6.115905539817836], [10.0, 10.0])], 
+        
+        >>> np.random.seed(0)
+        >>> s = Sigmoidmodel()
+        >>> s.sample_hetpar() # doctest: +ELLIPSIS
+        rec.array([ ([154.8813503927325, 171.51893663724195], ... [5.105352989948937, 6.115905539817836], [10.0, 10.0])], 
         dtype=[('alpha1', '<f8', (2,)), ... ('p32', '<f8', (2,)), ('gamma3', '<f8', (2,))])
         """
         low = self.par_mean - self.par_span/2
