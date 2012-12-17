@@ -21,21 +21,26 @@ Installing the cgptoolbox
    
 Installing on `Ubuntu <http://www.ubuntu.com/download/ubuntu/download>`_ 12.10 with root access
 -----------------------------------------------------------------------------------------------
-Installing cgptoolbox on the latest version of Ubuntu is relatively easy and Ubuntu also
-works well under `VirtualBox <http://www.virtualbox.org/>`_ on 64-bit Windows 7 and other platforms. 
-Most dependencies such as `hdf5 <http://www.hdfgroup.org/HDF5/>`_, R_
-and various `Python <http://python.org>`_ packages are in the Ubuntu repositories an can 
-be installed with apt-get. The code line will install all dependencies.
+
+Installing cgptoolbox on the latest version of Ubuntu is relatively easy and 
+Ubuntu also works well under `VirtualBox <http://www.virtualbox.org/>`_ on 
+64-bit Windows 7 and other platforms. Most dependencies such as `hdf5 
+<http://www.hdfgroup.org/HDF5/>`_, R_ and various `Python <http://python.org>
+`_ packages are in the Ubuntu repositories an can be installed with apt-get. 
+The code line will install all dependencies.
 
 .. code-block:: bash
 
    sudo apt-get install python-tables python-networkx python-pip python-rpy2 python-joblib cython
 
-For solving differential equations the cgptoolbox utilizes the `SUNDIALS <http://www.llnl.gov/CASC/sundials>`_ 
-library and the python bindings provided by the Python package `pysundials <http://pysundials.sourceforge.net>`_.
-Ubuntu 12.10 offer SUNDIALS v.2.5.0, but the stable release of `pysundials <http://pysundials.sourceforge.net>`_ is for
-v.2.3.0. The following lines of code adds the repository and signing key for Debian stable, installs libraries and header 
-files for the 2.3.0 version of SUNDIALS and protect the packages from upgrading.
+For solving differential equations the cgptoolbox utilizes the `SUNDIALS 
+<http://www.llnl.gov/CASC/sundials>`_ library and the python bindings provided 
+by the Python package `pysundials <http://pysundials.sourceforge.net>`_. 
+Ubuntu 12.10 offer SUNDIALS v.2.5.0, but the stable release of `pysundials 
+<http://pysundials.sourceforge.net>`_ is for v.2.3.0. The following lines of 
+code adds the repository and signing key for Debian stable, installs libraries 
+and header files for the 2.3.0 version of SUNDIALS and protect the packages 
+from upgrading.
 
 .. code-block:: bash
 
@@ -45,8 +50,9 @@ files for the 2.3.0 version of SUNDIALS and protect the packages from upgrading.
    echo "libsundials-serial hold" | sudo dpkg --set-selections
    echo "libsundials-serial-dev hold" | sudo dpkg --set-selections
 
-Once the right version of SUNDIALS is installed, pysundials and cgptoolbox can be installed 
-with `pip <http://www.pip-installer.org/>`_ directly from their code repositories.
+Once the right version of SUNDIALS is installed, pysundials and cgptoolbox can 
+be installed with `pip <http://www.pip-installer.org/>`_ directly from their 
+code repositories.
 
 .. code-block:: bash
 
@@ -55,9 +61,12 @@ with `pip <http://www.pip-installer.org/>`_ directly from their code repositorie
    
 Installing on Linux witout root access 
 --------------------------------------
-On a typipcal HPC cluster the cgptoobox must be installed without root access. Before the installing the required Python 
-packages you should check the following software dependencies and install (or ask the system administratir to install)  
-missing pieces, version numbers refer to version that we have tested, other version could also work:
+
+On a typical HPC cluster the cgptoobox must be installed without root access. 
+Before the installing the required Python packages you should check the 
+following software dependencies and install (or ask the system administrator 
+to install) missing pieces, version numbers refer to version that we have 
+tested, other version could also work:
 
 * `Python <http://python.org>`_  versions 2.7.3, 2.7.2. 
 * `virtualenv <http://www.virtualenv.org>`_ version 1.8.2
@@ -67,8 +76,10 @@ missing pieces, version numbers refer to version that we have tested, other vers
 
 SUNDIALS 
 ^^^^^^^^
-Download version 2.3.0 of the `SUNDIALS <http://www.llnl.gov/CASC/sundials>`_ library not the newest 2.5.0, 
-since `pysundials <http://pysundials.sourceforge.net>`_ does not work for the latest version yet. 
+
+Download version 2.3.0 of the `SUNDIALS <http://www.llnl.gov/CASC/sundials>`_ 
+library not the newest 2.5.0, since `pysundials 
+<http://pysundials.sourceforge.net>`_ does not work for the latest version yet.
 
 .. code-block:: bash
 
