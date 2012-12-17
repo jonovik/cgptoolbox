@@ -112,15 +112,12 @@ class Bond(Cellmlmodel, Paceable, Clampable):
     :class:`Paceable` and :class:`Clampable` mixins to add an experimental 
     protocols to a :class:`~cgp.physmod.cgp.physmod.Cellmlmodel`.
     
-    ..  inheritance-diagram: cgp.physmod.cellmlmodel.Cellmlmodel Paceable Clampable Bond
-        parts: 1
+    ..  inheritance-diagram:: cgp.physmod.cellmlmodel.Cellmlmodel Paceable Clampable Bond
+        :parts: 1
     
     .. todo:: Add voltage clamping.
     
-    As a convenience feature, the :meth:`Bond` constructor defines the 
-    *exposure_workspace* model identifier as a default argument.
-    Another typical adjustment is to set the redundant parameter *stim_start* 
-    to zero.
+    Note: The redundant parameter *stim_start* is set to zero.
     
     Once defined, the :class:`Bond` class can be used as follows:
     

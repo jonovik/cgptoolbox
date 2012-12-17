@@ -1,9 +1,11 @@
 """
-The class Sigmoidmodel inherits from Namedcvodeint and contains an adjacency matrix defining the
-connectivity of the network, a function defining the right hand side of the ODEs
-and a function for sampling heritable variation in allelic parameter values for
-cGP studies. The parameter ranges default to the ranges used in Gjuvsland et al.
-(2007).
+Solve sigmoid ode model equations describing diploid gene regulatory networks.
+
+The class Sigmoidmodel inherits from Namedcvodeint and contains an adjacency
+matrix defining the connectivity of the network, a function defining the right
+hand side of the ODEs and a function for sampling heritable variation in allelic
+parameter values for cGP studies. The parameter ranges default to the ranges
+used in Gjuvsland et al. (2007).
 
 Reference:
 
@@ -51,20 +53,20 @@ class Sigmoidmodel(Namedcvodeint):
     
     If we start with zero expression in this network only gene 1, which is always on, increases
     
-    >>> y = np.array([0.0,0.0,0.0,0.0,0.0,0.0])
-    >>> ydot = np.array([0.0,0.0,0.0,0.0,0.0,0.0])
-    >>> s.equations_diploid_adjacency(s.t0,y,ydot,None)
+    >>> y = np.zeros(6)
+    >>> ydot = np.zeros(6)
+    >>> s.equations_diploid_adjacency(s.t0, y, ydot, None)
     >>> ydot
     array([ 150.,  150.,    0.,    0.,    0.,    0.])
     
     Once there is a certain amount of gene 1 then gene 2 starts to increase
     
-    >>> y = np.array([5.0,5.0,0.0,0.0,0.0,0.0])
+    >>> y = np.array([5.0, 5.0, 0.0, 0.0, 0.0, 0.0])
     >>> s.equations_diploid_adjacency(s.t0,y,ydot,None)
     >>> ydot
     array([ 100. ,  100. ,    3.24...,    3.24...,    0. ,    0. ])
     
-    But seriously, we cant continue looking at derivatives, lets integrate!
+    But seriously, we can't continue looking at derivatives, let's integrate!
     
     .. plot::
         :width: 400
@@ -79,8 +81,6 @@ class Sigmoidmodel(Namedcvodeint):
         plt.xlabel('t')
         plt.ylabel('Expression level')
         plt.legend(('Gene 1','Gene 2','Gene 3'))
-
-    
     """
     
     #: Adjacency matrix defining network connectivity
@@ -136,46 +136,45 @@ class Sigmoidmodel(Namedcvodeint):
         array([ 16., 5., 5.])
                 
         # gene 1 and 2 both activate gene 3, boolean combination of regulators default to AND
-        >>> s = Sigmoidmodel(adjmatrix=np.array([[0,0,0],[0,0,0],[1,1,0]]))
+        >>> s = Sigmoidmodel(adjmatrix=np.array([[0, 0, 0], [0, 0, 0], [1, 1, 0]]))
         >>> s.boolfunc
         array([ 16., 16., 1.])
   
         # gene 1 and 2 both activate gene 3, specify combination of regulators to be OR
-        >>> s = Sigmoidmodel(adjmatrix=np.array([[0,0,0],[0,0,0],[1,1,0]]), boolfunc=[16,16,9])
+        >>> s = Sigmoidmodel(adjmatrix=np.array([[0, 0, 0], [0, 0, 0], [1, 1, 0]]), boolfunc=[16, 16, 9])
         
         # incompatible adjmatrix and boolfunc raises Exception 
-        >>> s = Sigmoidmodel(adjmatrix=np.array([[0,0,0],[0,0,0],[1,1,0]]), boolfunc = [16,16,5])
+        >>> s = Sigmoidmodel(adjmatrix=np.array([[0, 0, 0], [0, 0, 0], [1, 1, 0]]), boolfunc = [16, 16, 5])
         Traceback (most recent call last):
             ...
-        Exception: Mismatch: admjotifs[2,:] indicates two regulators, but boolfunc[2] does not
+        Exception: Mismatch: adjmatrix[2, :] indicates 2 regulator(s), but boolfunc[2] does not.
         """
         t = np.array(t)
         y = np.asanyarray(y)
-        if boolfunc==None:
+        if boolfunc == None:
             self.boolfunc = self.adjacency_to_boolfunc(adjmatrix)
         else:
-            self.check_adjacency_and_boolfunc(adjmatrix,boolfunc)
+            self.check_adjacency_and_boolfunc(adjmatrix, boolfunc)
             self.boolfunc = boolfunc
         self.adjmatrix = adjmatrix
         super(Sigmoidmodel, self).__init__(self.equations_diploid_adjacency, 
             t, y, p=p)
             
     def __str__(self):
-        
         """
-        Print method for a :class:`Sigmoidmodel` instance.
-        Prints a textual description of the connectivity and mode of regulation.
+        Textual description of the connectivity and mode of regulation.
         
         :TODO: make a corresponding graphical representation using networkx
         
         >>> s = Sigmoidmodel()
         >>> print s
-        Instance of class Sigmoidmodel() representing a 3-gene regulatory network where:
+        Instance of class Sigmoidmodel() representing a 3-gene regulatory 
+        network where:
         * Gene 1 has no regulators and production is always on.
         * Gene 2 has one activator of its production, gene 1.
         * Gene 3 has one activator of its production, gene 2.
         
-        >>> s = Sigmoidmodel(adjmatrix=np.array([[0,0,0],[0,0,0],[1,1,0]]), boolfunc=[16,16,9])
+        >>> s = Sigmoidmodel(adjmatrix=np.array([[0, 0, 0], [0, 0, 0], [1, 1, 0]]), boolfunc=[16, 16, 9])
         >>> print s
         Instance of class Sigmoidmodel() representing a 3-gene regulatory network where:
         * Gene 1 has no regulators and production is always on.
@@ -184,8 +183,9 @@ class Sigmoidmodel(Namedcvodeint):
         with index 9 in cgp.sigmoidmodels.doseresponse.R_logic is used to combine the regulatory signals.
 
         """
-        self.check_adjacency_and_boolfunc(self.adjmatrix,self.boolfunc)
-        text = "Instance of class Sigmoidmodel() representing a 3-gene regulatory network where:"
+        self.check_adjacency_and_boolfunc(self.adjmatrix, self.boolfunc)
+        text = "Instance of class Sigmoidmodel() representing a 3-gene "
+        text += "regulatory network where:"
 
         reglist = self.adjacency_to_reglist(self.adjmatrix)
 
@@ -193,31 +193,36 @@ class Sigmoidmodel(Namedcvodeint):
             regmode = self.adjmatrix[i, :].nonzero()[0]
             if np.shape(regmode) == (0,):
                 # adjmatrix indicates no regulators
-                text+="\n  * Gene "+str(i+1)+" has no regulators "
-                if self.boolfunc[i]==15:
-                    text+="and production is always off."
-                if self.boolfunc[i]==16:
-                    text+= "and production is always on."
+                text += "\n  * Gene {} has no regulators ".format(i + 1)
+                if self.boolfunc[i] == 15:
+                    text += "and production is always off."
+                if self.boolfunc[i] == 16:
+                    text += "and production is always on."
             elif np.shape(regmode) == (1,):
                 # adjmatrix indicates one regulator
-                text+="\n  * Gene "+str(i+1)+" has one"
-                if self.adjmatrix[i,regmode[0]]==1:
-                   text+=" activator"
+                text += "\n  * Gene {} has one".format(i + 1)
+                if self.adjmatrix[i, regmode[0]] == 1:
+                    text += " activator"
                 else:
-                    text+= " inhibitor",
-                text+=" of its production, gene "+str(reglist[i][0]+1)+"."
+                    text += " inhibitor"
+                text += " of its production, "
+                text += "gene {}.".format(reglist[i][0] + 1)
             else:
-                text+="\n  * Gene "+str(i+1)+" has two regulators of production. Gene "+str(reglist[i][0]+1)
-                if self.adjmatrix[i,regmode[0]]==1:
-                    text+=" activates"
+                text += "\n  * Gene {} has two regulators ".format(i + 1)
+                text += "of production. Gene {}".format(reglist[i][0] + 1)
+                if self.adjmatrix[i, regmode[0]] == 1:
+                    text += " activates"
                 else:
-                    text+=" inhibits"
-                text+=", gene "+str(reglist[i][1]+1)
-                if self.adjmatrix[i,regmode[1]]==1:
-                    text+=" activates. "
+                    text += " inhibits"
+                text += ", gene " + str(reglist[i][1] + 1)
+                if self.adjmatrix[i, regmode[1]] == 1:
+                    text += " activates. "
                 else:
-                    text+=" inhibits. "
-                text+="The boolean function \n    with index "+str(self.boolfunc[i])+" in cgp.sigmoidmodels.doseresponse.R_logic is used to combine the regulatory signals."
+                    text += " inhibits. "
+                text += "The boolean function \n    "
+                text += "with index {} ".format(self.boolfunc[i])
+                text += "in cgp.sigmoidmodels.doseresponse.R_logic "
+                text += "is used to combine the regulatory signals."
         
         return text
     
@@ -230,8 +235,8 @@ class Sigmoidmodel(Namedcvodeint):
         The actual motif is controlled by the adjacency matrix adjmatrix.
 
         >>> s = Sigmoidmodel()
-        >>> ydot = np.array([0.0,0.0,0.0,0.0,0.0,0.0])
-        >>> s.equations_diploid_adjacency(s.t0,s.y,ydot,None)
+        >>> ydot = np.zeros(6)
+        >>> s.equations_diploid_adjacency(s.t0, s.y, ydot, None)
         >>> ydot
         array([ 150.,  150.,    0.,    0.,    0.,    0.])
         """
@@ -272,53 +277,60 @@ class Sigmoidmodel(Namedcvodeint):
             Hill(Y[reglist[2, 1]], p.theta32[0, 1], p.p32[0, 1]), 
             boolfunc[2]) - p.gamma3[0, 1] * y[5]
 
-    def check_adjacency_and_boolfunc(self,adjmatrix,boolfunc):
+    def check_adjacency_and_boolfunc(self, adjmatrix, boolfunc):
         """
         Check for consistency between *adjmatrix* and *boolfunc*.
-        The number of non-zero elements in the i-th row of *adjmatrix* 
-        and the i-th element of *boolfunc*, both indicate the number of regulators 
-        (0,1 or 2) of gene i-1. An exception is raised if the numbers don't match.
+        
+        The number of non-zero elements in the i-th row of *adjmatrix* and the
+        i-th element of *boolfunc*, both indicate the number of regulators (0, 
+        1 or 2) of gene i-1. An exception is raised if the numbers don't match.
         
         
         >>> s = Sigmoidmodel()
         >>> adjmatrix = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]])
         
-        Exception raised when *adjmatrix* indicates 0 regulators for gene 1 and *boolfunc* indicates 2      
+        Exception raised when *adjmatrix* indicates 0 regulators for gene 1 
+        and *boolfunc* indicates 2      
         
-        >>> s.check_adjacency_and_boolfunc(adjmatrix,[1,5,7])   
+        >>> s.check_adjacency_and_boolfunc(adjmatrix, [1, 5, 7])   
         Traceback (most recent call last):
         ...
-        Exception: Mismatch: admjotifs[0,:] indicates zero regulators, but boolfunc[0] does not
+        Exception: Mismatch: adjmatrix[0, :] indicates 0 regulator(s), 
+        but boolfunc[0] does not.
         
-        Check passes when *adjmatrix* and *boolfunc* both indicate 0 regulators for gene 1
+        Check passes when *adjmatrix* and *boolfunc* both indicate 0 regulators
+        for gene 1
         
-        >>> s.check_adjacency_and_boolfunc(adjmatrix,[15,5,5])
+        >>> s.check_adjacency_and_boolfunc(adjmatrix, [15, 5, 5])
         """
         boolfunc = np.array(boolfunc)
         
-        if not adjmatrix.shape==(3,3):
-            raise Exception('adjmatrix.shape is not (3,3)')
-        if not boolfunc.shape==(3,):
+        if not adjmatrix.shape == (3, 3):
+            raise Exception('adjmatrix.shape is not (3, 3)')
+        if not boolfunc.shape == (3,):
             raise Exception('boolfunc does not have 3 elements')
         
+        
+        msg = "Mismatch: adjmatrix[{}, :] indicates {} regulator(s), "
+        msg += "but boolfunc[{}] does not."
         for i in range(3):
             if np.shape(adjmatrix[i, :].nonzero()[0]) == (0,):
                 # adjmatrix indicates no regulators
-                if ~np.max(boolfunc[i]==[15,16]):
-                    raise Exception('Mismatch: admjotifs['+str(i)+',:] indicates zero regulators, but boolfunc['+str(i)+'] does not')
+                if ~np.max(boolfunc[i] == [15, 16]):
+                    raise Exception(msg.format(i, 0, i))
             elif np.shape(adjmatrix[i, :].nonzero()[0]) == (1,):
                 # adjmatrix indicates one regulator
-                if ~np.max(boolfunc[i]==[5,7]):
-                    raise Exception('Mismatch: admjotifs['+str(i)+',:] indicates one regulator, but boolfunc['+str(i)+'] does not')
+                if ~np.max(boolfunc[i] == [5, 7]):
+                    raise Exception(msg.format(i, 1, i))
             elif np.shape(adjmatrix[i, :].nonzero()[0]) == (2,):
                 # adjmatrix inicates three regulators
-                if ~np.max(boolfunc[i]==[1,2,3,4,9,10,11,12,13,14]):
-                    raise Exception('Mismatch: admjotifs['+str(i)+',:] indicates two regulators, but boolfunc['+str(i)+'] does not')
+                if ~np.max(boolfunc[i] == [1, 2, 3, 4, 9, 10, 11, 12, 13, 14]):
+                    raise Exception(msg.format(i, 2, i))
             elif np.shape(adjmatrix[i, :].nonzero()[0]) == (3,):
-                raise Exception('Only 0,1 or 2 regulators allowed per gene')
+                raise Exception('Only 0, 1 or 2 regulators allowed per gene')
 
 
-    def adjacency_to_reglist(self,adjmatrix):
+    def adjacency_to_reglist(self, adjmatrix):
         """
         Convert adjacency matrix to nested lists of regulators  
         
@@ -339,7 +351,7 @@ class Sigmoidmodel(Namedcvodeint):
         Exception: Only 0,1 or 2 regulators allowed per gene
 
         """
-        reglist = np.zeros((3, 2),dtype=int)
+        reglist = np.zeros((3, 2), dtype=int)
                 
         for i in range(3):
             if np.shape(adjmatrix[i, :].nonzero()[0]) == (0,):
@@ -356,7 +368,7 @@ class Sigmoidmodel(Namedcvodeint):
         
         return reglist
       
-    def adjacency_to_boolfunc(self,adjmatrix):
+    def adjacency_to_boolfunc(self, adjmatrix):
         """
         Convert adjacency matrix to a list of boolean functions 
         (index used as input to :meth:`~cgp.sigmoidmodels.doseresponse.R_logic`). The number of 
