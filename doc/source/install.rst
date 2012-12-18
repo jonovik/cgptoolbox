@@ -25,9 +25,9 @@ Installing on `Ubuntu <http://www.ubuntu.com/download/ubuntu/download>`_ 12.10 w
 Installing cgptoolbox on the latest version of Ubuntu is relatively easy and 
 Ubuntu also works well under `VirtualBox <http://www.virtualbox.org/>`_ on 
 64-bit Windows 7 and other platforms. Most dependencies such as `hdf5 
-<http://www.hdfgroup.org/HDF5/>`_, R_ and various `Python <http://python.org>
-`_ packages are in the Ubuntu repositories an can be installed with apt-get. 
-The code line will install all dependencies.
+<http://www.hdfgroup.org/HDF5/>`_, R_ and various 
+`Python <http://python.org>`_ packages are in the Ubuntu repositories and can 
+be installed with apt-get. The code line will install all dependencies.
 
 .. code-block:: bash
 
@@ -63,10 +63,10 @@ Installing on Linux witout root access
 --------------------------------------
 
 On a typical HPC cluster the cgptoobox must be installed without root access. 
-Before the installing the required Python packages you should check the 
-following software dependencies and install (or ask the system administrator 
-to install) missing pieces, version numbers refer to version that we have 
-tested, other version could also work:
+Before installing the required Python packages, you should make sure the 
+following software dependencies are installed (your system administrator 
+may be able to assist). Version numbers refer to versions that we have 
+tested; other versions might also work.
 
 * `Python <http://python.org>`_  versions 2.7.3, 2.7.2. 
 * `virtualenv <http://www.virtualenv.org>`_ version 1.8.2
