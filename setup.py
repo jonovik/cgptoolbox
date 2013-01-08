@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 """cgptoolbox setup script."""
 
+# TODO: We might want to add dependencies: 
+# http://packages.python.org/distribute/setuptools.html#declaring-dependencies
+
 from setuptools import setup, find_packages
 
 if __name__ == "__main__":
