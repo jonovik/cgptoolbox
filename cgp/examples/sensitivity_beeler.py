@@ -21,7 +21,8 @@ from cgp.utils.unstruct import unstruct
 from cgp.utils.failwith import failwithnanlikefirst
 
 # Sensitivity analysis package for R
-r.library("sensitivity")
+if __name__ == "__main__":  # allow nosetests to import without requiring this 
+    r.library("sensitivity")
 # Initialize caching
 mem = Memory("/tmp/sensitivity_beeler")
 
