@@ -137,7 +137,6 @@ import matplotlib.pyplot as plt
 from matplotlib import _pylab_helpers
 
 __version__ = 2
-__test__ = False  # Keep nosetests from treating setup() as a test
 
 _debug = None
 def debug():
@@ -270,7 +269,14 @@ def mark_plot_labels(app, document):
 
 def setup(app):
     setup.app = app
-    setup.config = app.config
+    # Workaround for "__test__ = False" not working for anything called setup()
+    # http://code.google.com/p/python-nose/issues/detail?id=326
+    try:
+        setup.config = app.config
+    except AttributeError:
+        from nose.plugins.skip import SkipTest
+        raise SkipTest("Skipping incorrectly detected setup() function in "
+            "plot_directive_ggplot.")
     setup.confdir = app.confdir
 
     options = {'alt': directives.unchanged,
