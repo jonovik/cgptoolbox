@@ -672,7 +672,7 @@ class Cellmlmodel(Namedcvodeint):
         >>> print Cellmlmodel().makebench()
         # Run the following from the IPython prompt:
         import os
-        import cgp.physmod... as m
+        import _cellml2py... as m
         reload(m)
         from utils.capture_output import Capture
         with Capture() as cap:
@@ -709,12 +709,15 @@ if ext in [".so", ".pyd"]:
     
     finally:
         os.rename(backup, src)
-        print "##### Restored compiled version #####"
+        print "##### Restored original version #####"
         reload(m)
 
 print cap
 """
-        return template % self.model.__name__
+        name = self.model.__name__
+        if name.endswith(".cy"):
+            name = name[:-3]
+        return template % name
     
     def get_latest_exposure(self, fmt="workspace/{workspace}"):
         """
@@ -805,7 +808,7 @@ def test_cellmlmodel():
     y=[-86.2, 138.3, 11.6, 0.0002, 0.0, 1.0, 0.0, 0.0, 0.75, 0.75, 
     0.0, 1.0, 1.0, 1.0, 0.0, 0.2, 1.0])
     >>> c.model
-    <module 'cgp.physmod._cellml2py._f09947.py' from '...py.py...'>
+    <module '_cellml2py._f09947.py' from '...py.py...'>
     """
     pass
 
