@@ -5,8 +5,8 @@ from collections import OrderedDict
 import numpy as np
 import matplotlib
 matplotlib.use("agg")
-from matplotlib.pyplot import (plot, subplots_adjust, subplot, axes, xlabel, 
-    ylabel, setp, getp, gcf, hist)
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import setp, getp
 try:
     from cgp.utils.rnumpy import r
 except ImportError:
@@ -84,7 +84,7 @@ except NameError:
 
 def spij(m, n, i, j, *args, **kwargs):
     """Subplot specified by nrows, ncols, row, col; row, col start from zero."""
-    return subplot(m, n, 1 + i * n + j, *args, **kwargs)
+    return plt.subplot(m, n, 1 + i * n + j, *args, **kwargs)
 
 def thinp(h, k, n):
     """Thin property 'k' of handle 'h' to 'n' elements."""
@@ -93,7 +93,7 @@ def thinp(h, k, n):
         setp(h, k, thin(hk, n))
 
 # pylint: disable=W0401
-def splom(a=None, fun=plot, ntick=3, trim=(0, 0), hkw=(), skw=(),
+def splom(a=None, fun=plt.plot, ntick=3, trim=(0, 0), hkw=(), skw=(),
     *args, **kwargs):
     """
     Scatterplot matrix.
@@ -123,7 +123,7 @@ def splom(a=None, fun=plot, ntick=3, trim=(0, 0), hkw=(), skw=(),
     my_skw.update(skw)
     
     n = len(a.dtype.names)
-    setp(gcf(), "facecolor", "w")
+    setp(plt.gcf(), "facecolor", "w")
     # fig = figure(facecolor="w")
     # ax[i,j] = row i, col j
     ax = np.array([[spij(n, n, i, j, frame_on=False) for j in range(n)] 
@@ -132,7 +132,7 @@ def splom(a=None, fun=plot, ntick=3, trim=(0, 0), hkw=(), skw=(),
         for j, kj in enumerate(a.dtype.names):
             # Finite values only, optionally trimming possible outliers
             aki, akj = trimpair(np.c_[a[ki], a[kj]], *trim).T
-            axes(ax[i, j])
+            plt.axes(ax[i, j])
             if i > j:
                 pts = fun(akj, aki, *args, **my_kwargs)
                 setp(pts, antialiased=False)
@@ -140,13 +140,13 @@ def splom(a=None, fun=plot, ntick=3, trim=(0, 0), hkw=(), skw=(),
                 #    transform=ax[i,j].transAxes, ha="center")
             elif i == j:
                 # ax[i,j].hist(a[ki], cumulative=False, histtype="step")
-                hist(aki, **my_hkw)
+                plt.hist(aki, **my_hkw)
             if j == 0:
-                ylabel(ki, rotation="horizontal")
+                plt.ylabel(ki, rotation="horizontal")
             if i == (n - 1):
-                xlabel(kj, rotation="vertical")
+                plt.xlabel(kj, rotation="vertical")
     # compact the plot
-    subplots_adjust(**my_skw)
+    plt.subplots_adjust(**my_skw)
     # don't show any ticks
     setp([i.xaxis for i in ax.flatten()], "ticks_position", "none")
     setp([i.yaxis for i in ax.flatten()], "ticks_position", "none")
@@ -169,10 +169,14 @@ def insax(ax, i, j, h, w, **kwargs):
     
     ax is a (nrow, ncol) array of Axes.
     
+    Example (using a new figure to avoid interference with any existing figure 
+    objects).
+    
     >>> fig = plt.figure()
-    >>> ax = np.array([subplot(4, 4, i) for i in range(1, 17)], 
+    >>> ax = np.array([plt.subplot(4, 4, i) for i in range(1, 17)], 
     ...     object).reshape(4, 4)
-    >>> getp(insax(ax, 1, 1, 2, 2), "position")
+    >>> pos = getp(insax(ax, 1, 1, 2, 2), "position")
+    >>> print str(pos).replace("'", "")
     Bbox(array([[ 0.32717391,  0.30869565],...[ 0.69782609,  0.69130435]]))
     """
     (left, _), (_, top) = getp(ax[i, j], "position").get_points()
@@ -182,7 +186,7 @@ def insax(ax, i, j, h, w, **kwargs):
     #     spij(m, n, i+h, j+w), "position").get_points()
     width = right - left
     height = top - bottom
-    ax = gcf().add_axes([left, bottom, width, height], **kwargs)
+    ax = plt.gcf().add_axes([left, bottom, width, height], **kwargs)
     return ax
 
 def cmap_discretize(cmap, N):
