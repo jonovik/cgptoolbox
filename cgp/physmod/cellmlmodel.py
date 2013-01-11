@@ -15,36 +15,36 @@ Shorter naming scheme, e.g. __main__.py in package.
     plt.plot(t, y.x, t, y.y)
 """
 # pylint: disable=W0621, W0142, W0201
-from cgp.cvodeint.namedcvodeint import Namedcvodeint
-from cgp.utils.commands import getstatusoutput
-from cgp.utils.dotdict import Dotdict
-from cgp.utils.ordereddict import OrderedDict
-from cgp.utils.rec2dict import dict2rec
-from cgp.utils.write_if_not_exists import write_if_not_exists
 from StringIO import StringIO
-from cgp import physmod as cellmlmodels
-from cgp.physmod.cythonize import cythonize_model
 from collections import namedtuple
 from contextlib import closing
 from importlib import import_module
-from numpy import recarray # recarray allows named columns: y.V etc.
 from tempfile import NamedTemporaryFile as Tempfile, gettempdir
 import hashlib
-import joblib
 import json
-import numpy as np
 import os
 import shutil
 import subprocess
 import sys
 import urllib
 import warnings
-from lxml import etree
 
+import numpy as np
+from lxml import etree
+import joblib
+
+import cgp.physmod
+from cgp.cvodeint.namedcvodeint import Namedcvodeint
+from cgp.utils.commands import getstatusoutput
+from cgp.utils.dotdict import Dotdict
+from cgp.utils.ordereddict import OrderedDict
+from cgp.utils.rec2dict import dict2rec
+from cgp.utils.write_if_not_exists import write_if_not_exists
+from cgp.physmod.cythonize import cythonize_model
 
 __all__ = ["Cellmlmodel"]
 
-_cellml2py_dir = cellmlmodels.__path__[0] + "/_cellml2py/"
+_cellml2py_dir = cgp.physmod.__path__[0] + "/_cellml2py/"
 
 # XML namespaces
 mml = "http://www.w3.org/1998/Math/MathML"
@@ -501,14 +501,14 @@ class Cellmlmodel(Namedcvodeint):
                 dtype[i] = np.dtype(L)
         # if there are no parameters or algebraic variables, make empty recarray
         try:
-            pr = self.model.p.view(dtype.p).view(recarray)
+            pr = self.model.p.view(dtype.p, np.recarray)
         except TypeError:
-            pr = np.array([]).view(recarray)
+            pr = np.array([]).view(np.recarray)
         try:
-            self.algebraic = self.model.algebraic.view(dtype.a).view(recarray)
+            self.algebraic = self.model.algebraic.view(dtype.a, np.recarray)
         except TypeError:
-            self.algebraic = np.array([]).view(recarray)
-        self.y0r = self.model.y0.view(dtype.y).view(recarray)
+            self.algebraic = np.array([]).view(np.recarray)
+        self.y0r = self.model.y0.view(dtype.y, np.recarray)
         super(Cellmlmodel, self).__init__(self.model.ode, t, 
             y.view(dtype.y), pr, **kwargs)
         assert all(dtype[k] == self.dtype[k] for k in self.dtype)
