@@ -63,13 +63,18 @@ code repositories.
 Installing on Linux witout root access 
 --------------------------------------
 
-On a typical HPC cluster the cgptoobox must be installed without root access. 
-Before installing the required Python packages, you should make sure the 
-following software dependencies are installed (your system administrator 
-may be able to assist). Version numbers refer to versions that we have 
-tested; other versions might also work.
+If you don't have root access, e.g. on a shared high-performance computing 
+cluster, you must either get a system administrator to install dependencies, or 
+install them under your home directory. For the latter, please see the
+:ref:`environment-variables` section.
 
-* `Python <http://python.org>`_  versions 2.7.3, 2.7.2. 
+Dependencies (version numbers refer to versions that we have tested; other 
+versions might also work):
+
+* `Python <http://python.org>`_  versions 2.7.3, 2.7.2. Python must be 
+  installed with header files. There are several convenient 
+  `scientific Python distributions 
+  <http://stackoverflow.com/questions/6719309/python-distributions-and-environments-for-scientific-computing>`_.
 * `virtualenv <http://www.virtualenv.org>`_ version 1.8.2
 * `R <http://www.r-project.org/>`_ , version 2.15.1. R must be built as a library (instructions :ref:`below <r-instructions>`).
 * `hdf5 <http://www.hdfgroup.org/HDF5/>`_ , version 1.8.7, 1.8.9.
@@ -82,10 +87,10 @@ tested; other versions might also work.
   dependencies manually and make sure to adjust LD_LIBRARY_PATH as described 
   below.
 
-A useful bash option for the ``pip`` package installer for Python 
-(included with ``virtualenv``) is to cache downloaded files::
+.. environment-variables:
 
-   export PIP_DOWNLOAD_CACHE=$HOME/.pip-cache
+Environment variables
+^^^^^^^^^^^^^^^^^^^^^
 
 The examples below install libraries under ``$HOME/usr``, in which case you 
 should put the following in your `bash startup file 
@@ -95,6 +100,21 @@ should put the following in your `bash startup file
    export PATH=$HOME/usr/bin:$PATH
    export CPATH=$HOME/usr/include:$CPATH
    export LD_LIBRARY_PATH=$HOME/usr/lib:$LD_LIBRARY_PATH
+
+You may need to add additional directories to PATH, CPATH and LD_LIBRARY_PATH, 
+depending on how you have installed e.g. your Python distribution; see the 
+respective documentation on how to put the Python executable on PATH 
+and header files in CPATH and friends.
+
+A useful option for the ``pip`` package installer for Python is to cache 
+downloaded files::
+
+   export PIP_DOWNLOAD_CACHE=$HOME/.pip-cache
+
+Also (this is primarily useful if you use ``pip`` *without* ``virtualenv``), 
+you can install packages to a non-root location by setting::
+
+   export PIP_INSTALL_OPTION=--prefix=$HOME/usr
 
 .. _sundials-instructions:
 
@@ -109,7 +129,7 @@ library not the newest 2.5.0, since `pysundials
 
    tar -xzf sundials-2.3.0.tar.gz
    cd sundials-2.3.0
-   ./configure --prefix=$HOME/usr --enable-shared --with-ldflags=-no-undefined
+   ./configure --prefix=$HOME/usr --enable-shared
    make
    make install
    cd ..
@@ -170,7 +190,32 @@ Virtualenv with required python packages
    
    #packages for unittests and building documentation
    pip install "Sphinx>=1.1.3"
-   pip install "nose>=1.2.1"
+   pip install "nose>=1.2.1" nose-exclude
+   pip install docutils
+
+..  Unfinished draft:
+    Example: Install with minimal use of root on Ubuntu
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    
+    Tested on a fresh install of Ubuntu 12.04 LTS. This assumes that you have 
+    somehow installed Subversion, Git, and R (the equivalent of Ubuntu packages 
+    ``subversion git r-base-dev``).
+    
+    * Edit :ref:`environment-variables` in ``~/.bashrc``.
+    * Install EPD, specify $HOME/usr as installation directory.
+    * Install :ref:`sundials-instructions`.
+    * Run the following commands in the terminal. The ``--system-site-packages`` 
+      option makes the EPD modules (numpy, lxml et al.) available in the virtual 
+      environment::
+      
+      easy_install virtualenv
+      virtualenv --system-site-packages ~/venv/cgp
+      source ~/venv/cgp/bin/activate
+      pip install joblib bottle
+      pip install rpy2
+        pip install --upgrade nose
+      pip install svn+https://pysundials.svn.sourceforge.net/svnroot/pysundials/branches/2.3.0/@74
+      pip install git+https://github.com/jonovik/cgptoolbox.git
 
 Testing
 -------
@@ -180,12 +225,13 @@ properly installed::
 
    python -c "from lxml import etree"
    python -c "from pysundials import cvode"
-   python -c "from rpy2 import rinterface as ri"
+   python -c "from rpy2 import rinterface"
 
-Run unit tests for the cgptoolbox::
+To run all unit tests for the cgptoolbox, checkout the source code, change to the cgptoolbox directory, and run::
 
-   cd path/to/cgptoolbox
    nosetests cgp
+
+This will run ``nose`` with the options specified in :download:`setup.cfg <../../setup.cfg>`.
 
 Building the documentation
 --------------------------
