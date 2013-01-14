@@ -16,4 +16,5 @@ if __name__ == "__main__":
         url='http://arken.umb.no/~jonvi/cgptoolbox/',
         download_url='https://github.com/jonovik/cgptoolbox',
         packages = find_packages(),
+        package_data={"cgp.physmod": ["_cellml/*"]},
         )
