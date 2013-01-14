@@ -11,6 +11,7 @@ from itertools import chain
 
 import numpy as np
 
+# TODO: We now depend on rpy2, so don't need the workaround below.
 try:
     from cgp.utils.rnumpy import r, RRuntimeError
     have_rnumpy = True
@@ -1235,8 +1236,12 @@ def markovplot(t, y, a=None, names=None, model=None, comp=None, col="bgrcmyk",
         r["df"] = r.cbind({"t": t}, r.as_data_frame(rec2dict(x)))
         # r["df"] = r.data_frame(t=t, **rec2dict(xc))
         # r["df"] = r("df[c('" + "','".join(["t"] + names) + "')]")
-        r.library("ggplot2")
-        r.library("reshape")
+        for pkg in "ggplot2", "reshape":
+            try:
+                r.library(pkg)
+            except RRuntimeError:
+                r.install_packages(pkg, repos="http://cran.us.r-project.org")
+                r.library(pkg)
         # r.plot(r.df)
         r["xm"] = r.melt(r.df, id_var="t")
         cmd = ("qplot(t, value, fill=variable, geom='area', position='stack', "
