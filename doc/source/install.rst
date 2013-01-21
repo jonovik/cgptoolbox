@@ -16,9 +16,9 @@ Installing the cgptoolbox
 
 .. todo::
 
-   Describe installation process in a typical HPC environment, non-python 
-   dependencies (R, hdf5, zeromq, lxml) and file of required/recommended python 
-   packages for pip installation.
+   Describe non-python dependencies (R, hdf5, zeromq, lxml).
+   Register package at PyPI:
+   http://guide.python-distribute.org/contributing.html#registering-projects
 
 Installing on `Ubuntu <http://www.ubuntu.com/download/ubuntu/download>`_ 12.10 with root access
 -----------------------------------------------------------------------------------------------
@@ -51,13 +51,12 @@ from upgrading.
    echo "libsundials-serial hold" | sudo dpkg --set-selections
    echo "libsundials-serial-dev hold" | sudo dpkg --set-selections
 
-Once the right version of SUNDIALS is installed, pysundials and cgptoolbox can 
-be installed with `pip <http://www.pip-installer.org/>`_ directly from their 
-code repositories.
+Once the right version of SUNDIALS is installed, the cgptoolbox can 
+be installed with `pip <http://www.pip-installer.org/>`_ directly from the 
+code repository.
 
 .. code-block:: bash
 
-   sudo pip install svn+https://pysundials.svn.sourceforge.net/svnroot/pysundials/branches/2.3.0/@74
    sudo pip install git+https://github.com/jonovik/cgptoolbox.git
    
 Installing on Linux witout root access 
@@ -170,28 +169,7 @@ Virtualenv with required python packages
    #create and activate virtual Python environment
    virtualenv cgp			
    source cgp/bin/activate
-   
-   #install dependencies and cgptoolbox
-   pip install ipython
-   pip install "numpy>=1.6.1"
-   pip install "scipy>=0.10.1"
-   pip install "matplotlib>=1.1.1"
-   pip install "numexpr>=2.0.1"
-   pip install "Cython>=0.16"
-   pip install "tables>=2.3.1"		#requires hdf5 library
-   pip install joblib
-   pip install bottle
-   pip install "pyzmq>=2.2.0"		
-   pip install "rpy2>=2.2.6"		#requires R built as library
-   pip install networkx
-   pip install lxml
-   pip install svn+https://pysundials.svn.sourceforge.net/svnroot/pysundials/branches/2.3.0/@74
    pip install git+https://github.com/jonovik/cgptoolbox.git
-   
-   #packages for unittests and building documentation
-   pip install "Sphinx>=1.1.3"
-   pip install "nose>=1.2.1" nose-exclude
-   pip install docutils
 
 ..  Unfinished draft:
     Example: Install with minimal use of root on Ubuntu
@@ -211,10 +189,6 @@ Virtualenv with required python packages
       easy_install virtualenv
       virtualenv --system-site-packages ~/venv/cgp
       source ~/venv/cgp/bin/activate
-      pip install joblib bottle
-      pip install rpy2
-        pip install --upgrade nose
-      pip install svn+https://pysundials.svn.sourceforge.net/svnroot/pysundials/branches/2.3.0/@74
       pip install git+https://github.com/jonovik/cgptoolbox.git
 
 Testing
@@ -236,8 +210,20 @@ This will run ``nose`` with the options specified in :download:`setup.cfg <../..
 Building the documentation
 --------------------------
 
-Make sure you have `Sphinx >= 1.1 <http://sphinx.pocoo.org/latest/>`_ installed, 
-then run the following from the ``cgptoolbox/doc`` directory::
+The documentation is written using `Sphinx <http://sphinx.pocoo.org/latest/>`_. 
+Once the cgptoolbox is available on 
+`PyPI <http://pypi.python.org/pypi>`_, the following should work:
+
+   pip install cgptoolbox[docs]
+
+Unfortunately, URLs cannot be combined with the [] for specifying extras to 
+install. As a workaround, check out the source, then install:
+
+   git clone https://github.com/jonovik/cgptoolbox.git
+   cd cgptoolbox
+   pip install -e .[docs]
+
+Then run the following from the ``cgptoolbox/doc`` directory::
 
    sphinx-apidoc -T -H cgptoolbox -o source ..
    make html
