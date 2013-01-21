@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 """cgptoolbox setup script."""
 
-# TODO: We might want to add dependencies: 
-# http://packages.python.org/distribute/setuptools.html#declaring-dependencies
-
 from setuptools import setup, find_packages
 
 if __name__ == "__main__":
@@ -17,4 +14,24 @@ if __name__ == "__main__":
         download_url='https://github.com/jonovik/cgptoolbox',
         packages = find_packages(),
         package_data={"cgp.physmod": ["_cellml/*"]},
+        install_requires=[
+            "numpy", 
+            "scipy", 
+            "matplotlib>=1.1.1", 
+            "lxml", 
+            "rpy2", 
+            "ipython[parallel]", 
+            "Cython", 
+            "pyzmq", 
+            "networkx", 
+            "tables", 
+            "joblib", 
+            "nose>=1.2", 
+            "nose-exclude",
+            "bottle",
+            "pysundials",
+        ],
+        dependency_links=["svn+https://pysundials.svn.sourceforge.net/svnroot/"
+            "pysundials/branches/2.3.0/@74#egg=pysundials-2.3.0"],
+        extras_require={"docs": ["sphinx>=1.1.3", "docutils"]},
         )
