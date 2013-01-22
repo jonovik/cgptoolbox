@@ -85,6 +85,10 @@ versions might also work):
   e.g. ``STATIC_DEPS=true pip install lxml``. If this fails, install the 
   dependencies manually and make sure to adjust LD_LIBRARY_PATH as described 
   below.
+* Note on `matplotlib <http://matplotlib.org>`_: For a headless installation
+  (i.e. one without a graphical display), you may wish to set ``backend: Agg``
+  in your `matplotlibrc 
+  <http://matplotlib.org/users/customizing.html#the-matplotlibrc-file>`_ file.
 
 .. environment-variables:
 
