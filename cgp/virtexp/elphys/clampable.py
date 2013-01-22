@@ -1236,7 +1236,7 @@ def markovplot(t, y, a=None, names=None, model=None, comp=None, col="bgrcmyk",
         r["df"] = r.cbind({"t": t}, r.as_data_frame(rec2dict(x)))
         # r["df"] = r.data_frame(t=t, **rec2dict(xc))
         # r["df"] = r("df[c('" + "','".join(["t"] + names) + "')]")
-        for pkg in "ggplot2", "reshape":
+        for pkg in "ggplot2", "reshape", "colorspace":
             try:
                 r.library(pkg)
             except RRuntimeError:
