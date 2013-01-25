@@ -48,8 +48,6 @@ from cgp.physmod.cythonize import cythonize_model
 __all__ = ["Cellmlmodel"]
 
 cgp_tempdir = os.path.expanduser("~/_cgptoolbox")
-if cgp_tempdir not in sys.path:
-    sys.path.append(cgp_tempdir)
 
 # XML namespaces
 mml = "http://www.w3.org/1998/Math/MathML"
@@ -74,6 +72,12 @@ except ImportError:
     initfile = os.path.join(cgp_tempdir, "_cellml2py", "__init__.py")
     with write_if_not_exists(initfile):
         pass  # just create an empty __init__.py file
+
+# This must be done *after* creating cgp_tempdir, 
+# otherwise it gets silently ignored, cf.
+# http://docs.python.org/2/using/cmdline.html#envvar-PYTHONPATH
+if cgp_tempdir not in sys.path:
+    sys.path.append(cgp_tempdir)
 
 @mem.cache
 def generate_code(url_or_cellml, language="python"):
