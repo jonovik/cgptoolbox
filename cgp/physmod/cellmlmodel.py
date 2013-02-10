@@ -118,7 +118,7 @@ def generate_code(url_or_cellml, language="python"):
     else:
         src = urlcache(url_or_cellml)
     with Tempfile() as cellml, Tempfile() as pycode:  # pylint:disable=C0321
-        cellml.write(src)
+        cellml.write(src)  # Maybe this should be src.encode("utf-8")
         cellml.seek(0)
         subprocess.call(args, stdin=cellml, stdout=pycode, 
             stderr=subprocess.STDOUT)
