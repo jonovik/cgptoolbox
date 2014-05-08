@@ -773,7 +773,7 @@ print cap
         url = self.cellml_home + fmt.format(**self.__dict__)
         tree = etree.parse(StringIO(urlcache(url)), parser)
         query = ('//{http://www.w3.org/1999/xhtml}' +
-            'a[text()="Download This File"]/@href')
+            'a[contains(text(), "Download This File")]/@href')
         try:
             return etree.ETXPath(query)(tree)[0].rsplit("/", 2)[-2]
         except IndexError:
