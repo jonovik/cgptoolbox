@@ -57,7 +57,7 @@ code repository.
 
 .. code-block:: bash
 
-   sudo pip install git+https://github.com/jonovik/cgptoolbox.git
+   sudo pip install --process-dependency-links git+https://github.com/jonovik/cgptoolbox.git
    
 Installing on Linux witout root access 
 --------------------------------------
@@ -173,7 +173,7 @@ Virtualenv with required python packages
    #create and activate virtual Python environment
    virtualenv cgp			
    source cgp/bin/activate
-   pip install git+https://github.com/jonovik/cgptoolbox.git
+   pip install --process-dependency-links git+https://github.com/jonovik/cgptoolbox.git
 
 ..  Unfinished draft:
     Example: Install with minimal use of root on Ubuntu
@@ -193,7 +193,7 @@ Virtualenv with required python packages
       easy_install virtualenv
       virtualenv --system-site-packages ~/venv/cgp
       source ~/venv/cgp/bin/activate
-      pip install git+https://github.com/jonovik/cgptoolbox.git
+      pip install --process-dependency-links git+https://github.com/jonovik/cgptoolbox.git
 
 Testing
 -------
