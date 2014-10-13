@@ -29,7 +29,7 @@ if __name__ == "__main__":
             "nose>=1.2", 
             "nose-exclude",
             "bottle",
-            "pysundials"],
-        dependency_links=["svn+https://svn.code.sf.net/p/pysundials/code/branches/2.3.0/@74#egg=pysundials-2.3.0"],
+            "pysundials>=2.3.0-rc4",
+        ],
         extras_require={"docs": ["sphinx>=1.1.3", "docutils"]},
         )
