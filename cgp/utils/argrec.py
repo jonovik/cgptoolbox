@@ -126,7 +126,7 @@ def argrec(func, *args, **kwargs):
         len(ignore)
     except TypeError:
         ignore = [ignore]
-    if isinstance(ignore, basestring):
+    if isinstance(ignore, str):
         ignore = [ignore]
     # The order of fields will be:
     #   required arguments (names in argspec.args[:-len(argspec.defaults)])
@@ -155,9 +155,9 @@ def argrec(func, *args, **kwargs):
     # any remaining args correspond to func's unnamed *args
     varargs = args[nreq + ndef:] # may be empty list
     varargnames = ["_%s" % (i + nreq + ndef) for i in range(len(varargs))]
-    names = reqnames + defnames + varargnames + kwargs.keys()
+    names = reqnames + defnames + varargnames + list(kwargs.keys())
     # reqvals are and varargs are tuples, a minor hassle for concatenation
-    values = list(reqvals) + defvals + list(varargs) + kwargs.values()
+    values = list(reqvals) + defvals + list(varargs) + list(kwargs.values())
     if len(names) != len(values):
         msg = "One or more required arguments (%s)\n" % reqnames
         msg += "not specified, or specified by keyword.\n"

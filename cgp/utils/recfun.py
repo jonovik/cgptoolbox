@@ -51,7 +51,7 @@ def restruct(a, axes=0):
     """
     axes = np.atleast_1d(axes)
     u = unstruct(a)
-    ax = range(u.ndim)
+    ax = list(range(u.ndim))
     # Move the given axes to the end
     for i in axes:
         ax.remove(i)

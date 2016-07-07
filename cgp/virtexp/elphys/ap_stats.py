@@ -166,7 +166,7 @@ def apd_decayrate(stats, p=None):
         p3 = stats["p_repol"][-1]
     else:
         p2, p3 = p
-    t2, t3 = [stats["t_repol"][stats["p_repol"] == pi] for pi in p2, p3]
+    t2, t3 = [stats["t_repol"][stats["p_repol"] == pi] for pi in (p2, p3)]
     with np.errstate(all="ignore"):  # silence NaN-related errors
         difflnv = np.log(1 - p3) - np.log(1 - p2)
         result = - difflnv / (t3 - t2)

@@ -17,7 +17,7 @@ def test_purge():
     Cellmlmodel(purge=True)
 
 def test_hash():
-    a, b, c = [Cellmlmodel(chunksize=i) for i in 1, 1, 2]
+    a, b, c = [Cellmlmodel(chunksize=i) for i in (1, 1, 2)]
     assert hash(a) == hash(b)
     assert hash(b) != hash(c)
 

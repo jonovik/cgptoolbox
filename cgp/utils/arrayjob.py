@@ -530,7 +530,7 @@ def memmap_chunk(filename, mode="r+", **kwargs):
     from cgp.utils.load_memmap_offset import open_memmap, memmap_chunk_ind
     r = open_memmap(filename, "r")
     n = r.shape[0]
-    i = np.array_split(range(n), myNID)[myID]
+    i = np.array_split(list(range(n)), myNID)[myID]
     if len(i) > 0:
         result, offset = memmap_chunk_ind(filename, i, mode=mode)
         result.offset = offset
@@ -610,9 +610,9 @@ class Timing(OrderedDict):
             ('finished', nan), ('error', nan), ('seconds', nan)])
         """
         super(Timing, self).__init__()
-        for k, v in self._default.items():
+        for k, v in list(self._default.items()):
             self[k] = v
-        for k, v in kwargs.items():
+        for k, v in list(kwargs.items()):
             self[k] = v
     
     def __array__(self):

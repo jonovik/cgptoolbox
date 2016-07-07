@@ -28,5 +28,5 @@ if __name__ == "__main__":
     if args.clear_cellml2py:
         import shutil
         from cgp.physmod.cellmlmodel import cgp_tempdir
-        print "Clearing " + cgp_tempdir
+        print("Clearing " + cgp_tempdir)
         shutil.rmtree(cgp_tempdir)

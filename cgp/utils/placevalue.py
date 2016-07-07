@@ -65,6 +65,7 @@ import operator
 import numpy as np
 
 from .unstruct import unstruct
+from functools import reduce
 
 class Placevalue(object):
     """

@@ -15,7 +15,7 @@ Reference:
   
 """
 
-from __future__ import division
+
 from ..cvodeint.namedcvodeint import Namedcvodeint
 from ..sigmoidmodels.doseresponse import Hill, R_logic
 import numpy as np
@@ -110,7 +110,7 @@ class Sigmoidmodel(Namedcvodeint):
         ]
 
     #: Names of parameters, cf. Gjuvsland et al. (2007)
-    par_names, par_mean, par_span = zip(*_origpar)
+    par_names, par_mean, par_span = list(zip(*_origpar))
     #: Mean parameter values
     par_mean = np.array([[_i, _i] for _i in par_mean])
     #: Span in uniformly sampled parameter values

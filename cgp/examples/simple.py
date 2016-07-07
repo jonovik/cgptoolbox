@@ -307,7 +307,7 @@ def recovery_time(v, t=None, p=0.90):
 
 # Define baseline parameters
 baseline = [("a", 0.7), ("b", 0.8), ("theta", 0.08), ("I", 0.0)]
-names, rec = zip(*baseline)
+names, rec = list(zip(*baseline))
 hetpar = np.rec.fromrecords([rec], names=names)
 
 # Enumerate all possible genotypes

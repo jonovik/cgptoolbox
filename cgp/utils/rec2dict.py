@@ -113,13 +113,13 @@ def dict2rec(*args, **kwargs):
           dtype=[('a', '<i...'), ('b', '<i...'), ('c', '<i...', (2,))])
     """
     d = OrderedDict(*args, **kwargs)
-    for k, v in d.items():
+    for k, v in list(d.items()):
         d[k] = np.atleast_1d(v)
     # Convert keys to plain str because Numpy field names cannot be unicode
-    dtype = [(str(k), v.dtype, v.shape[1:]) for k, v in d.items()]
+    dtype = [(str(k), v.dtype, v.shape[1:]) for k, v in list(d.items())]
     shape = len(v)
     x = np.zeros(shape=shape, dtype=dtype)
-    for k, v in d.items():
+    for k, v in list(d.items()):
         x[k] = v
     return x
 

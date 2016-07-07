@@ -47,4 +47,4 @@ if __name__ == "__main__":
 # >>> from utils.test_arrayjob import report; report()
 def report():
     """Report results, perhaps while they are being computed."""
-    print np.load(outfile) # read-only by default
+    print(np.load(outfile)) # read-only by default

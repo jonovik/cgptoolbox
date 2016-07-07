@@ -132,10 +132,10 @@ def test_repr():
             "<class 'cvodeint.Cvodeint'> <function ode at 0x..." + 
             "getargspec(__init__) is not available when running under Cython"]
     if not any([_ellipsis_match(want, got) for want in wants]):
-        print "Wanted:", wants, "\\n", "Got:", got
+        print("Wanted:", wants, "\\n", "Got:", got)
 
 import logging
-from cStringIO import StringIO
+from io import StringIO
 import math
 fmtstr = "%(" + ")s\t%(".join(
     "asctime levelname name lineno process message".split()) + ")s"
@@ -157,7 +157,7 @@ def test_logging():
             with np.errstate(divide="ignore"):
                 ydot[0] = math.log(y[1])
                 ydot[1] = 1 / y[0] - t # will eventually turn negative
-        except StandardError: # allow KeyboardInterrupt, etc., to work
+        except Exception: # allow KeyboardInterrupt, etc., to work
             logger.exception("Caught an exception when evaluating ODE.")
             return -1
         logger.debug("ODE evaluated without error.")

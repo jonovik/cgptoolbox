@@ -182,7 +182,7 @@ class Namedcvodeint(Cvodeint):
         >>> Yr.x
         array([[-2.        ], [-1.96634283], ... [-1.96940322], [-2.00814991]])
         """
-        if not all(self.__dict__[k] is v for k, v in self.originals.items()):
+        if not all(self.__dict__[k] is v for k, v in list(self.originals.items())):
             raise AssertionError(self.reassignwarning)
         t, Y, flag = super(Namedcvodeint, self).integrate(**kwargs)
         Yr = Y.view(self.dtype.y, np.recarray)
@@ -253,20 +253,20 @@ class Namedcvodeint(Cvodeint):
         if _p is not None:
             if np.asarray(_p).dtype.names:
                 _p = rec2dict(_p)
-            for k, v in _p.items():
+            for k, v in list(_p.items()):
                 self.pr[k] = v
         if _y is not None:
             try:
                 self.y[:] = _y
                 # Assignment to NVector won't check number of elements, so:
                 np.testing.assert_allclose(self.y, _y)
-            except ValueError, exc:
+            except ValueError as exc:
                 msg = "can only convert an array of size 1 to a Python scalar"
                 assert msg in str(exc)
                 self.y[:] = _y.squeeze()
             except TypeError: # float expected instead of numpy.void instance
                 self.y[:] = _y.item()
-        for k, v in kwargs.items():
+        for k, v in list(kwargs.items()):
             if k in self.dtype.p.names and k not in self.dtype.y.names:
                 self.pr[k] = v
                 continue
@@ -354,8 +354,8 @@ class Namedcvodeint(Cvodeint):
         Subclass(f_ode=clamped, t=array([ 0.,  1.]), y=[0.0, 0.0])
         """
         # Indices to state variables whose rate-of-change will be set to zero
-        i = np.array([self.dtype.y.names.index(k) for k in kwargs.keys()])
-        v = np.array(kwargs.values())
+        i = np.array([self.dtype.y.names.index(k) for k in list(kwargs.keys())])
+        v = np.array(list(kwargs.values()))
         
         def clamped(t, y, ydot, f_data):
             """New RHS that prevents some elements from changing."""
@@ -369,7 +369,7 @@ class Namedcvodeint(Cvodeint):
         
         # Initialize clamped state variables.
         y = np.array(self.y).view(self.dtype.y)
-        for k, v in kwargs.items():
+        for k, v in list(kwargs.items()):
             y[k] = v
         
         # Use original options when rerunning the Cvodeint initialization.

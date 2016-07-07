@@ -12,7 +12,7 @@ def hdfcaching():
     
     filename = "/home/jonvi/hdfcache.h5"
     hdfcache = Hdfcache(filename)
-    pipeline = [hdfcache.cache(i) for i in gt2par, par2ph, ph2agg]
+    pipeline = [hdfcache.cache(i) for i in (gt2par, par2ph, ph2agg)]
     with hdfcache:
         for i in genotypes:
             for func in pipeline:
@@ -46,7 +46,7 @@ def clusterjob():
             # Preallocate arrays on disk (can be larger than available memory).
             # Changes are written back to disk when array goes out of scope.
             d = dict(par=par, ph=ph, agg=agg)
-            for k, v in d.items():
+            for k, v in list(d.items()):
                 a = np.memmap(k + ".npy", v.dtype, "w+", shape=len(genotypes))
                 a[0] = v
     

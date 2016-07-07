@@ -58,10 +58,10 @@ def rlist2pydict(x):
         result = x[0] if len(x) == 1 else list(x)
         try:
             return np.array(result)
-        except StandardError:
+        except Exception:
             return result
     elif r.is_atomic(x):  # Avoid "$ operator is invalid for atomic vectors"
-        return OrderedDict(zip(xnames, x))
+        return OrderedDict(list(zip(xnames, x)))
     else:
         return OrderedDict((k, rlist2pydict(r.dollar(x, k))) for k in xnames)
 
@@ -74,7 +74,7 @@ def r2rec(x):
     dtype=[('Sepal.Length', '<f8'), ('Sepal.Width', '<f8'), 
     ('Petal.Length', '<f8'), ('Petal.Width', '<f8'), ('Species', '|S10')])
     """
-    k, v = zip(*rlist2pydict(x).items())
+    k, v = list(zip(*list(rlist2pydict(x).items())))
     return np.rec.fromarrays(v, names=k).view(np.recarray)
 
 try:
@@ -154,7 +154,7 @@ def splom(a=None, fun=plt.plot, ntick=3, trim=(0, 0), hkw=(), skw=(),
     setp(ax[:, 1:], "yticks", []) # only col 0 should keep its y tick labels
     setp(ax[:-1, :], "xticks", []) # only row -1 should keep its x tick labels
     # pylint: disable=W0141
-    lab = filter(None, [i.get_xticklabels() for i in ax[-1, :]])
+    lab = [_f for _f in [i.get_xticklabels() for i in ax[-1, :]] if _f]
     setp(lab, "rotation", "vertical")
     if ntick is not None:
         for i in range(n):

@@ -2,7 +2,7 @@
 # pylint: disable=C0111,C0302
 
 # Integer division may give zero axis range, causing LinAlgError on display
-from __future__ import division
+
 
 import logging
 from collections import namedtuple
@@ -110,7 +110,7 @@ def listify(sequence):
     >>> listify([(1, 2), (3, 4, 5), (6, [7, 8], "abc")])
     [[1, 2], [3, 4, 5], [6, [7, 8], 'abc']]
     """    
-    if isinstance(sequence, basestring):
+    if isinstance(sequence, str):
         return sequence
     else:
         try:
@@ -166,7 +166,7 @@ def pairbcast(*pairs):
         # vector-valued items of `flat`.
         
         # Zip up corresponding items of the broadcasted, flattened vectors
-        flatbc = zip(*(np.ravel(i) for i in bc))
+        flatbc = list(zip(*(np.ravel(i) for i in bc)))
         
         result = []
         for bc in flatbc:
@@ -174,7 +174,7 @@ def pairbcast(*pairs):
             item = np.copy(flat)
             item[need_bc] = bc
             # Zip back into pairs
-            result.append(zip(item[::2], item[1::2]))
+            result.append(list(zip(item[::2], item[1::2])))
         return result
 
 def ndbcast(*tuples):
@@ -216,9 +216,9 @@ def ndbcast(*tuples):
     flat = [np.atleast_1d(i) for p in tuples for i in p]
     pb = np.broadcast_arrays(*np.ix_(*flat)) # Cartesian product of a00 a01 ...
     # Zip up corresponding items of the broadcasted, flattened a00 a01 ...
-    flatb = zip(*(np.ravel(i) for i in pb))
+    flatb = list(zip(*(np.ravel(i) for i in pb)))
     # Unflatten into tuples within each item of the Cartesian product
-    return [zip(*[i[j::n] for j in range(n)]) for i in flatb]
+    return [list(zip(*[i[j::n] for j in range(n)])) for i in flatb]
 
 def catrec(*args, **kwargs):
     """
@@ -255,7 +255,7 @@ def catrec(*args, **kwargs):
             else:
                 c = np.concatenate([np.atleast_1d(i) for i in v], axis=0)
             C.append(c.view(v[0].dtype, type(v[0])))
-        except Exception, _exc:  # pylint: disable=W0703,W0612
+        except Exception as _exc:  # pylint: disable=W0703,W0612
             C.append(v)
     return C
 
@@ -536,7 +536,7 @@ class Clampable(object):
                     # the dynamics from another initial state or parameter set.
                     dy, a = self.rates_and_algebraic(t, y)
                     if nthin:
-                        t, y, dy, a = [thin(arr, nthin) for arr in t, y, dy, a]
+                        t, y, dy, a = [thin(arr, nthin) for arr in (t, y, dy, a)]
                     yield Pace(t, y, dy, a, stats)
             y0 = y[-1]
     
@@ -732,7 +732,7 @@ class Clampable(object):
                     t, y, _flag = clamped.integrate(t=[0, duration])
                     dy, a = self.rates_and_algebraic(t, y)
                 if nthin:
-                    t, y, dy, a = [thin(arr, nthin) for arr in t, y, dy, a]
+                    t, y, dy, a = [thin(arr, nthin) for arr in (t, y, dy, a)]
                 L.append(Trajectory(t, y, dy, a))
         return L
     
@@ -843,7 +843,7 @@ class Clampable(object):
         for p in pairbcast(*protocol):
             try:
                 L.append((p, self.vclamp(p, nthin)))
-            except Exception, _exc:  # pylint: disable=W0703,W0612
+            except Exception as _exc:  # pylint: disable=W0703,W0612
                 logger.exception("Error in vclamp(%s)", p)
         return L
     
@@ -855,7 +855,7 @@ class Clampable(object):
         """
         L = self.vecvclamp([(thold, vhold), (t1, v1), (t2, v2)])
         peak1, peak2 = [np.array([traj[i].a.i_Na.min() for _proto, traj in L])
-            for i in 1, 2]
+            for i in (1, 2)]
         peak1 = - peak1 / peak1.min()
         peak2 = peak2 / peak2.min()
         
@@ -878,7 +878,7 @@ class Clampable(object):
         """Fig. 5 of Bondarenko et al."""
         L = self.vecvclamp([(thold, vhold), (t1, v1), (t2, v2), (t3, v3)])
         peak1, peak3 = [np.array([traj[i].a.i_CaL.min() for _proto, traj in L])
-            for i in 1, 3]
+            for i in (1, 3)]
         peak1 = - peak1 / peak1.min()
         peak3 = peak3 / peak3.min()
         
@@ -981,7 +981,7 @@ def mmfits(L, i=2, k=None, abs_=True):
     # Without this assertion, we'd get 
     # AttributeError: 'NotImplementedType' object has no attribute 'max'
     msg = "k must be a single field name of y or a, not %s" % type(k)
-    assert isinstance(k, basestring), msg
+    assert isinstance(k, str), msg
     tgap = []
     peak = []
     for proto, traj in L:
@@ -1042,7 +1042,7 @@ def mmfit(x, y, rse=False):
             start=dict(ymax=max(y), xhalf=np.mean(x)))
         try:
             fit = r.nls(**kwargs)
-        except RRuntimeError, exc:
+        except RRuntimeError as exc:
             s = str(exc.exc).split("\n")[1].strip()
             errmsg = "Michaelis-Menten fit failed with message '%s'. " % s
             errmsg += "Arguments to r.nls() were: %s"
@@ -1088,7 +1088,7 @@ def decayfits(L, i, k, abs_=True):
     Traceback (most recent call last):
     AssertionError: k must be a single field name of y or a
     """
-    assert isinstance(k, basestring), "k must be a single field name of y or a"
+    assert isinstance(k, str), "k must be a single field name of y or a"
     vi = []
     tau = []
     for proto, traj in L:
@@ -1218,7 +1218,7 @@ def markovplot(t, y, a=None, names=None, model=None, comp=None, col="bgrcmyk",
         # Often a closed state is defined algebraically as 1 minus the others.
         # This puts it apart from other closed states in the list of names 
         # that we generate below. To remedy this, we sort it.
-        names = sorted([n for i in "y", "a" 
+        names = sorted([n for i in ("y", "a") 
                         for n, c, u in zip(*model.legend[i]) 
                         if comp in c and u == "dimensionless"])
         # Distribution only makes sense for at least two states
@@ -1293,7 +1293,7 @@ def markovplots(t, y, a=None, model=None):
     >>> r.windows(record=True) # doctest: +SKIP
     >>> print L # doctest: +SKIP    
     """
-    comps = np.unique([c for v in model.legend.values() 
+    comps = np.unique([c for v in list(model.legend.values()) 
                        for _n, c, _u in zip(*v) if c])
     plots = [markovplot(t, y, model=model, comp=comp) for comp in comps]
     return [(c, p) for c, p in zip(comps, plots) if p]

@@ -85,9 +85,9 @@ if __name__ == "__main__":
     # Print and visualize results
     r.png("sensitivity.png", width=1024, height=768, pointsize=24)
     r.par(mfrow=(2, 3))  # multiple figures in two rows, three columns
-    for k, v in result.items():
-        print "===================================================="
-        print k
-        print v
+    for k, v in list(result.items()):
+        print("====================================================")
+        print(k)
+        print(v)
         r.plot(v, log="y", main=k)
     r.dev_off()  # close image file

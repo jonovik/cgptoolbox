@@ -30,7 +30,7 @@ def test_hdfcache():
         "This is the docstring for function f"
         result = np.zeros(1, dtype=[("y", float)])
         result["y"] = x["i"] * 2 + x["f"] + a * b
-        print "Evaluating f:", x, a, b, "=>", result
+        print("Evaluating f:", x, a, b, "=>", result)
         return result
     
     desired = "@hdfcache.cache\ndef f(x, a, b=10):"

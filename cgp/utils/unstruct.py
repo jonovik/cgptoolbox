@@ -77,7 +77,7 @@ def unstruct(x):
         x = np.concatenate([np.atleast_1d(i) for i in x])
     if x.dtype.fields is None:
         return x
-    types = np.array([t[0] for t in x.dtype.fields.values()])
+    types = np.array([t[0] for t in list(x.dtype.fields.values())])
     fieldtype = types[0]  # dtype object
     msg = "One or more fields has a different type or shape than the first: %s"
     assert (types == fieldtype).all(), msg % x.dtype

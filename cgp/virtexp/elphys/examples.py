@@ -30,7 +30,7 @@ has a
 :meth:`~cgp.cvodeint.namedcvodeint.Namedcvodeint.clamp` method.
 """  # pylint: disable=C0301,E1002,W0611
 
-from __future__ import division # 7 / 4 = 1.75 rather than 1
+ # 7 / 4 = 1.75 rather than 1
 
 import numpy as np
 

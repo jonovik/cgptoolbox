@@ -140,26 +140,26 @@ def geno2par_additive(genotype, hetpar, relvar=0.5, nloci=0, absvar=None):
     # TODO (kapsle, kapsle): Raise errors instead of prints
     if type(relvar).__name__=='ndarray':
         if relvar.shape != (N, M):
-            print 'relvar.shape must be (nloci,M)'
+            print('relvar.shape must be (nloci,M)')
     elif type(relvar).__name__=='float':
         # Test for N==M and create diagonal array
         if N == M:
             relvar = np.eye(N) * relvar
         else:
-            print 'nloci!=M so scalar relvar is not accepted' 
+            print('nloci!=M so scalar relvar is not accepted') 
     elif type(relvar).__name__=='list':
         # Test length, create NxM array
         if len(relvar)==N:
             rvar = np.zeros((N, M)).view(hetpar.dtype, np.recarray)
             for i in range(N):
                 # fill in non-zeros row by row
-                for key, value in relvar[i].items():
+                for key, value in list(relvar[i].items()):
                     setattr(rvar[i], key, value)
             relvar = rvar.view(float)
         else:
-            print 'relvar list must contain nloci dictionaries'
+            print('relvar list must contain nloci dictionaries')
     else:
-        print 'Relvar must be float, numpy array or list' 
+        print('Relvar must be float, numpy array or list') 
    
     ## calculate parameter values for genotype
     basis = hetpar.copy().view(float)
@@ -214,7 +214,7 @@ def prepare_geno2par_additive(genes, parnames, origpar, relchange, nloci=None):
         nloci = len(genes)
 
     #sample polymorphic loci
-    loci = range(len(genes))
+    loci = list(range(len(genes)))
     np.random.shuffle(loci)
     loci = loci[0:nloci]
     genes = [ genes[i] for i in loci ]

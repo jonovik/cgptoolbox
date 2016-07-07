@@ -360,7 +360,7 @@ class DictHdfcache(object):
           ArgSpec(args=['a', 'b'], varargs='args', keywords='kwargs', 
           defaults=(10,)))]
         """
-        print "cache: initializing resources for a decorated function"
+        print("cache: initializing resources for a decorated function")
         self.d[func] = {} # nested dictionary, like a cache Group in a File
         self.argspec[func] = inspect.getargspec(func)
         
@@ -369,17 +369,17 @@ class DictHdfcache(object):
             # ignoring the complications of hashing multiple arguments
             key = ahash(input_)
             if key in self.d[func]:
-                print "cache: returning cached value"
+                print("cache: returning cached value")
                 return self.d[func][key]
             else:
                 output = func(input_)
-                print "cache: computed", func.__name__, input_, "=>", output
+                print("cache: computed", func.__name__, input_, "=>", output)
                 if not self.d[func]:
                     # If the func-specific nested dict is empty, we know that 
                     # this is the first time func is evaluated. Now we can 
                     # perform initialization that had to be deferred until 
                     # we knew what kind of output func produces.
-                    print "cache: deferred initialization"
+                    print("cache: deferred initialization")
                     self.output_type[func] = type(output) # just an example
                 self.d[func][key] = output # store value for later retrieval
                 return output
@@ -704,19 +704,19 @@ def hdfcat(pathname="*.h5", outfilename="concatenated.h5"):
                     
                     # Remove HDF files with no actual content.
                     # Exhaust all the iterators and see which ones end up None.
-                    for t in itertools.izip_longest(*tablewalkers(fin)):
+                    for t in itertools.zip_longest(*tablewalkers(fin)):
                         pass
                     fin = [fi for fi, ti in zip(fin, t) if ti]  # pylint: disable=W0631
                     
                     # izip yields one node per file at a time, 
                     # presumably in identical order.
                     # (The plus in "[fout] + fin" is list concatenation.) 
-                    for t in itertools.izip(*tablewalkers([fout] + fin)):
+                    for t in zip(*tablewalkers([fout] + fin)):
                         tout, tin = t[0], t[1:]
                         for ti in tin:
                             tout.append(ti[:])
         return True
-    except IOError, exc:
+    except IOError as exc:
         if "Timed out" in str(exc):
             return False
         else:

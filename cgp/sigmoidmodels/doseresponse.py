@@ -1,5 +1,5 @@
 """Functions for modelling dose-response relationships in sigmoid models"""
-from __future__ import division
+
 import scipy
 import numpy as np
 

@@ -97,7 +97,7 @@ def memmap_chunk_ind(filename, indices, mode="r+", check_contiguous=True):
     if check_contiguous:
         want = np.arange(offset, 1 + isort[-1])
         if (len(indices) != shape) or not all(isort == want):
-            raise AssertionError, "Indices not contiguous"
+            raise AssertionError("Indices not contiguous")
     mm = open_memmap(filename, mode=mode, offset=offset, shape=shape)
     return mm, offset
 
@@ -133,7 +133,7 @@ def open_memmap(filename, mode='r+', dtype=None, shape=None,
     
     .. seealso:: :func:`numpy.memmap`
     """
-    if not isinstance(filename, basestring):
+    if not isinstance(filename, str):
         raise ValueError("Filename must be a string.  Memmap cannot use" \
                          " existing file handles.")
 
@@ -260,7 +260,7 @@ def load(file, mmap_mode=None, offset=0, shape=None):  #@ReservedAssignment
 
     import gzip
 
-    if isinstance(file, basestring):
+    if isinstance(file, str):
         fid = _file(file, "rb")
     elif isinstance(file, gzip.GzipFile):
         fid = np.lib.npyio.seek_gzip_factory(file)
@@ -283,8 +283,7 @@ def load(file, mmap_mode=None, offset=0, shape=None):  #@ReservedAssignment
         try:
             return np.lib.npyio._cload(fid)  # pylint: disable=W0212
         except:
-            raise IOError, \
-                "Failed to interpret file %s as a pickle" % repr(file)
+            raise IOError("Failed to interpret file %s as a pickle" % repr(file))
 
 if __name__ == "__main__":
     import doctest

@@ -17,7 +17,7 @@ def test_vargap():
     protocol = [(100, -80), (50, 0), 
                 (np.arange(2, 78, 15), (-90, -80, -70)), (100, 0)]
     p1, gap, p2 = b.vargap(protocol)  # 4 s
-    np.testing.assert_equal([len(i) for i in p1, gap, p2], [1, 3, 18])
+    np.testing.assert_equal([len(i) for i in (p1, gap, p2)], [1, 3, 18])
     L = b.vecvclamp(protocol)  # 9 s
     np.testing.assert_equal(
         [len(i) for i in zip(*[traj for _proto, traj in L])], [18, 18, 18, 18])
@@ -60,7 +60,7 @@ def test_bond_protocols(plot=False):
         savefig("fig%s%s.png" % (i, b.name))
     
     bp = b.bond_protocols()
-    for i, (varnames, protocol, limits, _url) in bp.items():
+    for i, (varnames, protocol, limits, _url) in list(bp.items()):
         if len(protocol[0]) == 2: # (duration, voltage), so clamping
             # List of (proto, traj), where traj is list of Trajectory
             L = b.vecvclamp(protocol)
@@ -86,6 +86,6 @@ def test_mmfits():
     # Verify improvement of error message in case k is list rather than string.
     try:
         mmfits(L, 2, ["i_Na"])
-    except AssertionError, exc:
+    except AssertionError as exc:
         msg = "k must be a single field name of y or a, not <type 'list'>"
         assert msg in str(exc)

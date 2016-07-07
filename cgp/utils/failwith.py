@@ -93,7 +93,7 @@ def nans_like(x):
     array([ nan,  nan,  nan])
     """
     try:
-        return dict((k, nans_like(v)) for k, v in x.iteritems())
+        return dict((k, nans_like(v)) for k, v in x.items())
     except AttributeError:
         try:
             xc = np.copy(x)

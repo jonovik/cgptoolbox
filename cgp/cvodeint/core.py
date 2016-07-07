@@ -54,16 +54,16 @@ log.handlers[0].setFormatter(logging.Formatter(fmtstr))
 
 # CVODE return flags: dict of messages for each return value. 
 # See also cvode.CVodeGetReturnFlagName()
-cv_ = dict([(k, v) for k, v in cvode.__dict__.iteritems() 
+cv_ = dict([(k, v) for k, v in cvode.__dict__.items() 
             if k.startswith("CV_")])
-flags = dict([(v, [k1 for k1, v1 in cv_.iteritems() if v1==v]) 
-    for v in np.unique(cv_.values())]) # example: flag = -12; print flags[flag]
+flags = dict([(v, [k1 for k1, v1 in cv_.items() if v1==v]) 
+    for v in np.unique(list(cv_.values()))]) # example: flag = -12; print flags[flag]
 del cv_
 
 nv = cvode.NVector # CVODE vector data type
 
 
-class CvodeException(StandardError):
+class CvodeException(Exception):
     """
     :func:`pysundials.cvode.CVode` returned a flag not in 
     ``[CV_SUCCESS, CV_TSTOP_RETURN, CV_ROOT_RETURN]``
@@ -204,7 +204,7 @@ def cvodefun(fun):
         """Wrapper for a CVODE right-hand side function"""
         def __init__(self):
             self.__name__ = fun.__name__ # used by pysundials/cvode.py
-            self.func_name = fun.__name__ # used by pysundials/cvode.py
+            self.__name__ = fun.__name__ # used by pysundials/cvode.py
             self.traceback = ""
         def __call__(self, *args, **kwargs):
             """Return function value if defined, -1 if exception, 0 otherwise"""
@@ -215,7 +215,7 @@ def cvodefun(fun):
                     return 0
                 else:
                     return result
-            except StandardError: # allow KeyboardInterrupt, etc., to work
+            except Exception: # allow KeyboardInterrupt, etc., to work
                 self.traceback = traceback.format_exc()
                 return -1
         def __repr__(self):
@@ -398,7 +398,7 @@ class Cvodeint(object):
         success_value = f_ode(t[0], nv(y), nv(y), f_data) # probably 0 or None
         try:
             error_value = f_ode(None, None, None, None) # <0 or raise exception
-        except StandardError:
+        except Exception:
             error_value = None
             try:
                 f_ode.traceback = ""
@@ -901,7 +901,7 @@ class Cvodeint(object):
             try:
                 val = getattr(self, arg)
                 if inspect.isfunction(val):
-                    arglist.append((arg, val.func_name))
+                    arglist.append((arg, val.__name__))
                 elif val != default:
                     arglist.append((arg, repr(val)))
             except ValueError:
@@ -958,7 +958,7 @@ class Cvodeint(object):
         ?                ^^ +++++++                          ^  ^
         """
         import textwrap, difflib
-        s, o = [textwrap.wrap(repr(x)) for x in self, other]
+        s, o = [textwrap.wrap(repr(x)) for x in (self, other)]
         return "\n".join([li.strip() for li in difflib.ndiff(s, o) 
                           if not li.startswith(" ")])
 
@@ -966,11 +966,11 @@ if __name__ == "__main__":
     import doctest
     failure_count, test_count = doctest.testmod(
         optionflags=doctest.NORMALIZE_WHITESPACE | doctest.ELLIPSIS)
-    print """
+    print("""
         NOTE: This doctest will (by design) result in an error message and a 
         traceback, which will be ignored by doctest (apparently, is is printed 
         outside of standard error and output). 
         Warnings about "enlarging arrays" are also intended.
-        """
+        """)
     if failure_count == 0:
-        print """All doctests passed."""
+        print("""All doctests passed.""")

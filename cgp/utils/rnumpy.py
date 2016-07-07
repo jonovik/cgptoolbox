@@ -13,7 +13,7 @@ import atexit
 import functools
 from warnings import warn
 from contextlib import contextmanager
-from cStringIO import StringIO
+from io import StringIO
 
 import numpy as np
 import rpy2.rinterface as ri
@@ -106,7 +106,7 @@ def rwrap(func):
     def wrapper(*args, **kwargs):
         """Written in Python, but callable only from R."""
         args = [pythonify(i) for i in args]
-        kwargs = {k: pythonify(v) for k, v in kwargs.items()}
+        kwargs = {k: pythonify(v) for k, v in list(kwargs.items())}
         return py2ri(func(*args, **kwargs))
     
     return wrapper
@@ -143,13 +143,13 @@ class R(object):
         try:
             return self[_munge_py_name_to_r(name)]
         except LookupError:
-            raise AttributeError, name
+            raise AttributeError(name)
 
     def __setattr__(self, *args, **kwargs):
-        raise NotImplementedError, "assign to r[foo] instead"
+        raise NotImplementedError("assign to r[foo] instead")
 
     def __delattr__(self, *args, **kwargs):
-        raise NotImplementedError, "delete r[foo] instead"
+        raise NotImplementedError("delete r[foo] instead")
 
     def __call__(self, string, env=None):
         parse = self.parse
@@ -161,7 +161,7 @@ class R(object):
             env = self_env
         try:
             return r.eval(p, envir=py2ri(env), enclos=self_env)
-        except ri.RRuntimeError, e:
+        except ri.RRuntimeError as e:
             raise RRuntimeError(e, string)
 
 r = R(ri.globalenv)
@@ -187,7 +187,7 @@ def test_r_call():
     # Check that it converts errors into our preferred exception type:
     try:
         r("stop('asdf')")
-    except RRuntimeError, e:
+    except RRuntimeError as e:
         assert "asdf" in str(e.exc)
     except Exception:
         assert False
@@ -208,7 +208,7 @@ def is_complete_expression(string):
         # direct-to-console printing of errors:
         with rcapture():
             r.parse(text=string)
-    except RRuntimeError, e:
+    except RRuntimeError as e:
         # XX FIXME: Surely there is a better way to do this...
         if "unexpected end of input" in e.exc.message:
             return False
@@ -338,7 +338,7 @@ class RClosure(RWrapper):
     def __call__(self, *args, **kwargs):
         rcall_args = [(None, value) for value in args]
         rcall_args += [(_munge_py_name_to_r(key), value)
-                       for key, value in kwargs.iteritems()]
+                       for key, value in kwargs.items()]
         return self.rcall(rcall_args)
 
     def rcall(self, args):
@@ -353,7 +353,7 @@ class RClosure(RWrapper):
             _sexp_rcall = self._sexp.rcall
             return ri2py(_sexp_rcall(converted_args, ri.globalenv),
                          "<return value from %s>" % (self._name,))
-        except ri.RRuntimeError, e:
+        except ri.RRuntimeError as e:
             raise RRuntimeError(e, self._name)
 
     def __repr__(self):
@@ -391,7 +391,7 @@ def test_rclosure_error():
     closure = RClosure("stop", stop)
     try:
         closure()
-    except RRuntimeError, e:
+    except RRuntimeError as e:
         assert e.call == "stop"
     except Exception:
         assert False
@@ -420,19 +420,19 @@ class RBinder(object):
     def __call__(self, *args, **kwargs):
         sexp = object.__getattribute__(self, "_sexp")
         if sexp is None:
-            raise ValueError, "this object has no corresponding R object"
+            raise ValueError("this object has no corresponding R object")
         return r["["](sexp, *args, **kwargs)
 
     def __setitem__(self, *args, **kwargs):
         msg = "R does not support mutating arbitrary arrays in place"
-        raise NotImplementedError, msg
+        raise NotImplementedError(msg)
 
     def __getattribute__(self, name):
         name = _munge_py_name_to_r(name)
         sexp = object.__getattribute__(self, "_sexp")
         if sexp is None:
             msg = "this object has no corresponding R object"
-            raise NotImplementedError, msg
+            raise NotImplementedError(msg)
         return functools.partial(r[name], sexp)
 
 def test_rbinder():
@@ -624,7 +624,7 @@ class RArray(np.ndarray):  # pylint: disable=W0232
 
     def resize(self, new_shape):
         if self.is_sealed():
-            raise NotImplementedError, "Cannot resize a sealed array"
+            raise NotImplementedError("Cannot resize a sealed array")
         if self.is_r():
             _set_sexp_shape(self._sexp, new_shape)
         np.ndarray.resize(self, new_shape)
@@ -742,9 +742,9 @@ def _arraylike_to_sexp(obj, recurse, **kwargs):
     shape = array.shape
     if array.dtype.kind == "O":
         if not recurse:
-            raise ValueError, "Cannot convert object arrays without recursing"
+            raise ValueError("Cannot convert object arrays without recursing")
         else:
-            sexp_seq = map(py2ri, sexp_seq)
+            sexp_seq = list(map(py2ri, sexp_seq))
     # Most types map directly to R arrays (or in one case an R list):
     if array.dtype.kind in _kind_to_sexp:
         sexp = ri.SexpVector(sexp_seq,
@@ -755,17 +755,17 @@ def _arraylike_to_sexp(obj, recurse, **kwargs):
     elif array.dtype.kind == "u":
         msg = "Cannot convert numpy array of unsigned values -- "
         msg += "R does not have unsigned integers."
-        raise ValueError, msg
+        raise ValueError(msg)
     # Record arrays map onto R data frames:
     elif array.dtype.kind == "V":
         if len(array.shape) != 1:
             msg = "Only unidimensional record arrays can be "
             msg += "converted to data frames"
-            raise ValueError, msg
+            raise ValueError(msg)
         if array.dtype.names is None:
             msg = "Cannot convert void array of type %r to data.frame -- it "
             msg += "has no field names"
-            raise ValueError, msg
+            raise ValueError(msg)
         df_args = []
         for field_name in array.dtype.names:
             df_args.append((field_name, py2ri(array[field_name])))
@@ -775,7 +775,7 @@ def _arraylike_to_sexp(obj, recurse, **kwargs):
         return ri.baseenv["data.frame"].rcall(tuple(df_args), ri.baseenv)
     # It should be impossible to get here:
     else:
-        raise ValueError, "Unknown numpy array type."
+        raise ValueError("Unknown numpy array type.")
 
 def test__arraylike_to_sexp():
     # Existing sexps are passed through without change:
@@ -797,7 +797,7 @@ def test__arraylike_to_sexp():
     s = _arraylike_to_sexp(np.array(["hi"], dtype=str), False)
     assert s.typeof == ri.STRSXP
     assert s[0] == "hi"
-    s = _arraylike_to_sexp(np.array(["hi"], dtype=unicode), False)
+    s = _arraylike_to_sexp(np.array(["hi"], dtype=str), False)
     assert s.typeof == ri.STRSXP
     assert s[0] == "hi"
     s = _arraylike_to_sexp(np.array(["hi"], dtype=object), True)
@@ -857,7 +857,7 @@ def py2ri(obj):
         return obj.__as_r_sexp__()
 
     if isinstance(obj, dict):
-        return r["list"].rcall(obj.iteritems()).__as_r_sexp__()
+        return r["list"].rcall(iter(obj.items())).__as_r_sexp__()
 
     if isinstance(obj, (list, tuple, np.ndarray)):
         return _arraylike_to_sexp(obj, True)
@@ -895,7 +895,7 @@ def py2ri(obj):
             raise ValueError(msg)
         return r.seq_int(obj.start, obj.stop).__as_r_sexp__()
 
-    raise ValueError, "cannot convert object %r to R" % (obj,)
+    raise ValueError("cannot convert object %r to R" % (obj,))
 
 def rarray(obj, **kwargs):
     seal = kwargs.get("seal", False)
@@ -914,7 +914,7 @@ def _r_filled_array(filler, shape, dtype, seal):
     elif np.dtype(dtype).kind == "c":
         filler = r.as_complex(filler)
     else:
-        raise ValueError, "Not sure how to make an array of type %r" % (dtype,)
+        raise ValueError("Not sure how to make an array of type %r" % (dtype,))
     array = r.rep_int(filler, np.asarray(shape).prod())
     array = array.unseal(assert_no_copy=True)
     array.resize(shape)
@@ -948,7 +948,7 @@ _NA_for_sexp_type[ri.STRSXP] = NA_CHARACTER
 def NA_for(obj):
     # Don't copy the whole thing:
     if _iterable(obj):
-        obj = iter(obj).next()
+        obj = next(iter(obj))
     return rcopy(obj).NA
 
 import threading

@@ -26,7 +26,7 @@ def test_int2vec_2d():
     there was only one position.
     """
     a = Placevalue([3])
-    assert_equal(a.int2vec(range(4)), [[0], [1], [2], [3]])
+    assert_equal(a.int2vec(list(range(4))), [[0], [1], [2], [3]])
 
 def test_vec2int_huge():
     """

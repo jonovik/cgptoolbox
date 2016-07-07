@@ -45,7 +45,7 @@ def main():
     if len(sys.argv) > 1:
         jobscript = sys.argv[-1]
     else:
-        print __doc__
+        print(__doc__)
         raise RuntimeError("No jobscript specified")
     wrapscript = jobscript + ".mpi.sh"
     
@@ -70,7 +70,7 @@ def main():
     assert status == 0, msg % (status, cmd, output)
     
     os.remove(wrapscript)
-    print output
+    print(output)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, 

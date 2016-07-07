@@ -30,7 +30,7 @@ has a
 :meth:`~cgp.cvodeint.namedcvodeint.Namedcvodeint.clamp` method.
 """  # pylint: disable=C0301
 
-from __future__ import division # 7 / 4 = 1.75 rather than 1
+ # 7 / 4 = 1.75 rather than 1
 from . import ap_stats
 from collections import namedtuple, deque
 from pysundials import cvode
@@ -227,7 +227,7 @@ class Paceable(object):
         
         # drop intervals where flag is None; those were past t_stop
         result = [res for res in result if res[-1] is not None]
-        t, Y, _flag = zip(*result) # (t, Y, flag), where each is a tuple
+        t, Y, _flag = list(zip(*result)) # (t, Y, flag), where each is a tuple
         
         # The items of the tuples refer to these intervals, assuming the
         # default p_repol specifying four thresholds:
@@ -348,7 +348,7 @@ class Paceable(object):
             ignore_flags=ignore_flags))
         
         # logging.debug("integration finished")
-        t, Y, _flag = zip(*result) # (t, Y, flag), where each is a tuple
+        t, Y, _flag = list(zip(*result)) # (t, Y, flag), where each is a tuple
         
         # The items of the tuples refer to these intervals
         # 0) stimulus
@@ -470,9 +470,9 @@ class Paceable(object):
         if np.isscalar(reltol):
             reltol = dict((k, reltol) for k in self.dtype.y.names)
         assert reltol or abstol, "Must specify relative or absolute tolerance"
-        absconv = all([abs(x1[k] - x0[k]) < tol for k, tol in abstol.items()])
+        absconv = all([abs(x1[k] - x0[k]) < tol for k, tol in list(abstol.items())])
         relconv = all([abs((x1[k] - x0[k]) / x0[k]) < tol 
-            for k, tol in reltol.items()])
+            for k, tol in list(reltol.items())])
         return relconv and absconv
         
     def steady(self, winwidth=10, max_nap=1000, reltol=0.001):
@@ -704,7 +704,7 @@ def ap_stats_array(stats):
     n = len(names)
     names += ["d%d" % (100 * i) for i in stats["p_repol"]]
     if "caistats" in stats:
-        dtype = [(var + name, float) for var in "ap", "ct" for name in names]
+        dtype = [(var + name, float) for var in ("ap", "ct") for name in names]
         data = np.r_[[float(stats[k]) for k in names[:n]],
                      stats["t_repol"],
                      [float(stats["caistats"][k]) for k in names[:n]],

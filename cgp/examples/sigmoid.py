@@ -119,7 +119,7 @@ def plot_gpmap(gt, ph):
     plt.plot(gt['Gene1'][gt['Gene2'] == 1], ph[gt['Gene2'] == 1], 'go-')
     plt.plot(gt['Gene1'][gt['Gene2'] == 2], ph[gt['Gene2'] == 2], 'bo-')
     plt.xlabel('Genotype gene 1')
-    plt.xticks(range(3), ('11', '12', '22'))
+    plt.xticks(list(range(3)), ('11', '12', '22'))
     plt.ylabel('Expression level gene 2')
     plt.legend(('11', '12', '22'), title="Genotype gene 2")
     plt.grid(b='on', axis='y')
