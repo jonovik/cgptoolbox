@@ -74,7 +74,7 @@ def r2rec(x):
     dtype=[('Sepal.Length', '<f8'), ('Sepal.Width', '<f8'), 
     ('Petal.Length', '<f8'), ('Petal.Width', '<f8'), ('Species', '|S10')])
     """
-    k, v = list(zip(*list(rlist2pydict(x).items())))
+    k, v = list(zip(*rlist2pydict(x).items()))
     return np.rec.fromarrays(v, names=k).view(np.recarray)
 
 try:

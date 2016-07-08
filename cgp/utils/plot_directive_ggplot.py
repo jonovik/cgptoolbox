@@ -733,7 +733,7 @@ def run(arguments, content, options, state_machine, state, lineno):
         if nofigs:
             images = []
 
-        opts = [':%s: %s' % (key, val) for key, val in list(options.items())
+        opts = [':%s: %s' % (key, val) for key, val in options.items()
                 if key in ('alt', 'height', 'width', 'scale', 'align', 'class')]
 
         only_html = ".. only:: html"

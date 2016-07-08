@@ -106,7 +106,7 @@ def rwrap(func):
     def wrapper(*args, **kwargs):
         """Written in Python, but callable only from R."""
         args = [pythonify(i) for i in args]
-        kwargs = {k: pythonify(v) for k, v in list(kwargs.items())}
+        kwargs = {k: pythonify(v) for k, v in kwargs.items()}
         return py2ri(func(*args, **kwargs))
     
     return wrapper

@@ -103,7 +103,7 @@ class OrderedDict(dict, DictMixin):
     def __eq__(self, other):
         if isinstance(other, OrderedDict):
             return len(self)==len(other) and \
-                   min(p==q for p, q in  zip(list(self.items()), list(other.items())))
+                   min(p==q for p, q in zip(self.items(), other.items()))
         return dict.__eq__(self, other)
 
     def __ne__(self, other):

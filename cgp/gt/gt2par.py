@@ -153,7 +153,7 @@ def geno2par_additive(genotype, hetpar, relvar=0.5, nloci=0, absvar=None):
             rvar = np.zeros((N, M)).view(hetpar.dtype, np.recarray)
             for i in range(N):
                 # fill in non-zeros row by row
-                for key, value in list(relvar[i].items()):
+                for key, value in relvar[i].items():
                     setattr(rvar[i], key, value)
             relvar = rvar.view(float)
         else:

@@ -204,7 +204,10 @@ def cvodefun(fun):
         """Wrapper for a CVODE right-hand side function"""
         def __init__(self):
             self.__name__ = fun.__name__ # used by pysundials/cvode.py
-            self.__name__ = fun.__name__ # used by pysundials/cvode.py
+			# pysundials/cvode.py makes use of self.func_name
+			# However, it most likely needs updating to work with Python 3
+			# TODO: Revisit odefun.func_name once pysundials works with Python 3
+            self.func_name = fun.__name__ # used by pysundials/cvode.py
             self.traceback = ""
         def __call__(self, *args, **kwargs):
             """Return function value if defined, -1 if exception, 0 otherwise"""
@@ -901,7 +904,7 @@ class Cvodeint(object):
             try:
                 val = getattr(self, arg)
                 if inspect.isfunction(val):
-                    arglist.append((arg, val.__name__))
+                    arglist.append((arg, val.func_name))
                 elif val != default:
                     arglist.append((arg, repr(val)))
             except ValueError:
@@ -973,4 +976,4 @@ if __name__ == "__main__":
         Warnings about "enlarging arrays" are also intended.
         """)
     if failure_count == 0:
-        print("""All doctests passed.""")
+        print("All doctests passed.")

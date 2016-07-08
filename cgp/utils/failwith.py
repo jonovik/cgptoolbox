@@ -176,7 +176,7 @@ def failwithnanlikefirst(func):
     ...     raise Exception("Failure")
     >>> try:
     ...     g()                         
-    ... except Exception, exc:
+    ... except Exception as exc:
     ...     print "Caught exception:", exc 
     <function g at 0x...> failed on first evaluation, or result could not be 
     interpreted as array of float. args = (), kwargs = {}

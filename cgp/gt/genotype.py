@@ -84,7 +84,8 @@ class Genotype(Placevalue):
         >>> np.concatenate(gt)
         array([(1, 1), (1, 0), (1, 2), 
                (0, 1), (0, 0), (0, 2), 
-               (2, 1), (2, 0), (2, 2)], dtype=[('a', '<i...'), ('b', '<i...')])
+               (2, 1), (2, 0), (2, 2)], 
+               dtype=(numpy.record, [('a', '<i...'), ('b', '<i...')]))
         """
         v = super(Genotype, self).int2vec(i)
         vi = v.view(self.fieldtype)

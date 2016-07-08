@@ -60,7 +60,7 @@ def test_bond_protocols(plot=False):
         savefig("fig%s%s.png" % (i, b.name))
     
     bp = b.bond_protocols()
-    for i, (varnames, protocol, limits, _url) in list(bp.items()):
+    for i, (varnames, protocol, limits, _url) in bp.items():
         if len(protocol[0]) == 2: # (duration, voltage), so clamping
             # List of (proto, traj), where traj is list of Trajectory
             L = b.vecvclamp(protocol)

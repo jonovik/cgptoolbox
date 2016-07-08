@@ -44,7 +44,7 @@ Now its method hdfcache.cache(func) can be used as a decorator:
 ...     "This is the docstring for function f"
 ...     result = np.zeros(1, dtype=[("y", float)])
 ...     result["y"] = x["i"] * 2 + x["f"] + a * b
-...     print "Evaluating f:", x, a, b, "=>", result
+...     print("Evaluating f:", x, a, b, "=>", result)
 ...     return result
 
 Calling hdfcache.cache again will cache multiple functions in the same HDF file.
@@ -57,7 +57,7 @@ Calling hdfcache.cache again will cache multiple functions in the same HDF file.
 ...     result["a"] = int(y["y"])
 ...     result["b"] = 1 / y["y"]
 ...     result["c"] = complex(0, y["y"])
-...     print "Evaluating g:", y, "=>", result
+...     print("Evaluating g:", y, "=>", result)
 ...     return result
 
 The function is evaluated normally the first time an input is encountered.
@@ -71,11 +71,11 @@ Evaluating f: [(2, 3.5)] 5 10 => [(57.5,)]
 Evaluating g: [(57.5,)] => [(57, 0.0173913..., 57.5j)]
 array([(53, 0.0187793..., 53.25j),
        (57, 0.0173913..., 57.5j)],
-      dtype=[('a', '<i4'), ('b', '<f8'), ('c', '<c16')])
+      dtype=(numpy.record, [('a', '<i4'), ('b', '<f8'), ('c', '<c16')]))
 
 In addition, the input and output are stored in the HDF file.
 
->>> print "Cache:", hdfcache.file    # doctest output cannot start with ellipsis
+>>> print("Cache:", hdfcache.file)    # doctest output cannot start with ellipsis
 Cache: ...
 /f (Group) ''
 /f/hash (Table(2,), shuffle, zlib(1)) ''
@@ -96,7 +96,7 @@ rec.array([(57.5,)], dtype=[('y', '<f8')])
 
 The source code of a cached function is stored as an attribute of its Group.
 
->>> print hdfcache.file.root.f._v_attrs.sourcecode   # doctest: +SKIP
+>>> print(hdfcache.file.root.f._v_attrs.sourcecode)   # doctest: +SKIP
 @hdfcache.cache
 def f(x, a, b=10):...
 >>> hdfcache.file.root.f._v_attrs  # doctest: +SKIP
@@ -116,48 +116,12 @@ or using a "with" statement:
 
 >>> with hdfcache:
 ...     hdfcache.file
-File(filename=..., title='', mode='a', rootUEP='/', ...
+File(filename=..., title='', mode='a', root_uep='/', ...
 >>> hdfcache._file
 <closed File>
 
 Compression is enabled by default, but can be disabled by passing filters=None 
 to the Hdfcache() constructor.
-
-
-== Comparing hash values manually ==
-
-The ahash(x) function currently applies the built-in hash() to x.__data__, 
-converting x to a Numpy array if needed. This is fast and tolerant towards 
-minor differences in shape and dtype. Just be aware of cases like these, which 
-have the same binary __data__:
-
->>> ahash(np.zeros(1)) == ahash(np.zeros(8, np.int8))       # float is 8 bytes
-True
-
-Here follow some details that are not relevant to the current ahash(), but are 
-important if you choose a stricter hash function.
-
-Numpy structured arrays and PyTables tables both distinguish between:
-
->>> type(x[0])
-<class 'numpy.core.records.record'>
->>> type(x[0:1])
-<class 'numpy.core.records.recarray'>
->>> x[0]
-(1, 1.25)
->>> x[0:1]
-rec.array([(1, 1.25)], dtype=[('i', '<i4'), ('f', '<f8')])
-
-Note, though, that 
-
->>> x[0].dtype == x[0:1].dtype
-True
-
-These nuances may affect hash values: whether an input is ndarray or recarray, 
-its shape and dimensionality.
-
->>> ahash(x[1]) == ahash(x[1:2]) # False if using joblib.hash as hash
-True
 
 The following is a reliable way to check whether 
 the hash of an input is in an existing hash Table.
@@ -170,22 +134,15 @@ array([1]...)
 Details:
 
 >>> h1 = ahash(x[1:2])
->>> want = dict([("joblib.hash", "4a14c07534c7a24053e58540b74de973"),
-...              ("Windows XP 32-bit", 1710834134),
-...              ("Windows 7 32-bit", 6484299406236008918)])
+>>> want = dict([("joblib.hash", "194ff6228b26c07f9386818a533c47b0")])
 >>> h1 in want.values()
 True
 >>> with hdfcache:
 ...     hash = hdfcache.file.root.f.hash # Table object
 ...     h = hash[:] # extract all records as structured ndarray
 >>> want = dict([
-...     ("joblib.hash", np.array([('cadf9e2413df9d83e2303522bc1267a9',), 
-...                               ('4a14c07534c7a24053e58540b74de973',)], 
-...                               dtype=[('hash', '|S32')])),
-...     ("Windows XP 32-bit",  np.array([(773416804,), (1710834134,)], 
-...                               dtype=[('hash', '<i4')])),
-...     ("Windows 7 32-bit", np.array([(-5981222333818771612,), 
-...                       (6484299406236008918,)], dtype=[('hash', '<i8')]))])
+...     ("joblib.hash", np.array([('194ff6228b26c07f9386818a533c47b0',)],
+...                               dtype=[('hash', '|S32')]))])
 >>> any([all([(i == j) for i, j in zip(h["hash"], v["hash"])]) 
 ...     for v in want.values()])
 True
@@ -204,7 +161,7 @@ http://thread.gmane.org/gmane.comp.python.pytables.user/1238/focus=1250
 
 # for merging iterators
 import itertools
-from contextlib import nested
+from contextlib import ExitStack
 from glob import glob
 import os
 from ..utils.poormanslock import Lock
@@ -213,6 +170,7 @@ import shutil
 import tables as pt
 import numpy as np
 from ..utils.argrec import autoname
+import hashlib
 # for decorating
 import inspect
 from functools import wraps
@@ -220,11 +178,7 @@ import time
 # logging facilities, useful for debugging
 import logging 
 
-# # To use Gael Varoquaux' joblib.hash() rather than the built-in one.
-# try:
-#     from joblib import hash as ahash
-# except ImportError:
-#     pass
+from joblib import hash as ahash
 
 
 log = logging.getLogger("hdfcache")
@@ -234,23 +188,6 @@ log.addHandler(logging.StreamHandler())
 fmtstr = "%(" + ")s\t%(".join(
     "asctime levelname name lineno process message".split()) + ")s"
 log.handlers[0].setFormatter(logging.Formatter(fmtstr))
-
-
-def ahash(x):
-    """
-    Hash the raw data of a Numpy array
-    
-    The input will be converted to a Numpy array if possible.    
-    The shape and dtype of the array does not enter into the hash.
-    
-    >>> x = np.arange(5)
-    >>> y = np.arange(5)
-    >>> ahash(x) == ahash(y) == ahash(range(5))
-    True
-    """
-    x = np.asarray(x)
-    x.setflags(write=False)
-    return hash(x.data)
 
 
 class NoHdfcache(object):
@@ -337,7 +274,7 @@ class DictHdfcache(object):
         
         >>> srt = sorted(dicthdfcache.d.items(), key=lambda x: x[0].__name__)
         >>> for k, v in srt:
-        ...     print k, sorted(v.items(), key=lambda x: x[-1])
+        ...     print(k, sorted(v.items(), key=lambda x: x[-1]))
         <function f at 0x...> [(..., 4), (..., 9)]
         <function g at 0x...> [(..., 27)]
         
@@ -459,7 +396,7 @@ class Hdfcache(object):
         ...     while True:
         ...         y = f(0)
         Traceback (most recent call last):
-        HdfcacheException: Flag file not found when calling <function f...
+        cgp.utils.hdfcache.HdfcacheException: Flag file not found when calling <function f...
         """
         if self.withflagfile:
             self.incontext = True
@@ -626,7 +563,7 @@ def hdfcat(pathname="*.h5", outfilename="concatenated.h5"):
     ...         f.createTable("/group1", "b", b[i:i+1], createparents=True)
     ...         return str(f.root.a[:]) + " " + str(f.root.group1.b[:]) + " " + str(f)
     >>> for i in 0, 1, 2:
-    ...     print "Part", i, writedata(i)
+    ...     print("Part", i, writedata(i))
     Part 0 [(0,)] [(11,)] ...cachetest.h5.0.h5...
     / (RootGroup) ''
     /a (Table(1,)) ''
@@ -664,7 +601,7 @@ def hdfcat(pathname="*.h5", outfilename="concatenated.h5"):
     >>> hdfcat(filename + ".*.h5", filename + ".concatenated")
     True
     >>> with pt.openFile(filename + ".concatenated") as f:
-    ...     print "Concatenated", str(f)
+    ...     print("Concatenated", str(f))
     Concatenated ...cachetest.h5.concatenated...
     / (RootGroup) ''
     /a (Table(3,)) ''
@@ -687,9 +624,10 @@ def hdfcat(pathname="*.h5", outfilename="concatenated.h5"):
             infilenames = glob(pathname)
             infilenames.sort(key=os.path.getsize)
             bigfilename = infilenames.pop()
-            # Open them all safely, using "with nested()"
-            with nested(*(pt.openFile(i) for i in infilenames)) as fin:
-                # Copy the biggest HDF file so we can append data 
+            # Open them all safely
+            with ExitStack() as stack:
+                fin = [stack.enter_context(pt.openFile(i)) for i in infilenames]
+                # Copy the biggest HDF file so we can append data
                 # from the others into the same structure. This relies on 
                 # the biggest file having all the caches populated.
                 # Don't use pt.copyFile() because it is slow on complex nested 

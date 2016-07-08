@@ -610,9 +610,9 @@ class Timing(OrderedDict):
             ('finished', nan), ('error', nan), ('seconds', nan)])
         """
         super(Timing, self).__init__()
-        for k, v in list(self._default.items()):
+        for k, v in self._default.items():
             self[k] = v
-        for k, v in list(kwargs.items()):
+        for k, v in kwargs.items():
             self[k] = v
     
     def __array__(self):

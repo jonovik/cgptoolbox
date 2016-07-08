@@ -470,9 +470,9 @@ class Paceable(object):
         if np.isscalar(reltol):
             reltol = dict((k, reltol) for k in self.dtype.y.names)
         assert reltol or abstol, "Must specify relative or absolute tolerance"
-        absconv = all([abs(x1[k] - x0[k]) < tol for k, tol in list(abstol.items())])
+        absconv = all([abs(x1[k] - x0[k]) < tol for k, tol in abstol.items()])
         relconv = all([abs((x1[k] - x0[k]) / x0[k]) < tol 
-            for k, tol in list(reltol.items())])
+            for k, tol in reltol.items()])
         return relconv and absconv
         
     def steady(self, winwidth=10, max_nap=1000, reltol=0.001):

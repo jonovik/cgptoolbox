@@ -167,7 +167,7 @@ def dict2hdf(d, f, where):
     /walk/nested (Group) ''
     /walk/nested/c (Array(3,)) ''...
     """
-    for k, v in list(d.items()):
+    for k, v in d.items():
         kw = dict(where=where, name=k, createparents=True)
         hdflog.debug(kw)
         if hasattr(v, "items"):

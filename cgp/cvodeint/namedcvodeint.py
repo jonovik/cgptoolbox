@@ -182,7 +182,7 @@ class Namedcvodeint(Cvodeint):
         >>> Yr.x
         array([[-2.        ], [-1.96634283], ... [-1.96940322], [-2.00814991]])
         """
-        if not all(self.__dict__[k] is v for k, v in list(self.originals.items())):
+        if not all(self.__dict__[k] is v for k, v in self.originals.items()):
             raise AssertionError(self.reassignwarning)
         t, Y, flag = super(Namedcvodeint, self).integrate(**kwargs)
         Yr = Y.view(self.dtype.y, np.recarray)
@@ -253,7 +253,7 @@ class Namedcvodeint(Cvodeint):
         if _p is not None:
             if np.asarray(_p).dtype.names:
                 _p = rec2dict(_p)
-            for k, v in list(_p.items()):
+            for k, v in _p.items():
                 self.pr[k] = v
         if _y is not None:
             try:
@@ -266,7 +266,7 @@ class Namedcvodeint(Cvodeint):
                 self.y[:] = _y.squeeze()
             except TypeError: # float expected instead of numpy.void instance
                 self.y[:] = _y.item()
-        for k, v in list(kwargs.items()):
+        for k, v in kwargs.items():
             if k in self.dtype.p.names and k not in self.dtype.y.names:
                 self.pr[k] = v
                 continue
@@ -369,7 +369,7 @@ class Namedcvodeint(Cvodeint):
         
         # Initialize clamped state variables.
         y = np.array(self.y).view(self.dtype.y)
-        for k, v in list(kwargs.items()):
+        for k, v in kwargs.items():
             y[k] = v
         
         # Use original options when rerunning the Cvodeint initialization.
