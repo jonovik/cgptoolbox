@@ -358,12 +358,16 @@ def cp2cond(s):
     "('<3' if (x < 3) else '>5' if (x > 5) else 0 if True else 0)"
     
     Function call as list item.
+    BUG: On Python 3, fails with
+    AttributeError: 'Call' object has no attribute 'starargs'
     
     >>> cp2cond('custom_piecewise([f(x,1), "<3", x>5, ">5", True, 0])')
     "('<3' if f(x, 1) else '>5' if (x > 5) else 0 if True else 0)"
     """
     p = codegen.parse(s)
     L = [codegen.to_source(i) for i in p.body[0].value.args[0].elts]
+    # Hack: What was True under Python 2 becomes '' under Python 3
+    # L = [True if i == '' else i for i in L]
     cond = L[0::2]
     val = L[1::2]
     ifelse = " ".join("%s if %s else" % (v, c) for c, v in zip(cond, val))

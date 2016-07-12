@@ -33,9 +33,9 @@ def hdf2numpy(src, dst, where="/", ext=".npy"):
     : .../npy : []
     : .../parent : []
     : .../parent/group : ['a.npy']
-    array([(1, 1.5), (2, 2.5)], dtype=[('i', '|i1'), ('x', '<f8')])
+    array([(1, 1.5), (2, 2.5)], dtype=[('i', 'i1'), ('x', '<f8')])
     : .../parent/group/sub : ['b.npy']
-    array([(1, 1.5), (2, 2.5)], dtype=[('i', '|i1'), ('x', '<f8')])
+    array([(1, 1.5), (2, 2.5)], dtype=[('i', 'i1'), ('x', '<f8')])
     """
     # standardize to forward slashes
     src = src.replace("\\", "/")

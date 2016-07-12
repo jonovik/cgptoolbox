@@ -24,26 +24,27 @@ def monogenicpar(genotype, hetpar, relvar=0.5, absvar=None):
 
     >>> genotype = [0, 1, 2]
     >>> hetpar = np.rec.fromrecords([(10, 11, 12)], 
-    ...     dtype=[(i, np.int8) for i in "a", "b", "c"])
+    ...     dtype=[(i, float) for i in ["a", "b", "c"]])
+
     >>> monogenicpar(genotype, hetpar)
-    rec.array([(5, 11, 18)], dtype=[('a', '|i1'), ('b', '|i1'), ('c', '|i1')])
+    rec.array([(5.0, 11.0, 18.0)], dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])
     >>> monogenicpar(genotype, hetpar, relvar=1)
-    rec.array([(0, 11, 24)], dtype=[('a', '|i1'), ('b', '|i1'), ('c', '|i1')])
+    rec.array([(0.0, 11.0, 24.0)], dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])
     >>> monogenicpar(genotype, hetpar, absvar=hetpar)
-    rec.array([(0, 11, 24)], dtype=[('a', '|i1'), ('b', '|i1'), ('c', '|i1')])
+    rec.array([(0.0, 11.0, 24.0)], dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])
     
     >>> genotype = [[0, 1, 2], [2, 1, 0]]
     >>> monogenicpar(genotype, hetpar)
-    rec.array([(5, 11, 18), (15, 11, 6)], dtype=[('a', '|i1'), ...])
+    rec.array([(5.0, 11.0, 18.0), (15.0, 11.0, 6.0)], dtype=[('a', '<f8'), ...])
     
     A recarray genotype is `unstructure`\ d before use, and its field names are 
     ignored.
     
     >>> genotype =  np.rec.array([(0, 1, 2), (2, 1, 0)], 
-    ...     dtype=[('a', '|i1'), ('b', '|i1'), ('c', '|i1')])
+    ...     dtype=[('a', 'i1'), ('b', 'i1'), ('c', 'i1')])
     >>> monogenicpar(genotype, hetpar)
-    rec.array([(5, 11, 18), (15, 11, 6)], 
-          dtype=[('a', '|i1'), ('b', '|i1'), ('c', '|i1')])
+    rec.array([(5.0, 11.0, 18.0), (15.0, 11.0, 6.0)],
+          dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])
     """
     genotype = np.atleast_2d(unstruct(genotype))
     hetpar = np.asanyarray(hetpar)
@@ -284,7 +285,7 @@ def geno2par_diploid(genotype, hetpar, loc2par):
     
     >>> genotype = [[0, 0], [1, 1]]
     >>> geno2par_diploid(genotype, hetpar, loc2par)      #doctest: +NORMALIZE_WHITESPACE
-    rec.array([([0.25, 0.25], [0.5, 0.5], [1.25, 1.25])],
+    rec.array([(array([ 0.25,  0.25]), array([ 0.5,  0.5]), array([ 1.25,  1.25]))],
           dtype=[('a', '<f8', (2,)), ('b', '<f8', (2,)), ('c', '<f8', (2,))])
     """
     N = loc2par.shape[0] #number of genes

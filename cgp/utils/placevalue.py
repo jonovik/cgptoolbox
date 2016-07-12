@@ -13,7 +13,7 @@ Default is most significant digit first, so that the last digit changes fastest.
 
 Iteration over vectors.
 
->>> for i in p: print i                                     # doctest: +ELLIPSIS
+>>> for i in p: print(i)                                     # doctest: +ELLIPSIS
 [0 0 0]
 [0 0 1]
 ...
@@ -47,9 +47,9 @@ Using a structured array with named fields to construct the Placevalue object.
 >>> dtype = [("a", np.int16), ("b", np.int16)]
 >>> pr = Placevalue(np.rec.fromrecords([[2,3]], dtype=dtype))
 >>> pr[7]
-array([(2, 1)], dtype=[('a', '<i2'), ('b', '<i2')])
+array([(2, 1)], dtype=(numpy.record, [('a', '<i2'), ('b', '<i2')]))
 >>> np.concatenate(pr)
-array([(0, 0), (0, 1), ..., (1, 1), (1, 2)], dtype=[('a', '<i2'), ('b', '<i2')])
+array([(0, 0), (0, 1), ..., (1, 1), (1, 2)], dtype=(numpy.record, [('a', '<i2'), ('b', '<i2')]))
 
 .. rubric:: Details
 
@@ -61,7 +61,6 @@ numbers left-to-right.
 The integer is computed by multiplying each vector element with its place value 
 and summing the result, just like 123 = 1*100 + 2*10 + 3*1.
 """
-import operator
 import numpy as np
 
 from .unstruct import unstruct
@@ -90,7 +89,7 @@ class Placevalue(object):
     ndarrays.
     
     >>> Placevalue([3, 4], names=["a", "b"])[0]
-    array([(0, 0)], dtype=[('a', '...'), ('b', '...')])
+    array([(0, 0)], dtype=(numpy.record, [('a', '...'), ('b', '...')]))
     
     If a structured array is used to construct the Placevalue object, the same 
     dtype and field names are used for the vectors returned by int2vec(), 
@@ -99,12 +98,12 @@ class Placevalue(object):
     >>> dtype = [("a", np.int8), ("b", np.int8)]
     >>> pr = Placevalue(np.rec.fromrecords([[3, 4]], dtype=dtype))
     >>> pr[11]
-    array([(2, 3)], dtype=[('a', '|i1'), ('b', '|i1')])
+    array([(2, 3)], dtype=(numpy.record, [('a', 'i1'), ('b', 'i1')]))
     
     To convert a structured ndarray to a recarray, use .view().
     
     >>> pr[11].view(np.recarray)
-    rec.array([(2, 3)], dtype=[('a', '|i1'), ('b', '|i1')])    
+    rec.array([(2, 3)], dtype=[('a', 'i1'), ('b', 'i1')])    
     """
     
     def __init__(self, n=None, msd_first=True, names=None):
@@ -119,7 +118,9 @@ class Placevalue(object):
         self.msd_first = msd_first
         # The number of possible genotypes can overflow fixed-size integers,
         # so use Python's unlimited-precision integer type.
-        self.maxint = reduce(operator.mul, [int(i) for i in self.u])
+        self.maxint = 1
+        for i in self.u:
+            self.maxint *= int(i)
         # Likewise, dtype=object will use Python integers
         if msd_first:
             self.posval = np.r_[1, self.u[:0:-1].astype(object).cumprod()][::-1]
@@ -205,12 +206,12 @@ class Placevalue(object):
         >>> dtype = [("a", np.int8), ("b", np.int8)]
         >>> pr = Placevalue(np.rec.fromrecords([[3, 4]], dtype=dtype))
         >>> pr.int2vec(11)
-        array([(2, 3)], dtype=[('a', '|i1'), ('b', '|i1')])
+        array([(2, 3)], dtype=(numpy.record, [('a', 'i1'), ('b', 'i1')]))
         >>> np.concatenate(pr)
         array([(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), ..., (2, 3)],
-            dtype=[('a', '|i1'), ('b', '|i1')])
+            dtype=(numpy.record, [('a', 'i1'), ('b', 'i1')]))
         """
-        i = np.atleast_1d(i).copy()
+        i = np.atleast_1d(i).copy().astype(object)  # Force dtype=object to avoid overflow in divmod() below
         result = np.zeros(i.shape + self.posval.shape, dtype=self.fieldtype)
         if self.msd_first:
             for pos, posval in enumerate(self.posval):
@@ -234,7 +235,7 @@ class Placevalue(object):
         >>> dtype = [("a", np.int8), ("b", np.int8)]
         >>> Placevalue(np.rec.fromrecords([[3, 4]], dtype=dtype))
         Placevalue(rec.array([(3, 4)],
-              dtype=[('a', '|i1'), ('b', '|i1')]), msd_first=True)
+              dtype=[('a', 'i1'), ('b', 'i1')]), msd_first=True)
         """
         return "%s(%r, msd_first=%r)" % (
             self.__class__.__name__, self.n, self.msd_first)
@@ -252,15 +253,15 @@ class Placevalue(object):
         4
         >>> np.concatenate(pv)
         array([(0, 0), (0, 1), (1, 0), (1, 1)], 
-              dtype=[('a', '|i1'), ('b', '|i1')])
+              dtype=(numpy.record, [('a', 'i1'), ('b', 'i1')]))
         
         Use maxint instead if __len__ exceeds the range of fixed-size integers.
         
         >>> len(Placevalue([[2] * 64]))
         Traceback (most recent call last):
-        OverflowError: long int too large to convert to int
+        OverflowError: cannot fit 'int' into an index-sized integer
         >>> Placevalue([[2] * 64]).maxint
-        18446744073709551616L
+        18446744073709551616
         """
         return self.maxint
     
@@ -282,7 +283,7 @@ class Placevalue(object):
         >>> pv = Placevalue(np.rec.fromrecords([[2, 2]], dtype=dtype))
         >>> np.array(pv)
         array([(0, 0), (0, 1), (1, 0), (1, 1)],
-              dtype=[('a', '|i1'), ('b', '|i1')])
+              dtype=(numpy.record, [('a', 'i1'), ('b', 'i1')]))
         """
         if self.dtype.names: # structured ndarray
             return np.concatenate(self)

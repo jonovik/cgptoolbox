@@ -7,9 +7,9 @@ def trimlim(x, low=0, high=0):
     Return lower and upper bound for trimming a vector.
     
     >>> trimlim(np.linspace(100, 200, 101), 0.25, 0.5)
-    (125.0, 149.0)
+    (125.0, 150.0)
     >>> trimlim(np.linspace(100, 200, 101), 25, 0.5)
-    (125.0, 149.0)
+    (125.0, 150.0)
     """
     x = np.sort(x)
     x = x[np.isfinite(x)]
@@ -38,8 +38,8 @@ def trim(x, low=0, high=0):
     
     Trimming the first quarter and last half of the interval from 100 to 200.
     
-    >>> trim(np.linspace(100, 200, 101), 0.25, 0.50) # doctest: +ELLIPSIS
-    array([ 125.,  126.,  ...,  148.,  149.])
+    >>> trim(np.linspace(100, 200, 101), 0.25, 0.50)
+    array([ 125.,  126.,  ...,  149.,  150.])
     
     If there are duplicate values, the number or proportion cut off may be less 
     than requested. For example, even if "high" is large, the elements equal to 
@@ -57,7 +57,7 @@ def trim(x, low=0, high=0):
     
     Setting both low and high may return an empty array.
     
-    >>> trim(range(10), low=5, high=5) # doctest: +ELLIPSIS
+    >>> trim(range(10), low=5, high=5)
     array([], dtype=...)
     """
     x = np.array(x)

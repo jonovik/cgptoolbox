@@ -22,7 +22,8 @@ with Lock(lockname="locked.txt", retry_delay=0.2, max_wait=10):
 
 To turn on debug-level logging:
 
->>> import poormanslock, logging
+>>> import logging
+>>> from cgp.utils import poormanslock
 >>> poormanslock.log.setLevel(logging.DEBUG)                    # doctest: +SKIP
 """
 import os # os.remove - delete lockfile

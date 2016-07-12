@@ -22,7 +22,7 @@ def argrec(func, *args, **kwargs):
     trying to obtain without having to modify or call f.
     
     >>> def f(a, b=10, *args, **kwargs):
-    ...     print inspect.getargvalues(inspect.currentframe())
+    ...     return inspect.getargvalues(inspect.currentframe())
     
     Here's what we have to work with.
     
@@ -32,24 +32,34 @@ def argrec(func, *args, **kwargs):
     Here are a number of function calls, showing the output of getargvalues(),
     and the corresponding output of argrec().
     
+    Doctesting is a bit complicated because ArgInfo.locals is a dict whose 
+    printed representation may vary between versions and platforms.
+    We use pprint to make the test output deterministic.  
+    
+    >>> from pprint import pprint
+    
     >>> f(1)
     ArgInfo(args=['a', 'b'], varargs='args', keywords='kwargs',
-    locals={'a': 1, 'args': (), 'b': 10, 'kwargs': {}})
+    locals={...})
+    >>> pprint(f(1).locals)
+    {'a': 1, 'args': (), 'b': 10, 'kwargs': {}}
     >>> argrec(f, 1) == np.rec.array([(1, 10)], dtype=[('a', int), ('b', int)])
     rec.array([ True], dtype=bool)
 
     >>> f(1.0, 2, "test", d=20)
     ArgInfo(args=['a', 'b'], varargs='args', keywords='kwargs',
-    locals={'a': 1.0, 'args': ('test',), 'b': 2, 'kwargs': {'d': 20}})
+    locals={...})
+    >>> pprint(f(1.0, 2, "test", d=20).locals)
+    {'a': 1.0, 'args': ('test',), 'b': 2, 'kwargs': {'d': 20}}
     >>> argrec(f, 1.0, 2, "test", d=20) == np.rec.array([(1.0, 2, 'test', 20)],
-    ...     dtype=[('a', float), ('b', int), ('_2', '|S4'), ('d', int)])
+    ...     dtype=[('a', float), ('b', int), ('_2', '<U4'), ('d', int)])
     rec.array([ True], dtype=bool)
     
     Checking that all required arguments are given.
     
     >>> f()
     Traceback (most recent call last):
-    TypeError: f() takes at least 1 argument (0 given)
+    TypeError: f() missing 1 required positional argument: 'a'
     >>> argrec(f)
     Traceback (most recent call last):
     TypeError: One or more required arguments (['a'])
@@ -75,10 +85,10 @@ def argrec(func, *args, **kwargs):
     
     >>> f(1.0, 2, "test", d=20, b="abc")
     Traceback (most recent call last):
-    TypeError: f() got multiple values for keyword argument 'b'
+    TypeError: f() got multiple values for argument 'b'
     >>> argrec(f, 1.0, 2, "test", d=20, b="abc") == np.rec.array(
     ...     [(1.0, 2, 'test', 20)], 
-    ...     dtype=[('a', float), ('b', int), ('_2', '|S4'), ('d', int)])
+    ...     dtype=[('a', float), ('b', int), ('_2', '<U4'), ('d', int)])
     rec.array([ True], dtype=bool)
     
     Another data type: bool.
@@ -109,15 +119,15 @@ def argrec(func, *args, **kwargs):
     
     >>> def g(a, b): pass
     >>> argrec(g, "This is a", "This is b")
-    rec.array([('This is a', 'This is b')], dtype=[('a', '|S9'), ('b', '|S9')])
+    rec.array([('This is a', 'This is b')], dtype=[('a', '<U9'), ('b', '<U9')])
     
     ..  Tests not working yet::
         #>>> argrec(g, "This is a", "This is b", ignore=0) # DOES NOT WORK YET
-        rec.array([('This is b')], dtype=[('b', '|S9')])
+        rec.array([('This is b')], dtype=[('b', '<U9')])
         #>>> argrec(g, "This is a", "This is b", ignore="a") # DOES NOT WORK YET
-        rec.array([('This is b')], dtype=[('b', '|S9')])
+        rec.array([('This is b')], dtype=[('b', '<U9')])
         #>>> argrec(g, "This is a", "This is b", ignore=1) # DOES NOT WORK YET
-        rec.array([('This is a',)], dtype=[('a', '|S9')])
+        rec.array([('This is a',)], dtype=[('a', '<U9')])
         #>>> argrec(g, "This is a", "This is b", ignore=["b"]) # DOES NOT WORK YET
     """
     ignore = kwargs.pop("ignore", ())
@@ -180,7 +190,7 @@ def autoname(x):
     ...     dtype=[('_0', int), ('_1', int)])
     rec.array([ True], dtype=bool)
     >>> bool(autoname(np.rec.fromarrays([[1], ["test"]], names=["i", "s"])) == 
-    ...     np.rec.array([(1, 'test')], dtype=[('i', int), ('s', '|S4')]))
+    ...     np.rec.array([(1, 'test')], dtype=[('i', int), ('s', '<U4')]))
     True
     >>> autoname(0) == np.rec.array([(0,)], dtype=[('_0', int)])
     rec.array([ True], dtype=bool)
@@ -199,8 +209,18 @@ def autoname(x):
     >>> c._0 = 20
     >>> a
     array([[10,  1], [ 2,  3]], dtype=int8)
+
+    Because [PyTables doesn't handle unicode](https://github.com/PyTables/PyTables/issues/268),
+    strings are converted to bytes.
+
+    >>> np.asarray("a")
+    array('a', dtype='<U1')
+    >>> autoname("a")
+    rec.array([(b'a',)], dtype=[('_0', 'S1')])
     """
     x = np.ascontiguousarray(x)
+    if x.dtype.kind == "U":
+        x = x.astype(bytes)
     if not x.shape:
         x.shape = (1,)
     if not x.dtype.names:

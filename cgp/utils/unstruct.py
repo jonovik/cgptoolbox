@@ -62,7 +62,7 @@ def unstruct(x):
     >>> unstruct(np.zeros(3, dtype=dtype))
     Traceback (most recent call last):
     AssertionError: One or more fields has a different type or shape 
-    than the first: [('a', '|i1'), ('b', '<i2')]
+    than the first: [('a', 'i1'), ('b', '<i2')]
     
     Non-array objects are converted with np.array() if possible. 
     List of arrays are OK if they can be concatenated.

@@ -36,10 +36,15 @@ then extracts sub-arrays 1 and 2.
 memmap([[(6.0, 7.0), (8.0, 9.0), (10.0, 11.0)],
         [(12.0, 13.0), (14.0, 15.0), (16.0, 17.0)]], 
         dtype=[('a', '<f8'), ('b', '<f8')])
->>> shutil.rmtree(dtemp)
+
+On Windows, shutil.rmtree will often fail.
+>>> try:
+...     shutil.rmtree(dtemp)
+... except PermissionError:
+...     pass
 """
 import numpy as np
-_file = file  # Hack borrowed from Numpy 1.4.0 np.lib.io
+_file = open
 from numpy.lib.format import magic, read_magic, dtype_to_descr
 from numpy.lib.format import read_array_header_1_0, write_array_header_1_0
 
@@ -268,7 +273,7 @@ def load(file, mmap_mode=None, offset=0, shape=None):  #@ReservedAssignment
         fid = file
 
     # Code to distinguish from NumPy binary files and pickles.
-    _ZIP_PREFIX = 'PK\x03\x04'
+    _ZIP_PREFIX = b'PK\x03\x04'
     N = len(np.lib.format.MAGIC_PREFIX)
     magic_ = fid.read(N)
     fid.seek(-N, 1) # back-up

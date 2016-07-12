@@ -15,7 +15,7 @@ def cbind(*arrays):
     if not arrays:
         raise TypeError("cbind() takes at least one argument (0 given)")
     dtype = np.dtype([d for a in arrays for d in a.dtype.descr])
-    result = np.empty(shape=a.shape, dtype=dtype)  # pylint: disable=W0631
+    result = np.empty(shape=arrays[-1].shape, dtype=dtype)  # pylint: disable=W0631
     for a in arrays:
         for k in a.dtype.names:
             # Squeeze to allow for trailing singleton dimensions
@@ -32,14 +32,14 @@ def restruct(a, axes=0):
     to one of size () whose fields are shape (3,).
     
     >>> restruct(np.array([(0, 1), (2, 3), (4, 5)], 
-    ...     dtype=[("a", "|i1"), ("b", "|i1")]))
-    array(([0, 2, 4], [1, 3, 5]), dtype=[('a', '|i1', (3,)), ('b', '|i1', (3,))])
+    ...     dtype=[("a", "i1"), ("b", "i1")]))
+    array(([0, 2, 4], [1, 3, 5]), dtype=[('a', 'i1', (3,)), ('b', 'i1', (3,))])
     
     This is an array of shape (2, 3) with two scalar fields.
     
     >>> a = np.array([[(0, 1), (2, 3),  (4,  5)],
     ...               [(6, 7), (8, 9), (10, 11)]], 
-    ...               dtype=[('a', '|i1'), ('b', '|i1')])
+    ...               dtype=[('a', 'i1'), ('b', 'i1')])
     
     Folding the first dimension into each field gives an array of shape (3,) 
     whose fields have shape (2,).
@@ -47,7 +47,7 @@ def restruct(a, axes=0):
     >>> restruct(a)
     array([([0, 6], [1, 7]), 
            ([2, 8], [3, 9]),
-           ([4, 10], [5, 11])], dtype=[('a', '|i1', (2,)), ('b', '|i1', (2,))])
+           ([4, 10], [5, 11])], dtype=[('a', 'i1', (2,)), ('b', 'i1', (2,))])
     """
     axes = np.atleast_1d(axes)
     u = unstruct(a)

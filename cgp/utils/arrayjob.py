@@ -74,11 +74,10 @@ import os # file and directory manipulation, and PBS_O_WORKDIR
 from os import environ as e
 from cgp.utils.commands import getstatusoutput # calling qsub
 import logging # diagnostics
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 import numpy as np
 
-from cgp.utils.ordereddict import OrderedDict
 from cgp.utils.rec2dict import dict2rec
 from cgp.utils.dotdict import Dotdict
 
@@ -249,7 +248,7 @@ def presub(func):
     
     >>> set_NID(8)
     >>> def f():
-    ...     print "Testing"
+    ...     print("Testing")
     >>> arun(presub(f))
     Testing
     >>> reset_NID() # undo effects of the doctest
@@ -279,9 +278,9 @@ def key(func):
     >>> a = A()
     >>> a.test, A.test
     (<bound method A.test of <...A object at 0x...>>, 
-     <unbound method A.test>)
+     <function A.test at 0x...>)
     >>> key(a.test), key(A.test)
-    (<function test at 0x...>, <function test at 0x...>)
+    (<function A.test at 0x...>, <function A.test at 0x...>)
     >>> a.test == A.test
     False
     >>> key(a.test) == key(A.test)
@@ -549,13 +548,13 @@ class Mmapdict(Dotdict):
     >>> try:
     ...     np.save("%s/a.npy" % dtemp, np.arange(3))
     ...     md = Mmapdict(pardir=dtemp, mode="r")
-    ...     print repr(md["a"])
-    ...     print repr(md.a)
+    ...     print(repr(md["a"]))
+    ...     print(repr(md.a))
     ...     del md
     ...     # It can be useful to pass shape and offset to Mmapdict()
     ...     np.save("%s/b.npy" % dtemp, np.arange(4))
     ...     md = Mmapdict(pardir=dtemp, mode="r+", shape=(2,), offset=1)
-    ...     print repr(md["b"])
+    ...     print(repr(md["b"]))
     ...     md["b"][:] = 10 + np.arange(len(md["b"]))
     ...     del md
     ...     # The memory-mapped part is modified

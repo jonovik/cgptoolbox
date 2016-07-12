@@ -70,20 +70,23 @@ class Dotdict(dict):
     def __getattr__(self, name):
         """
         Returns self[name] if available, otherwise call inherited __getattr__.
-        
-        >>> from cStringIO import StringIO
-        >>> import numpy as np
-        >>> f = StringIO()
+
         >>> d = Dotdict(a=1)
-        >>> np.save(f, d)
-        >>> f.reset()
-        >>> np.load(f)
-        array(Dotdict({'a': 1}), dtype=object)
+        >>> d.a
+        1
+
+        BUG: On Python 3, this does not print 2 as expected after the assignment.
+
+        >>> d.get
+        <built-in method get of Dotdict object at 0x...>
+        >>> d.get = 2
+        >>> d.get
+        2
         """
         try:
             return self[name]
         except KeyError:
-            getattr(super(Dotdict, self), name)
+            return getattr(super(Dotdict, self), name)
     def __setattr__(self, name, value):
         self[name] = value
     def __repr__(self):

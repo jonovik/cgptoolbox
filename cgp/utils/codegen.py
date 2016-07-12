@@ -76,6 +76,18 @@ def to_source(node, indent_with=' ' * 4, add_line_information=False):
     If `add_line_information` is set to `True` comments for the line numbers
     of the nodes are added to the output.  This can be used to spot wrong line
     number information of statement nodes.
+
+    Test that the Python 3 representation of e.g. True as a NameConstant is handled correctly.
+
+    >>> s = 'f([x<3, "<3", 42, 0])'
+    >>> p = parse(s)
+    >>> [to_source(i) for i in p.body[0].value.args[0].elts]
+    ['(x < 3)', "'<3'", '42', '0']
+
+    >>> s = 'f([x<3, "<3", True, 0])'
+    >>> p = parse(s)
+    >>> [to_source(i) for i in p.body[0].value.args[0].elts]
+    ['(x < 3)', "'<3'", 'True', '0']
     """
     generator = SourceGenerator(indent_with, add_line_information)
     generator.visit(node)
@@ -211,6 +223,7 @@ class SourceGenerator(NodeVisitor):
         for base in node.bases:
             paren_or_comma()
             self.visit(base)
+        # XXX: Python 3.5 AST removed starargs and kwargs
         # XXX: the if here is used to keep this module compatible
         #      with python 2.6.
         if hasattr(node, 'keywords'):
@@ -218,11 +231,11 @@ class SourceGenerator(NodeVisitor):
                 paren_or_comma()
                 self.write(keyword.arg + '=')
                 self.visit(keyword.value)
-            if node.starargs is not None:
+            if getattr(node, "starargs", None):
                 paren_or_comma()
                 self.write('*')
                 self.visit(node.starargs)
-            if node.kwargs is not None:
+            if getattr(node, "kwargs", None):
                 paren_or_comma()
                 self.write('**')
                 self.visit(node.kwargs)
@@ -386,11 +399,11 @@ class SourceGenerator(NodeVisitor):
             write_comma()
             self.write(keyword.arg + '=')
             self.visit(keyword.value)
-        if node.starargs is not None:
+        if getattr(node, "starargs", None):
             write_comma()
             self.write('*')
             self.visit(node.starargs)
-        if node.kwargs is not None:
+        if getattr(node, "kwargs", None):
             write_comma()
             self.write('**')
             self.visit(node.kwargs)
@@ -398,6 +411,10 @@ class SourceGenerator(NodeVisitor):
 
     def visit_Name(self, node):
         self.write(node.id)
+
+    def visit_NameConstant(self, node):
+        """New in Python 3."""
+        self.write(node.value)
 
     def visit_Str(self, node):
         self.write(repr(node.s))
@@ -417,6 +434,8 @@ class SourceGenerator(NodeVisitor):
             self.visit(item)
         self.write(idx and ')' or ',)')
 
+	# TODO: First argument should be self, 
+	# but it's called below as an ordinary function (not an instance method)
     def sequence_visit(left, right):
         def visit(self, node):
             self.write(left)
@@ -509,6 +528,8 @@ class SourceGenerator(NodeVisitor):
     def visit_Ellipsis(self, node):
         self.write('Ellipsis')
 
+	# TODO: First argument should be self, 
+	# but it's called below as an ordinary function (not an instance method)
     def generator_visit(left, right):
         def visit(self, node):
             self.write(left)

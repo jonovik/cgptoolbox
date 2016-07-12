@@ -27,6 +27,7 @@ def write_if_not_exists(filename, raise_if_exists=False):
     
     >>> with write_if_not_exists(filename) as f:
     ...     f.write("Hello world")
+    11
     >>> with open(filename) as f:
     ...     f.read()
     'Hello world'
@@ -35,7 +36,8 @@ def write_if_not_exists(filename, raise_if_exists=False):
     
     >>> with write_if_not_exists(filename) as f:
     ...     f.write("filename exists, so this goes to the null device")
-    
+    48
+
     The file contents are unaffected.
     
     >>> with open(filename) as f:

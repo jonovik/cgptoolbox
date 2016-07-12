@@ -97,12 +97,17 @@ def dict2rec(*args, **kwargs):
     ...     (np.arange(0, 3), np.arange(10, 13), np.zeros(3)))))
     array([(0, 10, 0.0), (1, 11, 0.0), (2, 12, 0.0)], 
           dtype=[('a', '<i...'), ('b', '<i...'), ('c', '<f8')])
-    
-    >>> dict2rec({
-    ...     "a": np.arange(0, 3), "b": np.arange(10, 13), "c": np.zeros((3,))})
-    array([(0, 0.0, 10), (1, 0.0, 11), (2, 0.0, 12)],
-          dtype=[('a', '<i...'), ('c', '<f8'), ('b', '<i...')])
-    
+
+    When passing a dict as input, field order is not guaranteed (same as for dict.items()).
+
+    >>> d = {"a": np.arange(0, 3), "b": np.arange(10, 13), "c": np.zeros((3,))}
+    >>> r = dict2rec(d)
+    >>> for k, v in d.items():
+    ...     r[k] == v
+    array([ True,  True,  True], dtype=bool)
+    array([ True,  True,  True], dtype=bool)
+    array([ True,  True,  True], dtype=bool)
+
     Vector-valued fields.
     
     >>> dict2rec([("a", [0, 1, 2]), 
@@ -117,7 +122,7 @@ def dict2rec(*args, **kwargs):
         d[k] = np.atleast_1d(v)
     # Convert keys to plain str because Numpy field names cannot be unicode
     dtype = [(str(k), v.dtype, v.shape[1:]) for k, v in d.items()]
-    shape = len(v)
+    shape = np.alen(v)
     x = np.zeros(shape=shape, dtype=dtype)
     for k, v in d.items():
         x[k] = v

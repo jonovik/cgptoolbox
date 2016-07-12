@@ -47,7 +47,7 @@ def test_zero_rank():
     >>> x1
     array((0, 1), dtype=[('a', '<i4'), ('b', '<i4')])
     >>> type(x0), type(x1)
-    (<type 'numpy.void'>, <type 'numpy.ndarray'>)
+    (<class 'numpy.void'>, <class 'numpy.ndarray'>)
     
     Unstructuring them was tricky, but finally works.
     

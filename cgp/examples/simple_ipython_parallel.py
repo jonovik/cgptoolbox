@@ -16,7 +16,7 @@ different tools for caching and parallelization.
 """
 # pylint: disable=W0621,E0102
 
-from IPython.parallel import Client
+from ipyparallel import Client
 
 from cgp.examples.simple import *  # @UnusedWildImport pylint: disable=W0614
 

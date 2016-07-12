@@ -53,31 +53,35 @@ def nans_like(x):
     >>> x = np.arange(3.0)
     >>> nans_like(x)
     array([ nan,  nan,  nan])
-    >>> y = x.view([(k, float) for k in "a", "b", "c"])
+    >>> y = x.view([(k, float) for k in ("a", "b", "c")])
     >>> nans_like(y)
     array([(nan, nan, nan)], dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])
     >>> nans_like(y.view(np.recarray))
     rec.array([(nan, nan, nan)], dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])
     
-    Tuple, list, dict.
-    
+    Tuple, list, dict. Note that field order of Python dicts is not deterministic.
+
+    >>> from pprint import pprint  # Sorts dict items, so prints deterministically
     >>> nans_like((x, y))
     [array([ nan,  nan,  nan]), array([(nan, nan, nan)], 
           dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])]
     >>> nans_like([x, y])
     [array([ nan,  nan,  nan]), array([(nan, nan, nan)], 
           dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])]
-    >>> nans_like(dict(a=x, b=y))
+    >>> pprint(nans_like(dict(a=x, b=y)))
     {'a': array([ nan,  nan,  nan]), 'b': array([(nan, nan, nan)], 
           dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])}
     
-    Nested list and dict.
+    Nested list.
     
     >>> nans_like([x, [x, y]])
     [array([ nan, nan, nan]), [array([ nan, nan, nan]), array([(nan, nan, nan)],
                             dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])]]
-    >>> nans_like(dict(a=x, b=dict(c=x, d=y)))
-    {'a': array([ nan,  nan,  nan]), 
+
+    Nested dict.
+
+    >>> pprint(nans_like(dict(a=x, b=dict(c=x, d=y))))
+    {'a': array([ nan,  nan,  nan]),
      'b': {'c': array([ nan,  nan,  nan]), 'd': array([(nan, nan, nan)], 
                 dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])}}
     
@@ -177,7 +181,7 @@ def failwithnanlikefirst(func):
     >>> try:
     ...     g()                         
     ... except Exception as exc:
-    ...     print "Caught exception:", exc 
+    ...     print("Caught exception:", exc)
     <function g at 0x...> failed on first evaluation, or result could not be 
     interpreted as array of float. args = (), kwargs = {}
     Traceback (most recent call last):...Exception: Failure
